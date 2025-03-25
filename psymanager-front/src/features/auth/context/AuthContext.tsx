@@ -8,6 +8,7 @@ import React, {
 } from "react";
 
 import { getTokenExpirationDelay } from "../../../utils/tokenUtils";
+import { refreshTokenService } from "../services/authService";
 
 interface AuthState {
   accessToken: string | null;
@@ -65,20 +66,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       return;
     }
     try {
-      const response = await fetch("http://localhost:8080/auth/refresh", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ refreshToken }),
-      });
-      if (response.ok) {
-        const data = await response.json();
-        // Asumimos que data contiene access y refresh tokens
-        login(data.accessToken, data.refreshToken);
-      } else {
-        logout();
-      }
+      const data = await refreshTokenService(refreshToken);
+      // Se asume que data contiene { accessToken, refreshToken }
+      login(data.accessToken, data.refreshToken);
     } catch (error) {
       console.log("Error al refrescar el token", error);
       logout();
