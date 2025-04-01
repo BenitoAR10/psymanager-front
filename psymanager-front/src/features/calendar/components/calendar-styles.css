@@ -1,0 +1,167 @@
+/* Estilos personalizados para react-big-calendar */
+
+/* Estilos generales */
+.custom-calendar {
+  font-family: "Roboto", "Helvetica", "Arial", sans-serif;
+  color: #424242;
+  width: 100% !important; /* Forzamos ancho completo */
+}
+
+/* Contenedor principal */
+.custom-calendar .rbc-calendar {
+  width: 100% !important; /* Forzamos ancho completo */
+}
+
+/* Cabecera del calendario */
+.custom-calendar .rbc-toolbar {
+  margin-bottom: 20px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #f0f0f0;
+  width: 100%; /* Aseguramos que la barra de herramientas ocupe todo el ancho */
+  display: flex;
+  flex-wrap: wrap; /* Permitimos que se envuelva en pantallas pequeñas */
+  justify-content: space-between;
+}
+
+.custom-calendar .rbc-toolbar-label {
+  flex-grow: 1;
+  text-align: center;
+  font-size: 1.2rem;
+  font-weight: 500;
+  color: #424242;
+}
+
+.custom-calendar .rbc-btn-group {
+  margin: 0;
+}
+
+.custom-calendar .rbc-toolbar button {
+  color: #757575;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  padding: 6px 12px;
+  font-weight: 500;
+  background-color: white;
+  transition: all 0.2s;
+}
+
+.custom-calendar .rbc-toolbar button:hover {
+  background-color: #f5f5f5;
+  border-color: #d0d0d0;
+}
+
+.custom-calendar .rbc-toolbar button.rbc-active {
+  background-color: #4db6ac;
+  color: white;
+  border-color: #4db6ac;
+  box-shadow: none;
+}
+
+.custom-calendar .rbc-toolbar button.rbc-active:hover {
+  background-color: #3da599;
+  border-color: #3da599;
+}
+
+/* Vistas del calendario */
+.custom-calendar .rbc-month-view,
+.custom-calendar .rbc-time-view,
+.custom-calendar .rbc-agenda-view {
+  width: 100% !important; /* Forzamos ancho completo para todas las vistas */
+}
+
+/* Cabecera de días */
+.custom-calendar .rbc-header {
+  padding: 10px 3px;
+  font-weight: 500;
+  border-bottom: 1px solid #f0f0f0;
+  color: #757575;
+}
+
+/* Celdas del calendario */
+.custom-calendar .rbc-month-view {
+  border: none;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid #f0f0f0;
+}
+
+.custom-calendar .rbc-month-row,
+.custom-calendar .rbc-row-bg {
+  width: 100%; /* Aseguramos que las filas ocupen todo el ancho */
+}
+
+.custom-calendar .rbc-day-bg {
+  transition: background-color 0.2s;
+}
+
+.custom-calendar .rbc-day-bg:hover {
+  background-color: #f9f9f9;
+}
+
+.custom-calendar .rbc-off-range-bg {
+  background-color: #fafafa;
+}
+
+.custom-calendar .rbc-today {
+  background-color: #e0f2f1;
+}
+
+/* Eventos */
+.custom-calendar .rbc-event {
+  background-color: transparent;
+  border: none;
+  padding: 0;
+  margin: 1px 0;
+}
+
+.custom-calendar .rbc-event.rbc-selected {
+  background-color: transparent;
+  outline: none;
+}
+
+.custom-calendar .rbc-event-label {
+  display: none;
+}
+
+/* Vista de semana y día */
+.custom-calendar .rbc-time-view {
+  border: 1px solid #f0f0f0;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.custom-calendar .rbc-time-header {
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.custom-calendar .rbc-time-header-content {
+  border-left: 1px solid #f0f0f0;
+}
+
+.custom-calendar .rbc-time-content {
+  border-top: 1px solid #f0f0f0;
+}
+
+.custom-calendar .rbc-time-slot {
+  color: #9e9e9e;
+}
+
+.custom-calendar .rbc-current-time-indicator {
+  background-color: #4db6ac;
+  height: 2px;
+}
+
+/* Selección */
+.custom-calendar .rbc-slot-selecting {
+  background-color: rgba(77, 182, 172, 0.1);
+}
+
+.custom-calendar .rbc-slot-selection {
+  background-color: rgba(77, 182, 172, 0.7);
+  border: none;
+  color: white;
+}
+
+.custom-calendar .rbc-day-slot .rbc-background-event {
+  background-color: transparent;
+}
