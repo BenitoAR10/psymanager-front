@@ -1,0 +1,43 @@
+.custom-toast {
+  font-family: "Roboto", "Helvetica", "Arial", sans-serif;
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+.custom-toast-description {
+  font-weight: 400;
+  margin-top: 4px;
+  color: #757575;
+  font-size: 13px;
+}
+
+/* Animaciones suaves */
+@keyframes toast-enter {
+  from {
+    transform: translateX(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes toast-exit {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(20px);
+    opacity: 0;
+  }
+}
+
+.sonner-toast[data-mounted="true"] {
+  animation: toast-enter 0.2s ease-out forwards;
+}
+
+.sonner-toast[data-removed="true"] {
+  animation: toast-exit 0.2s ease-in forwards;
+}

@@ -9,7 +9,7 @@ interface RoleProtectedRouteProps {
 const RoleProtectedRoute: React.FC<RoleProtectedRouteProps> = ({
   requiredRole,
 }) => {
-  const { isAuthenticated, userRoles, loading } = useAuth();
+  const { isAuthenticated, loading, user } = useAuth();
 
   // Mientras se cargan los tokens, mostramos un loader
   if (loading) {
@@ -24,7 +24,7 @@ const RoleProtectedRoute: React.FC<RoleProtectedRouteProps> = ({
   }
 
   // Si el usuario autenticado no tiene el rol requerido, mostramos 403.
-  if (!userRoles || !userRoles.includes(requiredRole)) {
+  if (!user || !user.roles.includes(requiredRole)) {
     return (
       <div style={{ padding: "2rem", textAlign: "center" }}>
         <h1>403 Forbidden</h1>

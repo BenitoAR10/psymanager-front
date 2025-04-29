@@ -1,3 +1,5 @@
+"use client";
+
 import type React from "react";
 import {
   Drawer,
@@ -8,6 +10,10 @@ import {
   Typography,
   Box,
   ListItemIcon,
+  Divider,
+  useTheme,
+  alpha,
+  Button,
 } from "@mui/material";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "../../features/auth/context/AuthContext";
@@ -17,6 +23,9 @@ import CalendarTodayOutlinedIcon from "@mui/icons-material/CalendarTodayOutlined
 import PersonOutlineOutlinedIcon from "@mui/icons-material/PersonOutlineOutlined";
 import HelpOutlineOutlinedIcon from "@mui/icons-material/HelpOutlineOutlined";
 import LogoutOutlinedIcon from "@mui/icons-material/LogoutOutlined";
+import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
+import SchoolOutlinedIcon from "@mui/icons-material/SchoolOutlined";
+import AssignmentOutlinedIcon from "@mui/icons-material/AssignmentOutlined";
 
 interface SidebarProps {
   drawerWidth: number;
@@ -28,22 +37,45 @@ const menuItems = [
   {
     text: "Dashboard",
     path: "/dashboard",
-    icon: <DashboardOutlinedIcon fontSize="small" />,
+    icon: <DashboardOutlinedIcon />,
+    description: "Vista general",
   },
   {
     text: "Calendario",
     path: "/dashboard/calendario",
-    icon: <CalendarTodayOutlinedIcon fontSize="small" />,
+    icon: <CalendarTodayOutlinedIcon />,
+    description: "Gestión de horarios",
+  },
+  {
+    text: "Estudiantes",
+    path: "/dashboard/estudiantes",
+    icon: <SchoolOutlinedIcon />,
+    description: "Listado de estudiantes",
+  },
+  {
+    text: "Historiales",
+    path: "/dashboard/historiales",
+    icon: <AssignmentOutlinedIcon />,
+    description: "Registros clínicos",
   },
   {
     text: "Perfil",
     path: "/dashboard/perfil",
-    icon: <PersonOutlineOutlinedIcon fontSize="small" />,
+    icon: <PersonOutlineOutlinedIcon />,
+    description: "Tu información",
   },
+];
+
+const secondaryMenuItems = [
   {
     text: "Ayuda",
     path: "/dashboard/ayuda",
-    icon: <HelpOutlineOutlinedIcon fontSize="small" />,
+    icon: <HelpOutlineOutlinedIcon />,
+  },
+  {
+    text: "Configuración",
+    path: "/dashboard/configuracion",
+    icon: <SettingsOutlinedIcon />,
   },
 ];
 
@@ -52,58 +84,201 @@ const Sidebar: React.FC<SidebarProps> = ({
   mobileOpen,
   onDrawerToggle,
 }) => {
+  const theme = useTheme();
   const { logout } = useAuth();
   const location = useLocation();
 
-  // Contenido del Drawer simplificado
+  // Contenido del Drawer mejorado
   const drawerContent = (
     <Box
       sx={{
         display: "flex",
         flexDirection: "column",
         height: "100%",
-        backgroundColor: "#ffffff",
+        backgroundColor: "background.paper",
         py: 2,
       }}
     >
-      {/* Título con ícono de corazón */}
-      <Box sx={{ px: 7, mb: 4, display: "flex", alignItems: "center" }}>
-        <PsychologyIcon sx={{ color: "#4DB6AC", mr: 1, fontSize: "1.8rem" }} />
-        <Typography
-          variant="subtitle1"
+      {/* Logo y título */}
+      <Box
+        sx={{
+          px: 3,
+          mb: 3,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "flex-start",
+        }}
+      >
+        <Box
           sx={{
-            color: "#4DB6AC",
-            fontWeight: 500,
-            fontSize: "1.5rem",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            width: 42,
+            height: 42,
+            borderRadius: 2,
+            backgroundColor: alpha(theme.palette.primary.main, 0.1),
+            mr: 1.5,
           }}
         >
-          Inicio
-        </Typography>
+          <PsychologyIcon
+            sx={{
+              color: theme.palette.primary.main,
+              fontSize: "1.8rem",
+            }}
+          />
+        </Box>
+        <Box>
+          <Typography
+            variant="h6"
+            sx={{
+              color: "text.primary",
+              fontWeight: 700,
+              lineHeight: 1.2,
+            }}
+          >
+            PSI UCB
+          </Typography>
+          <Typography
+            variant="caption"
+            sx={{
+              color: "text.secondary",
+              fontWeight: 500,
+            }}
+          >
+            Portal de Terapeutas
+          </Typography>
+        </Box>
       </Box>
 
+      <Divider sx={{ mb: 2 }} />
+
       {/* Menú principal */}
-      <List sx={{ px: 1 }}>
+      <Typography
+        variant="overline"
+        sx={{
+          px: 3,
+          mb: 1,
+          color: "text.secondary",
+          fontWeight: 600,
+        }}
+      >
+        MENÚ PRINCIPAL
+      </Typography>
+      <List sx={{ px: 2 }}>
         {menuItems.map((item) => {
           const isActive = location.pathname === item.path;
           return (
-            <ListItem key={item.text} disablePadding sx={{ mb: 1 }}>
+            <ListItem key={item.text} disablePadding sx={{ mb: 0.5 }}>
               <ListItemButton
                 component={Link}
                 to={item.path}
-                onClick={onDrawerToggle}
+                onClick={mobileOpen ? onDrawerToggle : undefined}
                 sx={{
-                  borderRadius: 1,
-                  py: 1,
-                  backgroundColor: isActive ? "#4DB6AC" : "transparent",
-                  color: isActive ? "#ffffff" : "#757575",
+                  borderRadius: 2,
+                  py: 1.2,
+                  px: 2,
+                  backgroundColor: isActive
+                    ? alpha(theme.palette.primary.main, 0.1)
+                    : "transparent",
+                  color: isActive
+                    ? theme.palette.primary.main
+                    : "text.secondary",
                   "&:hover": {
-                    backgroundColor: isActive ? "#4DB6AC" : "#f5f5f5",
+                    backgroundColor: isActive
+                      ? alpha(theme.palette.primary.main, 0.15)
+                      : alpha(theme.palette.grey[500], 0.08),
+                  },
+                  transition: "all 0.2s ease",
+                }}
+              >
+                <ListItemIcon
+                  sx={{
+                    color: isActive
+                      ? theme.palette.primary.main
+                      : "text.secondary",
+                    minWidth: 36,
+                  }}
+                >
+                  {item.icon}
+                </ListItemIcon>
+                <Box>
+                  <ListItemText
+                    primary={item.text}
+                    primaryTypographyProps={{
+                      fontSize: "0.95rem",
+                      fontWeight: isActive ? 600 : 500,
+                      color: isActive ? "primary.main" : "text.primary",
+                    }}
+                    secondary={item.description}
+                    secondaryTypographyProps={{
+                      fontSize: "0.75rem",
+                      display: { xs: "none", lg: "block" },
+                    }}
+                  />
+                </Box>
+                {isActive && (
+                  <Box
+                    sx={{
+                      width: 4,
+                      height: 32,
+                      borderRadius: 1,
+                      backgroundColor: theme.palette.primary.main,
+                      ml: 1,
+                    }}
+                  />
+                )}
+              </ListItemButton>
+            </ListItem>
+          );
+        })}
+      </List>
+
+      <Divider sx={{ my: 2 }} />
+
+      {/* Menú secundario */}
+      <Typography
+        variant="overline"
+        sx={{
+          px: 3,
+          mb: 1,
+          color: "text.secondary",
+          fontWeight: 600,
+        }}
+      >
+        SOPORTE
+      </Typography>
+      <List sx={{ px: 2 }}>
+        {secondaryMenuItems.map((item) => {
+          const isActive = location.pathname === item.path;
+          return (
+            <ListItem key={item.text} disablePadding sx={{ mb: 0.5 }}>
+              <ListItemButton
+                component={Link}
+                to={item.path}
+                onClick={mobileOpen ? onDrawerToggle : undefined}
+                sx={{
+                  borderRadius: 2,
+                  py: 1,
+                  px: 2,
+                  backgroundColor: isActive
+                    ? alpha(theme.palette.primary.main, 0.1)
+                    : "transparent",
+                  color: isActive
+                    ? theme.palette.primary.main
+                    : "text.secondary",
+                  "&:hover": {
+                    backgroundColor: isActive
+                      ? alpha(theme.palette.primary.main, 0.15)
+                      : alpha(theme.palette.grey[500], 0.08),
                   },
                 }}
               >
                 <ListItemIcon
                   sx={{
-                    color: isActive ? "#ffffff" : "#9e9e9e",
+                    color: isActive
+                      ? theme.palette.primary.main
+                      : "text.secondary",
                     minWidth: 36,
                   }}
                 >
@@ -113,7 +288,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                   primary={item.text}
                   primaryTypographyProps={{
                     fontSize: "0.9rem",
-                    fontWeight: isActive ? 500 : 400,
+                    fontWeight: isActive ? 600 : 500,
                   }}
                 />
               </ListItemButton>
@@ -126,32 +301,26 @@ const Sidebar: React.FC<SidebarProps> = ({
       <Box sx={{ flexGrow: 1 }} />
 
       {/* Botón de Logout */}
-      <Box sx={{ px: 2 }}>
-        <ListItem disablePadding>
-          <ListItemButton
-            onClick={() => {
-              logout();
-            }}
-            sx={{
-              color: "#757575",
-              "&:hover": {
-                backgroundColor: "transparent",
-                color: "#4DB6AC",
-              },
-              py: 1,
-            }}
-          >
-            <ListItemIcon sx={{ color: "inherit", minWidth: 36 }}>
-              <LogoutOutlinedIcon fontSize="small" />
-            </ListItemIcon>
-            <ListItemText
-              primary="Cierra sesión"
-              primaryTypographyProps={{
-                fontSize: "0.9rem",
-              }}
-            />
-          </ListItemButton>
-        </ListItem>
+      <Box sx={{ px: 2, mt: 2 }}>
+        <Button
+          variant="outlined"
+          color="error"
+          fullWidth
+          startIcon={<LogoutOutlinedIcon />}
+          onClick={logout}
+          sx={{
+            py: 1,
+            borderRadius: 2,
+            justifyContent: "flex-start",
+            borderWidth: "1.5px",
+            "&:hover": {
+              borderWidth: "1.5px",
+              backgroundColor: alpha(theme.palette.error.main, 0.08),
+            },
+          }}
+        >
+          Cerrar sesión
+        </Button>
       </Box>
     </Box>
   );
@@ -166,8 +335,26 @@ const Sidebar: React.FC<SidebarProps> = ({
           "& .MuiDrawer-paper": {
             width: drawerWidth,
             boxSizing: "border-box",
-            borderRight: "1px solid #f0f0f0",
+            borderRight: "1px solid",
+            borderColor: "divider",
             boxShadow: "none",
+            overflow: "hidden",
+            "&:hover": {
+              overflow: "auto",
+            },
+            "&::-webkit-scrollbar": {
+              width: "6px",
+            },
+            "&::-webkit-scrollbar-track": {
+              background: "transparent",
+            },
+            "&::-webkit-scrollbar-thumb": {
+              background: theme.palette.grey[300],
+              borderRadius: "3px",
+            },
+            "&::-webkit-scrollbar-thumb:hover": {
+              background: theme.palette.grey[400],
+            },
           },
         }}
         open
@@ -185,7 +372,7 @@ const Sidebar: React.FC<SidebarProps> = ({
           "& .MuiDrawer-paper": {
             width: drawerWidth,
             boxSizing: "border-box",
-            boxShadow: "0px 0px 10px rgba(0, 0, 0, 0.05)",
+            boxShadow: "0px 4px 20px rgba(0, 0, 0, 0.08)",
           },
         }}
         ModalProps={{
