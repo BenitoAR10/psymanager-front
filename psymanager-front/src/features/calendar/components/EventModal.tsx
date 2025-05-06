@@ -1,7 +1,6 @@
 "use client";
 
-import type React from "react";
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Dialog,
   DialogTitle,
@@ -27,13 +26,16 @@ interface EventModalProps {
   onClose: () => void;
   onSave: (event: CalendarEvent) => void;
   eventData?: CalendarEvent;
+  therapistName: string;
 }
 
-/**
- * Formatea un Date a yyyy-MM-ddThh:mm en zona local
- */
+// Helper para capitalizar cada palabra
+const capitalizeWord = (word: string) =>
+  word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+
+// Convierte Date a "yyyy-MM-ddThh:mm"
 const toLocalDatetime = (date: Date) => {
-  const tzOffset = date.getTimezoneOffset() * 60000; // en ms
+  const tzOffset = date.getTimezoneOffset() * 60000;
   const local = new Date(date.getTime() - tzOffset);
   return local.toISOString().slice(0, 16);
 };
@@ -43,41 +45,51 @@ const EventModal: React.FC<EventModalProps> = ({
   onClose,
   onSave,
   eventData,
+  therapistName,
 }) => {
   const theme = useTheme();
+  // Sólo edición si viene title no vacío
   const isEditMode = Boolean(eventData?.title);
 
-  // estados para los campos
-  const [title, setTitle] = useState(eventData?.title ?? "");
-  const [start, setStart] = useState(
-    eventData ? toLocalDatetime(eventData.start) : ""
-  );
-  const [end, setEnd] = useState(
-    eventData ? toLocalDatetime(eventData.end) : ""
-  );
+  const [title, setTitle] = useState<string>(therapistName);
+  const [start, setStart] = useState<string>("");
+  const [end, setEnd] = useState<string>("");
 
-  // Cuando cambie eventData, reinicializamos
   useEffect(() => {
+    // Sólo (re)inicializar cuando el modal se abre
+    if (!open) return;
+
+    if (isEditMode && eventData) {
+      // Capitaliza cada palabra del título existente
+      const cleaned = eventData
+        .title!.split(" ")
+        .filter(Boolean)
+        .map(capitalizeWord)
+        .join(" ");
+      setTitle(cleaned);
+    } else {
+      // Nuevo horario: título por defecto
+      setTitle(therapistName);
+    }
+
     if (eventData) {
-      setTitle(eventData.title || "");
+      // En edición o creación a partir de slot, siempre rellena start/end
       setStart(toLocalDatetime(eventData.start));
       setEnd(toLocalDatetime(eventData.end));
     } else {
-      setTitle("");
       setStart("");
       setEnd("");
     }
-  }, [eventData]);
+  }, [open, eventData, therapistName, isEditMode]);
 
   const handleSave = () => {
-    const newEvent: CalendarEvent = {
+    onSave({
       id: eventData?.id ?? Date.now(),
       title,
       start: new Date(start),
       end: new Date(end),
       userTherapistId: eventData!.userTherapistId,
-    };
-    onSave(newEvent);
+    });
   };
 
   return (
@@ -94,12 +106,8 @@ const EventModal: React.FC<EventModalProps> = ({
         },
       }}
     >
-      <DialogTitle
-        sx={{
-          p: 0,
-          m: 0,
-        }}
-      >
+      {/* HEADER */}
+      <DialogTitle sx={{ p: 0, m: 0 }}>
         <Box
           sx={{
             display: "flex",
@@ -129,7 +137,7 @@ const EventModal: React.FC<EventModalProps> = ({
             >
               {isEditMode ? <EditCalendarIcon /> : <AddIcon />}
             </Box>
-            <Typography variant="h6" component="div" fontWeight={600}>
+            <Typography variant="h6" fontWeight={600}>
               {isEditMode ? "Editar Horario" : "Nuevo Horario"}
             </Typography>
           </Box>
@@ -150,20 +158,16 @@ const EventModal: React.FC<EventModalProps> = ({
 
       <Divider />
 
+      {/* BODY */}
       <DialogContent sx={{ p: 3, pt: 2 }}>
         <TextField
-          label="Título del horario"
-          placeholder="Ej: Horario de consulta"
+          label="Terapeuta"
           fullWidth
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           margin="normal"
           variant="outlined"
-          InputProps={{
-            sx: {
-              borderRadius: 2,
-            },
-          }}
+          InputProps={{ sx: { borderRadius: 2 } }}
         />
 
         <Box sx={{ mt: 2, mb: 1 }}>
@@ -172,8 +176,7 @@ const EventModal: React.FC<EventModalProps> = ({
             color="text.secondary"
             sx={{ mb: 1, display: "flex", alignItems: "center", gap: 0.5 }}
           >
-            <AccessTimeIcon fontSize="small" />
-            Período de tiempo
+            <AccessTimeIcon fontSize="small" /> Período de tiempo
           </Typography>
           <Box
             sx={{
@@ -190,11 +193,7 @@ const EventModal: React.FC<EventModalProps> = ({
               onChange={(e) => setStart(e.target.value)}
               margin="dense"
               InputLabelProps={{ shrink: true }}
-              InputProps={{
-                sx: {
-                  borderRadius: 2,
-                },
-              }}
+              InputProps={{ sx: { borderRadius: 2 } }}
             />
             <TextField
               label="Fecha y hora de fin"
@@ -204,16 +203,13 @@ const EventModal: React.FC<EventModalProps> = ({
               onChange={(e) => setEnd(e.target.value)}
               margin="dense"
               InputLabelProps={{ shrink: true }}
-              InputProps={{
-                sx: {
-                  borderRadius: 2,
-                },
-              }}
+              InputProps={{ sx: { borderRadius: 2 } }}
             />
           </Box>
         </Box>
       </DialogContent>
 
+      {/* FOOTER */}
       <DialogActions sx={{ p: 2, pt: 0 }}>
         <Button
           onClick={onClose}
@@ -222,9 +218,7 @@ const EventModal: React.FC<EventModalProps> = ({
             borderRadius: 2,
             px: 3,
             borderWidth: "1.5px",
-            "&:hover": {
-              borderWidth: "1.5px",
-            },
+            "&:hover": { borderWidth: "1.5px" },
           }}
         >
           Cancelar
@@ -237,9 +231,7 @@ const EventModal: React.FC<EventModalProps> = ({
             borderRadius: 2,
             px: 3,
             boxShadow: theme.shadows[2],
-            "&:hover": {
-              boxShadow: theme.shadows[4],
-            },
+            "&:hover": { boxShadow: theme.shadows[4] },
           }}
         >
           {isEditMode ? "Actualizar" : "Crear"}

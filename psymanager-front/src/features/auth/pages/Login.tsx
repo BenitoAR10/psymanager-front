@@ -1,12 +1,24 @@
 "use client";
 
 import type React from "react";
-import { Grid, Box, Typography, Button, SvgIcon } from "@mui/material";
+import {
+  Grid,
+  Box,
+  Typography,
+  Button,
+  SvgIcon,
+  useTheme,
+  Paper,
+  useMediaQuery,
+} from "@mui/material";
 import GoogleIcon from "@mui/icons-material/Google";
 import MyLottieAnimation from "../../../components/animations/MyLottieAnimation";
 import logoPSIUCB from "../../../assets/images/logo.jpg";
 
 const Login: React.FC = () => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
+
   const handleLogin = () => {
     window.location.href = "http://localhost:8080/oauth2/authorization/google";
   };
@@ -16,62 +28,67 @@ const Login: React.FC = () => {
       container
       sx={{
         width: "100vw",
-        height: "100vh",
+        height: isMobile ? "auto" : "100vh", // Altura automática en móvil
         margin: 0,
       }}
     >
-      {/* Sección izquierda */}
+      {/* Sección izquierda/superior */}
       <Grid
         item
         xs={12}
         md={6}
         sx={{
           position: "relative",
-          backgroundColor: "#8EA4AA",
+          background: `linear-gradient(135deg, ${theme.palette.primary.light}, ${theme.palette.primary.dark})`,
           display: "flex",
           justifyContent: "center",
           alignItems: "center",
           overflow: "hidden",
+          minHeight: isMobile ? "220px" : "auto", // Altura mínima en móvil
+          py: isMobile ? 4 : 0, // Padding vertical en móvil
         }}
       >
-        {/* Arcos superiores */}
-        <Box
-          sx={{
-            position: "absolute",
-            top: -200,
-            left: 0,
-            width: "100%",
-            height: 400,
-            borderRadius: "50%",
-            backgroundColor: "#C5C8C9",
-            opacity: 0.8,
-          }}
-        />
-        <Box
-          sx={{
-            position: "absolute",
-            top: -250,
-            left: 0,
-            width: "100%",
-            height: 500,
-            borderRadius: "50%",
-            backgroundColor: "#BDC2C4",
-            opacity: 0.6,
-          }}
-        />
+        {/* Arcos superiores - Ocultos en móvil para simplificar */}
+        {!isMobile && (
+          <>
+            <Box
+              sx={{
+                position: "absolute",
+                top: -200,
+                left: 0,
+                width: "100%",
+                height: 400,
+                borderRadius: "50%",
+                backgroundColor: "rgba(255, 255, 255, 0.15)",
+              }}
+            />
+            <Box
+              sx={{
+                position: "absolute",
+                top: -250,
+                left: 0,
+                width: "100%",
+                height: 500,
+                borderRadius: "50%",
+                backgroundColor: "rgba(255, 255, 255, 0.1)",
+              }}
+            />
+          </>
+        )}
 
-        {/* Ícono de corazón en la parte superior */}
+        {/* Ícono de corazón - Ajustado para móvil */}
         <Box
           sx={{
             position: "absolute",
-            top: "10%",
+            top: isMobile ? "5%" : "10%",
             zIndex: 10,
           }}
         >
           <SvgIcon
             sx={{
-              color: "white",
-              fontSize: 30,
+              color: "rgba(255, 255, 255, 0.9)",
+              fontSize: isMobile ? 28 : 36,
+              filter: "drop-shadow(0px 2px 4px rgba(0, 0, 0, 0.2))",
             }}
           >
             <path
@@ -83,16 +100,18 @@ const Login: React.FC = () => {
           </SvgIcon>
         </Box>
 
-        {/* Logo PSI UCB */}
+        {/* Logo PSI UCB - Tamaño reducido en móvil */}
         <Box
           sx={{
             position: "relative",
             zIndex: 10,
-            width: 500,
+            width: isMobile ? "80%" : 500,
+            maxWidth: isMobile ? 280 : "none",
             height: "auto",
             display: "flex",
             justifyContent: "center",
             alignItems: "center",
+            padding: isMobile ? 2 : 4,
           }}
         >
           <img
@@ -102,42 +121,81 @@ const Login: React.FC = () => {
               width: "100%",
               height: "auto",
               objectFit: "contain",
-              filter: "drop-shadow(0px 2px 4px rgba(0, 0, 0, 0.2))", // Añadido sombra sutil para destacar el logo
+              filter: "drop-shadow(0px 4px 8px rgba(0, 0, 0, 0.25))",
             }}
           />
         </Box>
       </Grid>
 
-      {/* Sección derecha */}
+      {/* Sección derecha/inferior */}
       <Grid
         item
         xs={12}
         md={6}
         sx={{
-          backgroundColor: "#FFFFFF", // Asegurando que el fondo sea blanco
+          backgroundColor: theme.palette.grey[50],
           display: "flex",
           flexDirection: "column",
           justifyContent: "center",
           alignItems: "center",
-          p: 4,
+          p: isMobile ? 3 : 6, // Padding reducido en móvil
+          minHeight: isMobile ? "60vh" : "auto", // Altura mínima en móvil
         }}
       >
-        <Box sx={{ maxWidth: 400, width: "100%" }}>
+        <Paper
+          elevation={0}
+          sx={{
+            maxWidth: 440,
+            width: "100%",
+            p: isMobile ? 3 : 4, // Padding reducido en móvil
+            borderRadius: theme.shape.borderRadius,
+            backgroundColor: theme.palette.background.paper,
+            border: `1px solid ${theme.palette.grey[100]}`,
+            boxShadow: theme.shadows[1],
+          }}
+        >
           <Typography
-            variant="h4"
+            variant="h3"
             component="h1"
             gutterBottom
             sx={{
-              fontWeight: "bold",
-              mb: 0,
+              fontWeight: 600,
+              mb: 1.5,
               textAlign: "center",
-              fontSize: "3rem",
+              color: theme.palette.text.primary,
+              fontSize: isMobile ? "2rem" : "3rem", // Tamaño de fuente reducido en móvil
             }}
           >
             Bienvenido
           </Typography>
 
-          <Box sx={{ display: "flex", justifyContent: "center", mb: 4 }}>
+          <Typography
+            variant="body1"
+            sx={{
+              textAlign: "center",
+              mb: isMobile ? 3 : 4, // Margen reducido en móvil
+              color: theme.palette.text.secondary,
+              maxWidth: "90%",
+              mx: "auto",
+              fontSize: isMobile ? "0.9rem" : "1rem", // Tamaño de fuente reducido en móvil
+            }}
+          >
+            Inicia sesión para acceder a tu cuenta y gestionar tus horarios de
+            consulta
+          </Typography>
+
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "center",
+              mb: isMobile ? 3 : 5, // Margen reducido en móvil
+              // Ajustar tamaño de la animación en móvil
+              "& > div": {
+                transform: isMobile ? "scale(0.85)" : "none",
+                transformOrigin: "center center",
+              },
+            }}
+          >
             {/* Animación Lottie */}
             <MyLottieAnimation />
           </Box>
@@ -149,34 +207,56 @@ const Login: React.FC = () => {
             startIcon={
               <GoogleIcon
                 sx={{
-                  color: "#4285F4", // Color azul de Google
+                  color: "#4285F4",
+                  fontSize: isMobile ? "1.2rem" : "1.5rem", // Tamaño de icono reducido en móvil
                 }}
               />
             }
             sx={{
-              width: "auto", // Ancho automático en lugar de 100%
-              maxWidth: "240px", // Ancho máximo para que se parezca más al de la imagen
+              width: isMobile ? "100%" : "auto", // Ancho completo en móvil
+              maxWidth: isMobile ? "none" : "280px",
               borderRadius: 28,
               textTransform: "none",
-              py: 1,
+              py: isMobile ? 1 : 1.25, // Padding vertical reducido en móvil
               px: 3,
-              border: "1px solid #e0e0e0",
-              color: "rgba(0, 0, 0, 0.7)", // Color de texto más oscuro
-              backgroundColor: "white",
-              boxShadow: "0px 1px 3px rgba(0, 0, 0, 0.1)",
-              margin: "0 auto", // Centrado horizontal
+              border: `1px solid ${theme.palette.grey[200]}`,
+              color: theme.palette.text.primary,
+              backgroundColor: theme.palette.background.paper,
+              boxShadow: theme.shadows[1],
+              margin: "0 auto",
               display: "flex",
               justifyContent: "center",
-              fontSize: "0.9rem", // Tamaño de fuente más pequeño
+              fontSize: isMobile ? "0.9rem" : "0.95rem", // Tamaño de fuente reducido en móvil
+              fontWeight: 500,
+              transition: "all 0.3s ease",
               "&:hover": {
-                backgroundColor: "#f5f5f5",
-                boxShadow: "0px 2px 4px rgba(0, 0, 0, 0.1)",
+                backgroundColor: theme.palette.grey[50],
+                boxShadow: theme.shadows[2],
+                borderColor: theme.palette.grey[300],
+              },
+              // Mejorar la experiencia táctil
+              "&:active": {
+                transform: "scale(0.98)",
               },
             }}
           >
             Iniciar sesión con Google
           </Button>
-        </Box>
+        </Paper>
+
+        <Typography
+          variant="caption"
+          sx={{
+            mt: isMobile ? 2 : 3, // Margen reducido en móvil
+            color: theme.palette.text.secondary,
+            opacity: 0.8,
+            fontSize: isMobile ? "0.7rem" : "0.75rem", // Tamaño de fuente reducido en móvil
+            textAlign: "center",
+            px: 2,
+          }}
+        >
+          © {new Date().getFullYear()} PSI UCB - Todos los derechos reservados
+        </Typography>
       </Grid>
     </Grid>
   );

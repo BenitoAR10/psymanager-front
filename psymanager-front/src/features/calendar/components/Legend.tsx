@@ -1,42 +1,70 @@
 import React from "react";
-import { Box } from "@mui/material";
+import { Box, Typography, useTheme, Paper } from "@mui/material";
 
 const Legend: React.FC = () => {
+  const theme = useTheme();
+
   return (
-    <Box
+    <Paper
+      elevation={0}
       sx={{
         display: "flex",
-        gap: 2,
+        gap: { xs: 2, sm: 3 },
         alignItems: "center",
-        padding: "8px 16px",
-        backgroundColor: "#f9f9f9",
-        borderRadius: "8px",
-        marginBottom: "8px",
+        padding: { xs: "10px 16px", sm: "12px 20px" },
+        backgroundColor: theme.palette.grey[50],
+        borderRadius: theme.shape.borderRadius,
+        marginBottom: 2,
+        border: `1px solid ${theme.palette.grey[100]}`,
+        flexWrap: "wrap",
       }}
     >
-      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+      <Typography
+        variant="subtitle2"
+        sx={{
+          color: theme.palette.text.secondary,
+          fontWeight: 600,
+          mr: 1,
+          display: { xs: "none", sm: "block" },
+        }}
+      ></Typography>
+
+      <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
         <Box
           sx={{
-            width: 16,
-            height: 16,
-            backgroundColor: "#4DB6AC",
-            borderRadius: "4px",
+            width: 14,
+            height: 14,
+            backgroundColor: theme.palette.primary.main,
+            borderRadius: "3px",
+            boxShadow: `0 1px 3px ${theme.palette.primary.main}30`,
           }}
         />
-        <span>Mis horarios</span>
+        <Typography
+          variant="body2"
+          sx={{ color: theme.palette.text.primary, fontWeight: 500 }}
+        >
+          Mis horarios
+        </Typography>
       </Box>
-      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+
+      <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
         <Box
           sx={{
-            width: 16,
-            height: 16,
-            backgroundColor: "#64B5F6",
-            borderRadius: "4px",
+            width: 14,
+            height: 14,
+            backgroundColor: theme.palette.secondary.main,
+            borderRadius: "3px",
+            boxShadow: `0 1px 3px ${theme.palette.secondary.main}30`,
           }}
         />
-        <span>Horarios ocupados</span>
+        <Typography
+          variant="body2"
+          sx={{ color: theme.palette.text.primary, fontWeight: 500 }}
+        >
+          Horarios ocupados
+        </Typography>
       </Box>
-    </Box>
+    </Paper>
   );
 };
 

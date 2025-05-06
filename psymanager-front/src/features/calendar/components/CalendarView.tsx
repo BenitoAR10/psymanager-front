@@ -60,8 +60,6 @@ const EventComponent: React.FC<EventProps<CalendarEvent>> = ({ event }) => {
           color: isOwnEvent
             ? theme.palette.primary.contrastText
             : theme.palette.secondary.contrastText,
-          px: 1,
-          py: 0.25,
           borderRadius: 1,
           fontSize: "0.75rem",
           fontWeight: 500,
@@ -78,7 +76,8 @@ const EventComponent: React.FC<EventProps<CalendarEvent>> = ({ event }) => {
           height: "100%",
           display: "flex",
           alignItems: "center",
-          justifyContent: "flex-start",
+          justifyContent: "center",
+          padding: "2px 4px",
           "&:hover": {
             opacity: isOwnEvent ? 1 : 0.8,
             transform: isOwnEvent ? "translateY(-1px)" : "none",
@@ -94,12 +93,26 @@ const EventComponent: React.FC<EventProps<CalendarEvent>> = ({ event }) => {
   );
 };
 
+const capitalize = (word: string) =>
+  word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+
 const CalendarView: React.FC = () => {
+  const { accessToken } = useAuth();
   const theme = useTheme();
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | undefined>(
     undefined
   );
+
+  const payload = accessToken
+    ? JSON.parse(atob(accessToken.split(".")[1]))
+    : { firstName: "", lastName: "" };
+
+  const therapistName = [payload.firstName, payload.lastName]
+    .filter(Boolean)
+    .map(capitalize)
+    .join(" ");
+
   const [selectedSlot, setSelectedSlot] = useState<{
     start: Date;
     end: Date;
@@ -329,6 +342,7 @@ const CalendarView: React.FC = () => {
 
       <EventModal
         open={modalOpen}
+        therapistName={therapistName}
         onClose={handleModalClose}
         onSave={handleSaveEvent}
         eventData={

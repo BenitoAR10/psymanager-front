@@ -8,141 +8,66 @@ import {
   Card,
   CardContent,
   Button,
-  Avatar,
   Paper,
-  Chip,
-  IconButton,
   Divider,
-  useTheme,
+  CircularProgress,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import EventNoteIcon from "@mui/icons-material/EventNote";
-import AccessTimeIcon from "@mui/icons-material/AccessTime";
-import ArrowForwardIosIcon from "@mui/icons-material/ArrowForwardIos";
-import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
-import ChevronRightIcon from "@mui/icons-material/ChevronRight";
-import CalendarTodayOutlinedIcon from "@mui/icons-material/CalendarTodayOutlined";
-import PersonOutlineIcon from "@mui/icons-material/PersonOutline";
 import SchoolOutlinedIcon from "@mui/icons-material/SchoolOutlined";
-
-const MiniCalendar = () => {
-  const theme = useTheme();
-  const days = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
-  const currentDate = 14;
-  const highlightedDate = 22;
-
-  return (
-    <Box sx={{ width: "100%" }}>
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          mb: 2,
-        }}
-      >
-        <Typography
-          variant="subtitle1"
-          sx={{ fontWeight: 600, color: "text.primary" }}
-        >
-          Noviembre 2024
-        </Typography>
-        <Box>
-          <IconButton
-            size="small"
-            sx={{
-              color: "text.secondary",
-              "&:hover": {
-                backgroundColor: "rgba(77, 182, 172, 0.08)",
-                color: "primary.main",
-              },
-            }}
-          >
-            <ChevronLeftIcon fontSize="small" />
-          </IconButton>
-          <IconButton
-            size="small"
-            sx={{
-              color: "text.secondary",
-              "&:hover": {
-                backgroundColor: "rgba(77, 182, 172, 0.08)",
-                color: "primary.main",
-              },
-            }}
-          >
-            <ChevronRightIcon fontSize="small" />
-          </IconButton>
-        </Box>
-      </Box>
-
-      <Grid container spacing={1}>
-        {days.map((day) => (
-          <Grid item xs={12 / 7} key={day}>
-            <Typography
-              variant="caption"
-              align="center"
-              sx={{
-                display: "block",
-                color: "text.secondary",
-                fontWeight: 500,
-              }}
-            >
-              {day}
-            </Typography>
-          </Grid>
-        ))}
-
-        {Array.from({ length: 30 }, (_, i) => i + 1).map((day) => (
-          <Grid item xs={12 / 7} key={day}>
-            <Box
-              sx={{
-                display: "flex",
-                justifyContent: "center",
-                alignItems: "center",
-                height: 32,
-                width: 32,
-                borderRadius: "50%",
-                margin: "0 auto",
-                cursor: "pointer",
-                transition: "all 0.2s ease",
-                bgcolor:
-                  day === currentDate
-                    ? "primary.main"
-                    : day === highlightedDate
-                    ? "primary.light"
-                    : "transparent",
-                color:
-                  day === currentDate || day === highlightedDate
-                    ? theme.palette.common.white
-                    : theme.palette.text.primary,
-                "&:hover": {
-                  bgcolor:
-                    day === currentDate
-                      ? "primary.dark"
-                      : day === highlightedDate
-                      ? "primary.main"
-                      : "grey.100",
-                  transform: "scale(1.1)",
-                },
-              }}
-            >
-              <Typography
-                variant="caption"
-                sx={{
-                  fontWeight: day === currentDate ? 600 : 400,
-                }}
-              >
-                {day}
-              </Typography>
-            </Box>
-          </Grid>
-        ))}
-      </Grid>
-    </Box>
-  );
-};
+import ArrowForwardIosIcon from "@mui/icons-material/ArrowForwardIos";
+import AssignedStudents, {
+  AssignedStudent,
+} from "../components/AssignedStudents";
+import CalendarWidget from "../components/CalendarWidget";
+import UpcomingAppointments from "../components/UpcomingAppointments";
+import { useUpcomingAppointmentsQuery } from "../hooks/useUpcomingAppointmentsQuery";
 
 const Dashboard: React.FC = () => {
+  // React Query hook para cargar las próximas 5 citas
+  const {
+    data: upcomingAppointments = [],
+    isLoading,
+    isError,
+  } = useUpcomingAppointmentsQuery(5);
+
+  // Datos de ejemplo para la sección de estudiantes asignados
+  const assignedStudents: AssignedStudent[] = [
+    {
+      name: "Amanda Clara",
+      days: "Lu, Ma",
+      time: "10:00 AM - 01:00 PM",
+      status: "Activo",
+    },
+    {
+      name: "Juan Perez",
+      days: "Mi, Ju",
+      time: "10:00 AM - 01:00 PM",
+      status: "Pendiente",
+    },
+    {
+      name: "Jessica Morales",
+      days: "Vi",
+      time: "10:00 AM - 01:00 PM",
+      status: "Activo",
+    },
+  ];
+
+  // Extraer las fechas completas de cada cita para marcar eventos
+  const eventDates = upcomingAppointments.map(
+    (appt) => new Date(appt.dateTime)
+  );
+
+  const handleViewAll = () => {
+    console.log("Ver todas las citas");
+    // TODO: navegar a la página completa de citas
+  };
+
+  const handleViewStudents = () => {
+    console.log("Ver todos los estudiantes asignados");
+    // TODO: navegar a la lista de estudiantes
+  };
+
   return (
     <Box sx={{ width: "100%", pb: 6 }}>
       {/* Banner principal */}
@@ -196,86 +121,10 @@ const Dashboard: React.FC = () => {
             estudiantes en un solo lugar.
           </Typography>
         </Box>
-
-        {/* Logo PSI UCB */}
-        <Box
-          sx={{
-            position: "relative",
-            zIndex: 1,
-            alignSelf: { xs: "center", md: "flex-end" },
-          }}
-        >
-          <Box sx={{ position: "relative", width: 150, height: 80 }}>
-            <Box
-              sx={{
-                position: "absolute",
-                top: 0,
-                left: 0,
-                width: 120,
-                height: 40,
-                bgcolor: "error.main",
-                display: "flex",
-                justifyContent: "center",
-                alignItems: "center",
-                boxShadow: "0 4px 12px rgba(229, 57, 53, 0.3)",
-                "&:before": {
-                  content: '""',
-                  position: "absolute",
-                  right: -20,
-                  top: 0,
-                  width: 0,
-                  height: 0,
-                  borderTop: "20px solid transparent",
-                  borderBottom: "20px solid transparent",
-                  borderLeft: "20px solid #E53935",
-                },
-              }}
-            >
-              <Typography
-                variant="h6"
-                sx={{ fontWeight: "bold", color: "common.white" }}
-              >
-                PSI
-              </Typography>
-            </Box>
-            <Box
-              sx={{
-                position: "absolute",
-                bottom: 0,
-                right: 0,
-                width: 120,
-                height: 40,
-                bgcolor: "#1D3557",
-                display: "flex",
-                justifyContent: "center",
-                alignItems: "center",
-                boxShadow: "0 4px 12px rgba(29, 53, 87, 0.3)",
-                "&:before": {
-                  content: '""',
-                  position: "absolute",
-                  left: -20,
-                  top: 0,
-                  width: 0,
-                  height: 0,
-                  borderTop: "20px solid #1D3557",
-                  borderBottom: "20px solid #1D3557",
-                  borderLeft: "20px solid transparent",
-                },
-              }}
-            >
-              <Typography
-                variant="h6"
-                sx={{ fontWeight: "bold", color: "common.white" }}
-              >
-                UCB
-              </Typography>
-            </Box>
-          </Box>
-        </Box>
       </Paper>
 
       <Grid container spacing={4}>
-        {/* Columna izquierda */}
+        {/* Columna izquierda: accesos y estudiantes asignados */}
         <Grid item xs={12} md={8}>
           {/* Accesos directos */}
           <Box sx={{ mb: 4 }}>
@@ -367,193 +216,13 @@ const Dashboard: React.FC = () => {
           </Box>
 
           {/* Estudiantes asignados */}
-          <Box>
-            <Box
-              sx={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                mb: 3,
-              }}
-            >
-              <Typography
-                variant="h5"
-                sx={{
-                  fontWeight: 600,
-                  color: "text.primary",
-                  display: "flex",
-                  alignItems: "center",
-                  "&::after": {
-                    content: '""',
-                    display: "block",
-                    width: 40,
-                    height: 3,
-                    backgroundColor: "primary.main",
-                    marginLeft: 2,
-                    borderRadius: 1.5,
-                  },
-                }}
-              >
-                Estudiantes asignados
-              </Typography>
-              <Button
-                variant="text"
-                color="primary"
-                endIcon={<ArrowForwardIosIcon sx={{ fontSize: 14 }} />}
-                sx={{
-                  fontWeight: 600,
-                  "&:hover": {
-                    backgroundColor: "rgba(77, 182, 172, 0.08)",
-                  },
-                }}
-              >
-                Ver todos
-              </Button>
-            </Box>
-
-            <Grid container spacing={3}>
-              {[
-                {
-                  name: "Amanda Clara",
-                  days: "Lu, Ma",
-                  time: "10:00 AM - 01:00 PM",
-                  status: "Activo",
-                },
-                {
-                  name: "Juan Perez",
-                  days: "Mi, Ju",
-                  time: "10:00 AM - 01:00 PM",
-                  status: "Pendiente",
-                },
-                {
-                  name: "Jessica Morales",
-                  days: "Vi",
-                  time: "10:00 AM - 01:00 PM",
-                  status: "Activo",
-                },
-              ].map((student) => (
-                <Grid item xs={12} sm={6} md={4} key={student.name}>
-                  <Card
-                    elevation={1}
-                    sx={{
-                      borderRadius: 3,
-                      height: "100%",
-                      position: "relative",
-                      "&::before": {
-                        content: '""',
-                        position: "absolute",
-                        top: 0,
-                        left: 0,
-                        width: "100%",
-                        height: 4,
-                        backgroundColor:
-                          student.status === "Activo"
-                            ? "success.main"
-                            : "warning.main",
-                        borderRadius: "12px 12px 0 0",
-                      },
-                    }}
-                  >
-                    <CardContent sx={{ p: 3 }}>
-                      <Box
-                        sx={{ display: "flex", alignItems: "center", mb: 2 }}
-                      >
-                        <Avatar
-                          sx={{
-                            width: 56,
-                            height: 56,
-                            mr: 2,
-                            bgcolor:
-                              student.status === "Activo"
-                                ? "success.light"
-                                : "warning.light",
-                            color:
-                              student.status === "Activo"
-                                ? "success.dark"
-                                : "warning.dark",
-                            fontWeight: 600,
-                            fontSize: "1.2rem",
-                            boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-                          }}
-                        >
-                          {student.name.charAt(0)}
-                        </Avatar>
-                        <Box>
-                          <Typography variant="h6" fontWeight={600} mb={0.5}>
-                            {student.name}
-                          </Typography>
-                          <Chip
-                            label="Estudiante"
-                            size="small"
-                            sx={{
-                              height: 22,
-                              fontSize: "0.7rem",
-                              bgcolor:
-                                student.status === "Activo"
-                                  ? "success.light"
-                                  : "warning.light",
-                              color:
-                                student.status === "Activo"
-                                  ? "success.dark"
-                                  : "warning.dark",
-                              fontWeight: 600,
-                              borderRadius: 1,
-                            }}
-                          />
-                        </Box>
-                      </Box>
-
-                      <Divider sx={{ my: 2 }} />
-
-                      <Box
-                        sx={{
-                          display: "flex",
-                          alignItems: "center",
-                          mb: 2.5,
-                          backgroundColor: "grey.50",
-                          p: 1.5,
-                          borderRadius: 2,
-                        }}
-                      >
-                        <AccessTimeIcon
-                          fontSize="small"
-                          sx={{ mr: 1, color: "text.secondary" }}
-                        />
-                        <Box>
-                          <Typography
-                            variant="caption"
-                            color="text.secondary"
-                            display="block"
-                          >
-                            Horario
-                          </Typography>
-                          <Typography variant="body2" fontWeight={500}>
-                            {student.days} • {student.time}
-                          </Typography>
-                        </Box>
-                      </Box>
-
-                      <Button
-                        variant="contained"
-                        fullWidth
-                        color="primary"
-                        startIcon={<PersonOutlineIcon />}
-                        sx={{
-                          py: 1,
-                          fontWeight: 600,
-                        }}
-                      >
-                        Ver historial
-                      </Button>
-                    </CardContent>
-                  </Card>
-                </Grid>
-              ))}
-            </Grid>
-          </Box>
+          <AssignedStudents
+            students={assignedStudents}
+            onViewAll={handleViewStudents}
+          />
         </Grid>
 
-        {/* Columna derecha */}
+        {/* Columna derecha: calendario y próximas citas */}
         <Grid item xs={12} md={4}>
           <Card
             elevation={2}
@@ -590,54 +259,38 @@ const Dashboard: React.FC = () => {
                       backgroundColor: "rgba(77, 182, 172, 0.08)",
                     },
                   }}
+                  onClick={handleViewAll}
                 >
                   Ver todas
                 </Button>
               </Box>
 
               <Box sx={{ p: 3 }}>
-                <MiniCalendar />
+                {/* Mini calendario con puntos en días de cita */}
+                <CalendarWidget eventDates={eventDates} />
 
                 <Divider sx={{ my: 3 }} />
 
-                <Box textAlign="center" mt={2}>
-                  <Box
-                    sx={{
-                      width: 64,
-                      height: 64,
-                      bgcolor: "primary.light",
-                      borderRadius: 2,
-                      mx: "auto",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      mb: 2,
-                      boxShadow: "0 4px 12px rgba(77, 182, 172, 0.2)",
-                    }}
-                  >
-                    <CalendarTodayOutlinedIcon
-                      sx={{ color: "primary.dark", fontSize: 32 }}
-                    />
+                {/* Carga / Error / Lista de próximas citas */}
+                {isLoading ? (
+                  <Box textAlign="center" mt={2}>
+                    <CircularProgress />
+                    <Typography variant="body2" color="text.secondary" mt={1}>
+                      Cargando citas...
+                    </Typography>
                   </Box>
-                  <Typography variant="h6" fontWeight={600} mb={1}>
-                    Sin citas próximas
-                  </Typography>
-                  <Typography
-                    variant="body2"
-                    color="text.secondary"
-                    sx={{ mb: 3 }}
-                  >
-                    No tienes citas programadas para los próximos días
-                  </Typography>
-                  <Button
-                    variant="outlined"
-                    color="primary"
-                    startIcon={<EventNoteIcon />}
-                    sx={{ fontWeight: 600 }}
-                  >
-                    Añadir nueva cita
-                  </Button>
-                </Box>
+                ) : isError ? (
+                  <Box textAlign="center" mt={2}>
+                    <Typography variant="body2" color="error">
+                      Error al cargar citas
+                    </Typography>
+                  </Box>
+                ) : (
+                  <UpcomingAppointments
+                    appointments={upcomingAppointments}
+                    onViewAll={handleViewAll}
+                  />
+                )}
               </Box>
             </CardContent>
           </Card>
