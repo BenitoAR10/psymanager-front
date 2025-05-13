@@ -1,7 +1,9 @@
+import { API_URL } from "../utils/constants";
 import { ScheduleAvailabilityDto } from "../types/scheduleTypes";
+import { storage } from "../utils/storage";
 
 /**
- * Obtiene todos los horarios disponibles opcionalmente filtrados por terapeuta y fecha.
+ * Obtiene todos los horarios disponibles, opcionalmente filtrados por terapeuta y fecha.
  */
 export async function getAvailableSchedules({
   token,
@@ -14,32 +16,25 @@ export async function getAvailableSchedules({
   startDate?: string;
   endDate?: string;
 }): Promise<ScheduleAvailabilityDto[]> {
-  try {
-    const baseUrl = process.env.EXPO_PUBLIC_API_URL || "http://localhost:8080";
-    const params = new URLSearchParams();
+  const params = new URLSearchParams();
+  if (therapistId) params.append("therapistId", therapistId.toString());
+  if (startDate) params.append("startDate", startDate);
+  if (endDate) params.append("endDate", endDate);
 
-    if (therapistId) params.append("therapistId", therapistId.toString());
-    if (startDate) params.append("startDate", startDate);
-    if (endDate) params.append("endDate", endDate);
-
-    const response = await fetch(
-      `${baseUrl}/api/schedules/available?${params.toString()}`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      }
-    );
-
-    if (!response.ok) {
-      throw new Error(`Error ${response.status}: ${response.statusText}`);
+  const response = await fetch(
+    `${API_URL}/api/schedules/available?${params.toString()}`,
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
     }
+  );
 
-    return await response.json();
-  } catch (error) {
-    console.error("Error al obtener horarios disponibles:", error);
-    throw error;
+  if (!response.ok) {
+    throw new Error(`Error ${response.status}: ${response.statusText}`);
   }
+
+  return await response.json();
 }
 
 /**
@@ -52,35 +47,25 @@ export async function getRelatedSchedulesByScheduleId({
   token: string;
   scheduleId: number;
 }): Promise<ScheduleAvailabilityDto[]> {
-  try {
-    const baseUrl = process.env.EXPO_PUBLIC_API_URL || "http://localhost:8080";
-
-    const response = await fetch(
-      `${baseUrl}/api/schedules/available/by-schedule/${scheduleId}`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      }
-    );
-
-    if (!response.ok) {
-      throw new Error(`Error ${response.status}: ${response.statusText}`);
+  const response = await fetch(
+    `${API_URL}/api/schedules/available/by-schedule/${scheduleId}`,
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
     }
+  );
 
-    return await response.json();
-  } catch (error) {
-    console.error("Error al obtener horarios relacionados:", error);
-    throw error;
+  if (!response.ok) {
+    throw new Error(`Error ${response.status}: ${response.statusText}`);
   }
+
+  return await response.json();
 }
 
 /**
- * * Crea una sesión programada para un horario específico.
- * * @param token - Token de autorización del usuario.
- * * @param scheduleId - ID del horario programado.
+ * Crea una sesión programada para un horario específico.
  */
-
 export async function createScheduledSession({
   token,
   scheduleId,
@@ -88,9 +73,7 @@ export async function createScheduledSession({
   token: string;
   scheduleId: number;
 }): Promise<void> {
-  const baseUrl = process.env.EXPO_PUBLIC_API_URL || "http://localhost:8080";
-
-  const response = await fetch(`${baseUrl}/api/sessions`, {
+  const response = await fetch(`${API_URL}/api/sessions`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -101,6 +84,37 @@ export async function createScheduledSession({
 
   if (!response.ok) {
     const errorBody = await response.json();
-    throw new Error(JSON.stringify(errorBody));
+    throw {
+      status: response.status,
+      message: errorBody.message || "Error al crear la cita",
+      path: errorBody.path,
+    };
   }
 }
+
+/**
+ * Obtiene las sesiones del tratamiento activo del paciente autenticado.
+ */
+export const getTreatmentScheduleSessions = async (): Promise<
+  ScheduleAvailabilityDto[]
+> => {
+  const token = await storage.getItem("accessToken");
+
+  const response = await fetch(
+    `${API_URL}/api/sessions/my/treatment-sessions`,
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(
+      errorText || "Error al obtener sesiones del tratamiento activo"
+    );
+  }
+
+  return await response.json();
+};

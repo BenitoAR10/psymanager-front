@@ -1,10 +1,19 @@
-import React from "react";
-import { View, TouchableOpacity, StyleSheet } from "react-native";
+import type React from "react";
+import {
+  View,
+  TouchableOpacity,
+  StyleSheet,
+  Platform,
+  StatusBar,
+} from "react-native";
 import { Text } from "react-native-paper";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import type { NavigationProp } from "@react-navigation/native";
 import type { RootStackParamList } from "../navigation/AppNavigator";
+import { theme } from "../screens/styles/themeConstants";
+
+const { colors, typography, spacing, shadows } = theme;
 
 interface CustomHeaderProps {
   currentRoute:
@@ -13,15 +22,17 @@ interface CustomHeaderProps {
     | "Appointments"
     | "CalmNow"
     | "Profile"
-    | "ScheduleDetail";
+    | "ScheduleDetail"
+    | "AccountSettings";
+  rightComponent?: React.ReactNode;
 }
 
-const CustomHeader: React.FC<CustomHeaderProps> = ({ currentRoute }) => {
+const CustomHeader: React.FC<CustomHeaderProps> = ({
+  currentRoute,
+  rightComponent,
+}) => {
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
-
-  const toggleRoute =
-    currentRoute === "Schedule" ? "ScheduleWeekly" : "Schedule";
-  const toggleIcon = currentRoute === "Schedule" ? "calendar-week" : "calendar";
+  const isDetail = currentRoute === "ScheduleDetail";
 
   const getTitle = (route: string) => {
     switch (route) {
@@ -29,79 +40,80 @@ const CustomHeader: React.FC<CustomHeaderProps> = ({ currentRoute }) => {
       case "ScheduleWeekly":
         return "Calendario de disponibilidad";
       case "Appointments":
-        return "Citas";
+        return "Mis citas";
       case "CalmNow":
         return "Calma Ahora";
       case "Profile":
         return "Mi Perfil";
       case "ScheduleDetail":
         return "Detalles del Horario";
+      case "AccountSettings":
+        return "Configuración de la cuenta";
       default:
         return "Pantalla";
     }
   };
 
-  const handleToggle = () => {
-    if (currentRoute === "Schedule") {
-      navigation.navigate("ScheduleWeekly");
-    } else if (currentRoute === "ScheduleWeekly") {
-      navigation.navigate("MainTabs", {
-        screen: "Schedule",
-      });
-    }
-  };
-
-  const showToggleIcon =
-    currentRoute === "Schedule" || currentRoute === "ScheduleWeekly";
-
   return (
-    <View style={styles.container}>
-      <View style={styles.leftContainer} />
-      <Text style={styles.title}>{getTitle(currentRoute)}</Text>
-      <View style={styles.rightContainer}>
-        {showToggleIcon && (
-          <TouchableOpacity style={styles.rightButton} onPress={handleToggle}>
+    <View style={styles.container} accessibilityRole="header">
+      <View style={styles.leftContainer}>
+        {isDetail && (
+          <TouchableOpacity
+            onPress={() => navigation.goBack()}
+            style={styles.iconButton}
+            accessibilityLabel="Volver"
+          >
             <MaterialCommunityIcons
-              name={toggleIcon as keyof typeof MaterialCommunityIcons.glyphMap}
+              name="arrow-left"
               size={24}
-              color="#8C9EFF"
+              color={colors.primary.main}
             />
           </TouchableOpacity>
         )}
       </View>
+      <Text style={styles.title}>{getTitle(currentRoute)}</Text>
+      <View style={styles.rightContainer}>{rightComponent}</View>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    height: 56,
+    height: 64,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: "#ffffff",
-    paddingHorizontal: 16,
+    backgroundColor: colors.background.paper,
+    paddingHorizontal: spacing.lg,
     borderBottomWidth: 1,
-    borderBottomColor: "#f0f0f0",
+    borderBottomColor: colors.border.main,
+    paddingTop: Platform.OS === "android" ? StatusBar.currentHeight || 0 : 0,
+    ...shadows.sm,
+  },
+  iconButton: {
+    padding: spacing.sm,
+    marginLeft: -spacing.sm,
+    borderRadius: 20,
+    backgroundColor: colors.background.default,
+    ...shadows.sm,
   },
   leftContainer: {
     width: 40,
     alignItems: "flex-start",
+    justifyContent: "center",
   },
   rightContainer: {
-    width: 40,
+    minWidth: 40,
     alignItems: "flex-end",
-  },
-  rightButton: {
-    padding: 8,
-    marginRight: -8,
+    justifyContent: "center",
   },
   title: {
     flex: 1,
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#333333",
     textAlign: "center",
+    fontWeight: "600",
+    color: colors.text.primary,
+    fontSize: typography.sizes.lg,
+    letterSpacing: -0.3,
   },
 });
 

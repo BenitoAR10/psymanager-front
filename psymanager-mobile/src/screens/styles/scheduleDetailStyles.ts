@@ -1,125 +1,295 @@
-import { StyleSheet } from "react-native";
+// scheduleDetailStyles.ts
+import { StyleSheet, Platform, Dimensions } from "react-native";
 
+// Colores consistentes con tu tema
+export const colors = {
+  primary: "#4DB6AC",
+  primaryLight: "#80CBC4",
+  primaryDark: "#00897B",
+  secondary: "#64B5F6",
+  textPrimary: "#2A3548",
+  textSecondary: "#6B7A99",
+  background: "#F5F7FA",
+  surface: "#FFFFFF",
+  border: "#E3E8EF",
+  success: "#43A047",
+  error: "#E53935",
+  warning: "#FDD835",
+};
+
+const { width } = Dimensions.get("window");
+const cardRadius = 16;
+const buttonRadius = 28;
+
+// Definir los estilos correctamente
 const scheduleDetailStyles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
   container: {
     flex: 1,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.background,
+  },
+  contentContainer: {
     padding: 16,
+    paddingBottom: 100, // Espacio para el botón fijo
   },
   header: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 20,
+    justifyContent: "space-between",
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    backgroundColor: colors.surface,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.05,
+        shadowRadius: 5,
+      },
+      android: {
+        elevation: 2,
+      },
+    }),
   },
   backButton: {
-    padding: 8,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.background,
   },
   headerTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    marginLeft: 8,
-    color: "#333333",
+    fontSize: 17,
+    fontWeight: "600",
+    color: colors.textPrimary,
+    textAlign: "center",
   },
-  profileContainer: {
+  therapistCard: {
+    backgroundColor: colors.surface,
+    borderRadius: cardRadius,
+    padding: 16,
+    marginBottom: 16,
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 8,
+      },
+      android: {
+        elevation: 2,
+      },
+    }),
+  },
+  therapistInfo: {
+    flexDirection: "row",
     alignItems: "center",
     marginBottom: 16,
   },
   avatar: {
-    backgroundColor: "#E2E8F0",
+    backgroundColor: colors.primaryLight + "20",
+    marginRight: 12,
+  },
+  therapistTextContainer: {
+    flex: 1,
   },
   therapistName: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#4A5568",
-    marginTop: 8,
-  },
-  therapistSpecialty: {
-    fontSize: 14,
-    color: "#718096",
-  },
-  section: {
-    marginBottom: 20,
-  },
-  sectionTitle: {
     fontSize: 16,
-    fontWeight: "bold",
-    color: "#2D3748",
+    fontWeight: "700",
+    color: colors.textPrimary,
     marginBottom: 4,
   },
-  sectionSubtitle: {
-    fontSize: 14,
-    color: "#718096",
-    marginBottom: 12,
+  therapistSpecialty: {
+    fontSize: 13,
+    color: colors.textSecondary,
   },
-  sectionText: {
-    fontSize: 14,
-    color: "#718096",
-    marginBottom: 12,
+  scheduleContainer: {
+    backgroundColor: colors.surface,
+    borderRadius: cardRadius,
+    padding: 20,
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 8,
+      },
+      android: {
+        elevation: 2,
+      },
+    }),
   },
-  daysContainer: {
+  mainTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: colors.textPrimary,
+    marginBottom: 8,
+  },
+  subtitle: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    marginBottom: 20,
+  },
+  dateSection: {
+    marginBottom: 24,
+  },
+  dateHeader: {
     flexDirection: "row",
-    justifyContent: "space-between",
-    marginVertical: 12,
-  },
-  dayItem: {
     alignItems: "center",
-    justifyContent: "center",
+    marginBottom: 16,
+  },
+  dateCircle: {
     width: 40,
-    height: 60,
-    borderRadius: 12,
-    backgroundColor: "#F7FAFC",
-  },
-  selectedDayItem: {
-    backgroundColor: "#8C9EFF",
-  },
-  dayNumber: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: "#4A5568",
-  },
-  dayName: {
-    fontSize: 12,
-    color: "#718096",
-  },
-  selectedDayText: {
-    color: "#FFFFFF",
-  },
-  hoursContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 12,
-  },
-  hourItem: {
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: colors.primaryLight + "20",
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 20,
-    backgroundColor: "#F7FAFC",
-    minWidth: 80,
+    marginRight: 12,
   },
-  selectedHourItem: {
-    backgroundColor: "#8C9EFF",
+  dateDay: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: colors.primary,
   },
-  hourText: {
+  dateInfo: {
+    flex: 1,
+  },
+  dateMonth: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: colors.textPrimary,
+  },
+  dateWeekday: {
+    fontSize: 13,
+    color: colors.textSecondary,
+  },
+  timeSlots: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+  },
+  timeSlot: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: colors.background,
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    marginRight: 10,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: colors.border,
+    minWidth: width / 2 - 40,
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.05,
+        shadowRadius: 2,
+      },
+      android: {
+        elevation: 1,
+      },
+    }),
+  },
+  selectedTimeSlot: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+    ...Platform.select({
+      ios: {
+        shadowColor: colors.primary,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.2,
+        shadowRadius: 4,
+      },
+      android: {
+        elevation: 3,
+      },
+    }),
+  },
+  timeIcon: {
+    marginRight: 8,
+  },
+  timeText: {
     fontSize: 14,
-    color: "#4A5568",
+    color: colors.textPrimary,
+    fontWeight: "500",
   },
-  selectedHourText: {
+  selectedTimeText: {
     color: "#FFFFFF",
+    fontWeight: "600",
+  },
+  emptyState: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 40,
+  },
+  emptyText: {
+    fontSize: 15,
+    color: colors.textSecondary,
+    textAlign: "center",
+    marginTop: 16,
+    maxWidth: "80%",
+  },
+  buttonContainer: {
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    backgroundColor: colors.surface,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    width: "100%",
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: -2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 3,
+      },
+      android: {
+        elevation: 8,
+      },
+    }),
   },
   reserveButton: {
-    backgroundColor: "#8C9EFF",
-    borderRadius: 12,
+    backgroundColor: colors.primary,
+    borderRadius: buttonRadius,
     paddingVertical: 16,
+    flexDirection: "row",
     alignItems: "center",
-    marginTop: 20,
-    marginBottom: 30,
+    justifyContent: "center",
+    ...Platform.select({
+      ios: {
+        shadowColor: colors.primary,
+        shadowOffset: { width: 0, height: 3 },
+        shadowOpacity: 0.2,
+        shadowRadius: 5,
+      },
+      android: {
+        elevation: 3,
+      },
+    }),
+  },
+  disabledButton: {
+    backgroundColor: colors.primary + "80",
   },
   reserveButtonText: {
     color: "#FFFFFF",
     fontSize: 16,
-    fontWeight: "bold",
+    fontWeight: "600",
+    letterSpacing: 0.5,
+  },
+  buttonIcon: {
+    marginRight: 8,
   },
 });
 

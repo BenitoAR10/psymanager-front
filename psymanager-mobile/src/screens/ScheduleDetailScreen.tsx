@@ -1,11 +1,16 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { View, TouchableOpacity, ScrollView } from "react-native";
+import { View, TouchableOpacity, ScrollView, SafeAreaView } from "react-native";
 import { Text, Avatar } from "react-native-paper";
 import { useRoute, RouteProp, useNavigation } from "@react-navigation/native";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { MotiView } from "moti";
+import dayjs from "dayjs";
+import "dayjs/locale/es";
 import TherapistContact from "../components/TherapistContact";
 import scheduleDetailStyles from "./styles/scheduleDetailStyles";
+import { colors } from "./styles/scheduleDetailStyles";
 import type { RootStackParamList } from "../navigation/AppNavigator";
 import { useAuth } from "../auth/useAuth";
 import {
@@ -16,6 +21,9 @@ import { ScheduleAvailabilityDto } from "../types/scheduleTypes";
 import { useToast } from "react-native-toast-notifications";
 import ConfirmReservationModal from "../components/ConfirmReservationModal";
 import LoadingOverlay from "../components/LoadingOverlay";
+
+// Configurar dayjs para español
+dayjs.locale("es");
 
 type ScheduleDetailRouteProp = RouteProp<RootStackParamList, "ScheduleDetail">;
 
@@ -34,6 +42,11 @@ const ScheduleDetailScreen: React.FC = () => {
   const [modalVisible, setModalVisible] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  // Agrupar horarios por fecha
+  const [groupedTimes, setGroupedTimes] = useState<{
+    [key: string]: ScheduleAvailabilityDto[];
+  }>({});
+
   useEffect(() => {
     const fetchData = async () => {
       if (!token) return;
@@ -42,9 +55,24 @@ const ScheduleDetailScreen: React.FC = () => {
           token,
           scheduleId,
         });
-        setAvailableTimes(
-          result.filter((item) => item.availabilityStatus === "available")
+
+        const availableSlots = result.filter(
+          (item) => item.availabilityStatus === "available"
         );
+
+        setAvailableTimes(availableSlots);
+
+        // Agrupar por fecha
+        const grouped = availableSlots.reduce((acc, slot) => {
+          const dateKey = slot.date;
+          if (!acc[dateKey]) {
+            acc[dateKey] = [];
+          }
+          acc[dateKey].push(slot);
+          return acc;
+        }, {} as { [key: string]: ScheduleAvailabilityDto[] });
+
+        setGroupedTimes(grouped);
       } catch (error) {
         console.error("Error al obtener horarios relacionados", error);
       }
@@ -55,7 +83,9 @@ const ScheduleDetailScreen: React.FC = () => {
 
   const handleOpenModal = () => {
     if (!selectedHourId) {
-      toast.show("Selecciona un horario para reservar.", { type: "danger" });
+      toast.show("Por favor selecciona un horario antes de continuar.", {
+        type: "warning",
+      });
       return;
     }
 
@@ -79,7 +109,13 @@ const ScheduleDetailScreen: React.FC = () => {
         scheduleId: selectedHourId,
       });
 
-      toast.show("Cita agendada correctamente", { type: "success" });
+      toast.show(
+        "Tu solicitud de cita fue enviada. Espera la confirmación del terapeuta.",
+        {
+          type: "success",
+        }
+      );
+
       setTimeout(() => {
         setModalVisible(false);
         setLoading(false);
@@ -90,7 +126,19 @@ const ScheduleDetailScreen: React.FC = () => {
       setModalVisible(false);
       try {
         const parsed = JSON.parse(error.message);
-        toast.show(parsed.message || "Error desconocido", { type: "danger" });
+        if (parsed.status === 409) {
+          toast.show("Este horario ya ha sido reservado por otro estudiante.", {
+            type: "danger",
+          });
+        } else if (parsed.status === 400) {
+          toast.show("No fue posible registrar la cita. Verifica tu perfil.", {
+            type: "danger",
+          });
+        } else {
+          toast.show(parsed.message || "Ocurrió un error inesperado.", {
+            type: "danger",
+          });
+        }
       } catch {
         toast.show(error.message || "No se pudo agendar la cita.", {
           type: "danger",
@@ -99,85 +147,164 @@ const ScheduleDetailScreen: React.FC = () => {
     }
   };
 
+  // Formatear fecha para mostrar
+  const formatDate = (dateString: string) => {
+    const date = dayjs(dateString);
+    return {
+      day: date.format("D"),
+      month: date.format("MMMM"),
+      weekday: date.format("dddd"),
+    };
+  };
+
   return (
-    <>
-      <ScrollView style={scheduleDetailStyles.container}>
-        {/* Perfil del terapeuta */}
-        <View style={scheduleDetailStyles.profileContainer}>
-          <Avatar.Image
-            size={80}
-            source={{ uri: "https://via.placeholder.com/80" }}
-            style={scheduleDetailStyles.avatar}
-          />
-          <Text style={scheduleDetailStyles.therapistName}>
-            Psicól. {therapistName}
-          </Text>
-          <Text style={scheduleDetailStyles.therapistSpecialty}>
-            Psicóloga Especialista
-          </Text>
-        </View>
+    <SafeAreaView style={scheduleDetailStyles.safeArea}>
+      {/* Header con botón de regreso */}
 
-        {/* Contacto */}
-        <TherapistContact
-          onCall={() => {}}
-          onEmail={() => {}}
-          onWhatsApp={() => {}}
-        />
-
-        {/* Sobre la terapeuta */}
-        <View style={scheduleDetailStyles.section}>
-          <Text style={scheduleDetailStyles.sectionTitle}>
-            Sobre la Terapeuta
-          </Text>
-          <Text style={scheduleDetailStyles.sectionText}>
-            Esta terapeuta está especializada en salud emocional universitaria.
-          </Text>
-        </View>
-
-        {/* Horarios disponibles */}
-        <View style={scheduleDetailStyles.section}>
-          <Text style={scheduleDetailStyles.sectionTitle}>
-            Horarios Disponibles
-          </Text>
-          <Text style={scheduleDetailStyles.sectionSubtitle}>
-            Selecciona el horario que deseas reservar.
-          </Text>
-
-          <View style={scheduleDetailStyles.hoursContainer}>
-            {availableTimes.map((item) => (
-              <TouchableOpacity
-                key={item.scheduleId}
-                style={[
-                  scheduleDetailStyles.hourItem,
-                  selectedHourId === item.scheduleId &&
-                    scheduleDetailStyles.selectedHourItem,
-                ]}
-                onPress={() => setSelectedHourId(item.scheduleId)}
-              >
-                <Text
-                  style={[
-                    scheduleDetailStyles.hourText,
-                    selectedHourId === item.scheduleId &&
-                      scheduleDetailStyles.selectedHourText,
-                  ]}
-                >
-                  {item.startTime} - {item.endTime}
+      <ScrollView
+        style={scheduleDetailStyles.container}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={scheduleDetailStyles.contentContainer}>
+          {/* Tarjeta del terapeuta */}
+          <MotiView
+            from={{ opacity: 0, translateY: -10 }}
+            animate={{ opacity: 1, translateY: 0 }}
+            transition={{ duration: 500 }}
+            style={scheduleDetailStyles.therapistCard}
+          >
+            <View style={scheduleDetailStyles.therapistInfo}>
+              <Avatar.Image
+                size={60}
+                source={{ uri: "https://via.placeholder.com/60" }}
+                style={scheduleDetailStyles.avatar}
+              />
+              <View style={scheduleDetailStyles.therapistTextContainer}>
+                <Text style={scheduleDetailStyles.therapistName}>
+                  Psicól. {therapistName}
                 </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </View>
+                <Text style={scheduleDetailStyles.therapistSpecialty}>
+                  Psicóloga Especialista
+                </Text>
+              </View>
+            </View>
 
-        {/* Botón de reserva */}
+            {/* Componente de contacto del terapeuta */}
+            <TherapistContact />
+          </MotiView>
+
+          {/* Horarios disponibles agrupados por fecha */}
+          <MotiView
+            from={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 500, delay: 200 }}
+            style={scheduleDetailStyles.scheduleContainer}
+          >
+            <Text style={scheduleDetailStyles.mainTitle}>
+              Horarios Disponibles
+            </Text>
+            <Text style={scheduleDetailStyles.subtitle}>
+              Selecciona el horario que prefieras para tu consulta
+            </Text>
+
+            {Object.keys(groupedTimes).length > 0 ? (
+              Object.entries(groupedTimes).map(([dateKey, slots], index) => {
+                const { day, month, weekday } = formatDate(dateKey);
+                return (
+                  <MotiView
+                    key={dateKey}
+                    from={{ opacity: 0, translateY: 20 }}
+                    animate={{ opacity: 1, translateY: 0 }}
+                    transition={{ duration: 400, delay: 300 + index * 100 }}
+                    style={scheduleDetailStyles.dateSection}
+                  >
+                    <View style={scheduleDetailStyles.dateHeader}>
+                      <View style={scheduleDetailStyles.dateCircle}>
+                        <Text style={scheduleDetailStyles.dateDay}>{day}</Text>
+                      </View>
+                      <View style={scheduleDetailStyles.dateInfo}>
+                        <Text style={scheduleDetailStyles.dateMonth}>
+                          {month.charAt(0).toUpperCase() + month.slice(1)}
+                        </Text>
+                        <Text style={scheduleDetailStyles.dateWeekday}>
+                          {weekday.charAt(0).toUpperCase() + weekday.slice(1)}
+                        </Text>
+                      </View>
+                    </View>
+
+                    <View style={scheduleDetailStyles.timeSlots}>
+                      {slots.map((item) => (
+                        <TouchableOpacity
+                          key={item.scheduleId}
+                          style={[
+                            scheduleDetailStyles.timeSlot,
+                            selectedHourId === item.scheduleId &&
+                              scheduleDetailStyles.selectedTimeSlot,
+                          ]}
+                          onPress={() => setSelectedHourId(item.scheduleId)}
+                        >
+                          <MaterialCommunityIcons
+                            name="clock-outline"
+                            size={16}
+                            color={
+                              selectedHourId === item.scheduleId
+                                ? "#FFFFFF"
+                                : colors.textSecondary
+                            }
+                            style={scheduleDetailStyles.timeIcon}
+                          />
+                          <Text
+                            style={[
+                              scheduleDetailStyles.timeText,
+                              selectedHourId === item.scheduleId &&
+                                scheduleDetailStyles.selectedTimeText,
+                            ]}
+                          >
+                            {item.startTime} - {item.endTime}
+                          </Text>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                  </MotiView>
+                );
+              })
+            ) : (
+              <View style={scheduleDetailStyles.emptyState}>
+                <MaterialCommunityIcons
+                  name="calendar-clock"
+                  size={50}
+                  color="#CBD5E0"
+                />
+                <Text style={scheduleDetailStyles.emptyText}>
+                  No hay horarios disponibles para este terapeuta
+                </Text>
+              </View>
+            )}
+          </MotiView>
+        </View>
+      </ScrollView>
+
+      {/* Botón de reserva */}
+      <View style={scheduleDetailStyles.buttonContainer}>
         <TouchableOpacity
-          style={scheduleDetailStyles.reserveButton}
+          style={[
+            scheduleDetailStyles.reserveButton,
+            !selectedHourId && scheduleDetailStyles.disabledButton,
+          ]}
           onPress={handleOpenModal}
+          disabled={!selectedHourId}
         >
+          <MaterialCommunityIcons
+            name="calendar-check"
+            size={20}
+            color="#FFFFFF"
+            style={scheduleDetailStyles.buttonIcon}
+          />
           <Text style={scheduleDetailStyles.reserveButtonText}>
             Reservar Cita
           </Text>
         </TouchableOpacity>
-      </ScrollView>
+      </View>
 
       <ConfirmReservationModal
         visible={modalVisible}
@@ -187,7 +314,7 @@ const ScheduleDetailScreen: React.FC = () => {
       />
 
       <LoadingOverlay visible={loading} />
-    </>
+    </SafeAreaView>
   );
 };
 

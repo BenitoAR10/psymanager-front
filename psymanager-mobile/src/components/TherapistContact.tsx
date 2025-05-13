@@ -1,63 +1,150 @@
+// TherapistContact.tsx
 "use client";
 
-import type React from "react";
-import { View, TouchableOpacity, StyleSheet } from "react-native";
+import React, { useState } from "react";
+import { View, TouchableOpacity, Animated, Pressable } from "react-native";
 import { Text } from "react-native-paper";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import therapistContactStyles, {
+  colors,
+} from "./styles/therapistContactStyles";
 
 interface Props {
   onCall?: () => void;
   onEmail?: () => void;
   onWhatsApp?: () => void;
+  disabled?: boolean;
 }
 
-const TherapistContact: React.FC<Props> = ({ onCall, onEmail, onWhatsApp }) => {
+const TherapistContact: React.FC<Props> = ({
+  onCall,
+  onEmail,
+  onWhatsApp,
+  disabled = false,
+}) => {
+  // Estados para manejar la animación de presionado
+  const [phonePressed, setPhonePressed] = useState(false);
+  const [emailPressed, setEmailPressed] = useState(false);
+  const [whatsappPressed, setWhatsappPressed] = useState(false);
+
+  // Función para manejar la presión de los botones
+  const handlePressIn = (
+    setter: React.Dispatch<React.SetStateAction<boolean>>
+  ) => {
+    if (!disabled) {
+      setter(true);
+    }
+  };
+
+  const handlePressOut = (
+    setter: React.Dispatch<React.SetStateAction<boolean>>
+  ) => {
+    if (!disabled) {
+      setter(false);
+    }
+  };
+
   return (
-    <View style={styles.container}>
-      <View style={styles.contactContainer}>
-        <TouchableOpacity style={styles.contactButton} onPress={onCall}>
-          <MaterialCommunityIcons name="phone" size={24} color="#8C9EFF" />
-          <Text style={styles.contactLabel}>Teléfono</Text>
-        </TouchableOpacity>
+    <View style={therapistContactStyles.container}>
+      <View style={therapistContactStyles.contactContainer}>
+        {/* Botón de teléfono */}
+        <Pressable
+          style={[
+            therapistContactStyles.contactButton,
+            therapistContactStyles.phoneButton,
+            phonePressed && therapistContactStyles.pressedButton,
+            disabled && therapistContactStyles.disabledButton,
+          ]}
+          onPress={onCall}
+          onPressIn={() => handlePressIn(setPhonePressed)}
+          onPressOut={() => handlePressOut(setPhonePressed)}
+          disabled={disabled}
+          accessibilityRole="button"
+          accessibilityLabel="Llamar al terapeuta"
+          accessibilityHint="Toca para llamar al terapeuta por teléfono"
+        >
+          <MaterialCommunityIcons
+            name="phone"
+            size={22}
+            color={colors.phone}
+            style={therapistContactStyles.contactIcon}
+          />
+          <Text
+            style={[
+              therapistContactStyles.contactLabel,
+              therapistContactStyles.phoneLabel,
+            ]}
+          >
+            Llamar
+          </Text>
+        </Pressable>
 
-        <TouchableOpacity style={styles.contactButton} onPress={onEmail}>
-          <MaterialCommunityIcons name="email" size={24} color="#8C9EFF" />
-          <Text style={styles.contactLabel}>Email</Text>
-        </TouchableOpacity>
+        {/* Botón de email */}
+        <Pressable
+          style={[
+            therapistContactStyles.contactButton,
+            therapistContactStyles.emailButton,
+            emailPressed && therapistContactStyles.pressedButton,
+            disabled && therapistContactStyles.disabledButton,
+          ]}
+          onPress={onEmail}
+          onPressIn={() => handlePressIn(setEmailPressed)}
+          onPressOut={() => handlePressOut(setEmailPressed)}
+          disabled={disabled}
+          accessibilityRole="button"
+          accessibilityLabel="Enviar email al terapeuta"
+          accessibilityHint="Toca para enviar un email al terapeuta"
+        >
+          <MaterialCommunityIcons
+            name="email-outline"
+            size={22}
+            color={colors.email}
+            style={therapistContactStyles.contactIcon}
+          />
+          <Text
+            style={[
+              therapistContactStyles.contactLabel,
+              therapistContactStyles.emailLabel,
+            ]}
+          >
+            Email
+          </Text>
+        </Pressable>
 
-        <TouchableOpacity style={styles.contactButton} onPress={onWhatsApp}>
-          <MaterialCommunityIcons name="whatsapp" size={24} color="#25D366" />
-          <Text style={[styles.contactLabel, { color: "#25D366" }]}>
+        {/* Botón de WhatsApp */}
+        <Pressable
+          style={[
+            therapistContactStyles.contactButton,
+            therapistContactStyles.whatsappButton,
+            whatsappPressed && therapistContactStyles.pressedButton,
+            disabled && therapistContactStyles.disabledButton,
+          ]}
+          onPress={onWhatsApp}
+          onPressIn={() => handlePressIn(setWhatsappPressed)}
+          onPressOut={() => handlePressOut(setWhatsappPressed)}
+          disabled={disabled}
+          accessibilityRole="button"
+          accessibilityLabel="Contactar por WhatsApp"
+          accessibilityHint="Toca para contactar al terapeuta por WhatsApp"
+        >
+          <MaterialCommunityIcons
+            name="whatsapp"
+            size={22}
+            color={colors.whatsapp}
+            style={therapistContactStyles.contactIcon}
+          />
+          <Text
+            style={[
+              therapistContactStyles.contactLabel,
+              therapistContactStyles.whatsappLabel,
+            ]}
+          >
             WhatsApp
           </Text>
-        </TouchableOpacity>
+        </Pressable>
       </View>
     </View>
   );
 };
 
 export default TherapistContact;
-
-const styles = StyleSheet.create({
-  container: {
-    marginVertical: 16,
-  },
-  contactContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    backgroundColor: "#EEF2FF",
-    borderRadius: 16,
-    padding: 8,
-  },
-  contactButton: {
-    alignItems: "center",
-    justifyContent: "center",
-    padding: 12,
-    flex: 1,
-  },
-  contactLabel: {
-    fontSize: 12,
-    color: "#8C9EFF",
-    marginTop: 4,
-  },
-});

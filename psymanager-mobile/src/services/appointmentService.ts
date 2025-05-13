@@ -1,11 +1,16 @@
-import { UserAppointmentDto } from "../types/appointmentTypes";
+import { API_URL } from "../utils/constants";
+import {
+  UserAppointmentDto,
+  UserAppointmentDetailDto,
+} from "../types/appointmentTypes";
 
+/**
+ * Obtiene todas las citas del usuario autenticado.
+ */
 export async function getUserAppointments(
   token: string
 ): Promise<UserAppointmentDto[]> {
-  const baseUrl = process.env.EXPO_PUBLIC_API_URL || "http://localhost:8080";
-
-  const response = await fetch(`${baseUrl}/api/sessions/my`, {
+  const response = await fetch(`${API_URL}/api/sessions/my`, {
     headers: {
       Authorization: `Bearer ${token}`,
     },
@@ -16,6 +21,26 @@ export async function getUserAppointments(
     throw new Error(errorText || "Error al obtener citas agendadas");
   }
 
-  const data = await response.json();
-  return data;
+  return await response.json();
+}
+
+/**
+ * Obtiene el detalle de una cita específica del usuario.
+ */
+export async function getAppointmentDetail(
+  sessionId: number,
+  token: string
+): Promise<UserAppointmentDetailDto> {
+  const response = await fetch(`${API_URL}/api/sessions/my/${sessionId}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(errorText || "Error al obtener detalle de la cita");
+  }
+
+  return await response.json();
 }

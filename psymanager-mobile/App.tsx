@@ -1,9 +1,13 @@
 import React from "react";
-import { PaperProvider } from "react-native-paper";
+import { StatusBar } from "expo-status-bar";
+import { Provider as PaperProvider } from "react-native-paper";
+import { ToastProvider } from "react-native-toast-notifications";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+
 import AppNavigator from "./src/navigation/AppNavigator";
 import { AuthProvider } from "./src/auth/AuthContext";
-import { StatusBar } from "expo-status-bar";
-import { ToastProvider } from "react-native-toast-notifications";
+
+const queryClient = new QueryClient();
 
 export default function App() {
   return (
@@ -16,10 +20,12 @@ export default function App() {
       dangerColor="#F56565"
     >
       <PaperProvider>
-        <AuthProvider>
-          <AppNavigator />
-          <StatusBar style="auto" />
-        </AuthProvider>
+        <QueryClientProvider client={queryClient}>
+          <AuthProvider>
+            <AppNavigator />
+            <StatusBar style="auto" />
+          </AuthProvider>
+        </QueryClientProvider>
       </PaperProvider>
     </ToastProvider>
   );

@@ -1,50 +1,87 @@
 "use client";
 
 import type React from "react";
-import { useEffect, useState } from "react";
-import { View, TouchableOpacity, SectionList } from "react-native";
+import { useState, useCallback, useRef } from "react";
 import {
-  Text,
-  Card,
-  ActivityIndicator,
-  Avatar,
-  Button,
-  Divider,
-} from "react-native-paper";
+  View,
+  TouchableOpacity,
+  RefreshControl,
+  Animated,
+  SafeAreaView,
+} from "react-native";
+import { Text, ActivityIndicator } from "react-native-paper";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useAuth } from "../auth/useAuth";
 import { getUserAppointments } from "../services/appointmentService";
+import { useFocusEffect, useNavigation } from "@react-navigation/native";
+import { MotiView, MotiText } from "moti";
 import type { UserAppointmentDto } from "../types/appointmentTypes";
-import appointmentStyles from "./styles/appointmentStyles";
+import appointmentStyles from "../screens/styles/appointmentStyles";
+import { theme } from "../screens/styles/themeConstants";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import type { RootStackParamList } from "../navigation/AppNavigator";
+import dayjs from "dayjs";
+import "dayjs/locale/es";
+import CustomHeader from "../components/CustomHeader";
+
+// Configurar dayjs para español
+dayjs.locale("es");
+
+const { colors, animations } = theme;
 
 const MyAppointmentsScreen: React.FC = () => {
   const { token } = useAuth();
   const [appointments, setAppointments] = useState<UserAppointmentDto[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const scrollY = useRef(new Animated.Value(0)).current;
 
-  useEffect(() => {
-    const fetchAppointments = async () => {
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+
+  const isPastAppointment = (appointment: UserAppointmentDto) => {
+    const appointmentEnd = dayjs(`${appointment.date}T${appointment.endTime}`);
+    return appointmentEnd.isBefore(dayjs());
+  };
+
+  const fetchAppointments = useCallback(
+    async (showLoader = true) => {
       if (!token) return;
+
+      if (showLoader) setLoading(true);
 
       try {
         const result = await getUserAppointments(token);
         setAppointments(result);
         setError(null);
       } catch (err: any) {
-        setError(err.message || "Error desconocido");
+        console.error("Error fetching appointments:", err);
+        setError(err.message || "No se pudieron cargar tus citas");
       } finally {
         setLoading(false);
+        setRefreshing(false);
       }
-    };
+    },
+    [token]
+  );
 
-    fetchAppointments();
-  }, [token]);
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    fetchAppointments(false);
+  }, [fetchAppointments]);
 
-  // Agrupar citas por fecha
+  useFocusEffect(
+    useCallback(() => {
+      fetchAppointments();
+    }, [fetchAppointments])
+  );
+
   const groupAppointmentsByDate = () => {
     const grouped: { [key: string]: UserAppointmentDto[] } = {};
+    const now = dayjs();
 
+    // Primero agrupamos por fecha
     appointments.forEach((appointment) => {
       if (!grouped[appointment.date]) {
         grouped[appointment.date] = [];
@@ -52,127 +89,441 @@ const MyAppointmentsScreen: React.FC = () => {
       grouped[appointment.date].push(appointment);
     });
 
-    return Object.keys(grouped).map((date) => ({
-      title: formatDate(date),
-      data: grouped[date],
-    }));
+    // Luego separamos en próximas y pasadas
+    const upcoming: {
+      title: string;
+      date: string;
+      data: UserAppointmentDto[];
+    }[] = [];
+    const past: { title: string; date: string; data: UserAppointmentDto[] }[] =
+      [];
+
+    Object.keys(grouped).forEach((date) => {
+      const dateObj = dayjs(date);
+      const section = {
+        title: formatDate(date),
+        date: date, // Guardamos la fecha original para ordenar
+        data: grouped[date].sort((a, b) =>
+          a.startTime.localeCompare(b.startTime)
+        ),
+      };
+
+      if (dateObj.isAfter(now, "day") || dateObj.isSame(now, "day")) {
+        upcoming.push(section);
+      } else {
+        past.push(section);
+      }
+    });
+
+    // Ordenamos las secciones
+    upcoming.sort((a, b) => dayjs(a.date).diff(dayjs(b.date)));
+    past.sort((a, b) => dayjs(b.date).diff(dayjs(a.date)));
+
+    // Combinamos con las etiquetas adecuadas
+    const result = [];
+
+    if (upcoming.length > 0) {
+      result.push({
+        title: "Próximas citas",
+        data: [],
+        isHeader: true,
+      });
+      result.push(...upcoming);
+    }
+
+    if (past.length > 0) {
+      result.push({
+        title: "Citas pasadas",
+        data: [],
+        isHeader: true,
+      });
+      result.push(...past);
+    }
+
+    return result;
   };
 
-  // Formatear fecha para mostrar como "20 Sep, 2024"
   const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    const day = date.getDate();
-    const month = date.toLocaleString("es-ES", { month: "short" });
-    const year = date.getFullYear();
-    return `${day} ${month}, ${year}`;
+    return dayjs(dateString).format("dddd, D [de] MMMM");
   };
+
+  const formatTime = (time: string) => {
+    // Convertir formato 24h a 12h
+    const [hours, minutes] = time.split(":");
+    const hour = Number.parseInt(hours);
+    const ampm = hour >= 12 ? "PM" : "AM";
+    const hour12 = hour % 12 || 12;
+    return `${hour12}:${minutes} ${ampm}`;
+  };
+
+  const renderAppointmentStatus = (appointment: UserAppointmentDto) => {
+    const isPast = isPastAppointment(appointment);
+
+    let statusText = "Confirmada";
+    let statusColor = colors.success.main;
+    let statusBgColor = `${colors.success.light}20`;
+
+    if (appointment.sessionState === "PENDING") {
+      statusText = "Pendiente";
+      statusColor = colors.warning.main;
+      statusBgColor = `${colors.warning.light}20`;
+    } else if (appointment.sessionState === "REJECTED") {
+      statusText = "Rechazada";
+      statusColor = colors.error.main;
+      statusBgColor = `${colors.error.light}20`;
+    } else if (isPast) {
+      statusText = "Completada";
+      statusColor = colors.text.secondary;
+      statusBgColor = `${colors.grey[300]}50`;
+    }
+
+    return (
+      <View
+        style={[
+          appointmentStyles.statusContainer,
+          { backgroundColor: statusBgColor },
+        ]}
+      >
+        <Text style={[appointmentStyles.statusText, { color: statusColor }]}>
+          {statusText}
+        </Text>
+      </View>
+    );
+  };
+
+  const navigateToSchedule = () => {
+    navigation.navigate("Schedule");
+  };
+
+  const renderEmptyState = () => (
+    <MotiView
+      from={{ opacity: 0, scale: 0.9 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ type: "spring", duration: 500 }}
+      style={appointmentStyles.emptyContainer}
+    >
+      <MaterialCommunityIcons
+        name="calendar-blank"
+        size={70}
+        color={colors.primary.main}
+        style={appointmentStyles.emptyIcon}
+      />
+      <MotiText
+        from={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 200, duration: 300 }}
+        style={appointmentStyles.emptyText}
+      >
+        No tienes citas agendadas
+      </MotiText>
+      <MotiText
+        from={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 300, duration: 300 }}
+        style={appointmentStyles.emptyDescription}
+      >
+        Agenda una cita con un terapeuta para comenzar tu proceso de atención
+      </MotiText>
+      <MotiView
+        from={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 400, duration: 300 }}
+      >
+        <TouchableOpacity
+          style={appointmentStyles.scheduleButton}
+          onPress={navigateToSchedule}
+          activeOpacity={0.8}
+        >
+          <MaterialCommunityIcons
+            name="calendar-plus"
+            size={20}
+            color={colors.primary.contrastText}
+          />
+          <Text style={appointmentStyles.scheduleButtonText}>Agendar cita</Text>
+        </TouchableOpacity>
+      </MotiView>
+    </MotiView>
+  );
+
+  const renderErrorState = () => (
+    <MotiView
+      from={{ opacity: 0, scale: 0.9 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ type: "spring", duration: 500 }}
+      style={appointmentStyles.errorContainer}
+    >
+      <MaterialCommunityIcons
+        name="alert-circle-outline"
+        size={70}
+        color={colors.error.main}
+        style={appointmentStyles.errorIcon}
+      />
+      <MotiText
+        from={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 200, duration: 300 }}
+        style={appointmentStyles.errorText}
+      >
+        No pudimos cargar tus citas
+      </MotiText>
+      <MotiText
+        from={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 300, duration: 300 }}
+        style={appointmentStyles.errorDescription}
+      >
+        {error ||
+          "Ocurrió un error al cargar tus citas. Por favor intenta nuevamente."}
+      </MotiText>
+      <MotiView
+        from={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 400, duration: 300 }}
+      >
+        <TouchableOpacity
+          style={appointmentStyles.retryButton}
+          onPress={() => fetchAppointments()}
+          activeOpacity={0.8}
+        >
+          <MaterialCommunityIcons
+            name="refresh"
+            size={20}
+            color={colors.primary.contrastText}
+          />
+          <Text style={appointmentStyles.retryButtonText}>
+            Intentar nuevamente
+          </Text>
+        </TouchableOpacity>
+      </MotiView>
+    </MotiView>
+  );
+
+  if (loading && !refreshing) {
+    return (
+      <SafeAreaView style={appointmentStyles.container}>
+        <View style={appointmentStyles.loader}>
+          <ActivityIndicator
+            animating
+            size="large"
+            color={colors.primary.main}
+          />
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
-    <View style={appointmentStyles.container}>
-      <View style={appointmentStyles.header}>
-        <Text style={appointmentStyles.title}>Citas</Text>
-        <TouchableOpacity style={appointmentStyles.filterButton}>
-          <MaterialCommunityIcons
-            name="filter-variant"
-            size={24}
-            color="#424242"
-          />
-        </TouchableOpacity>
-      </View>
-
-      {loading ? (
-        <ActivityIndicator
-          animating
-          size="large"
-          style={appointmentStyles.loader}
-        />
-      ) : error ? (
-        <Text style={appointmentStyles.errorText}>{error}</Text>
+    <SafeAreaView style={appointmentStyles.container}>
+      {error ? (
+        renderErrorState()
       ) : appointments.length === 0 ? (
-        <View style={appointmentStyles.emptyContainer}>
-          <MaterialCommunityIcons
-            name="calendar-blank"
-            size={64}
-            color="#8C9EFF"
-          />
-          <Text style={appointmentStyles.emptyText}>
-            No tienes citas agendadas
-          </Text>
-        </View>
+        renderEmptyState()
       ) : (
-        <SectionList
+        <Animated.SectionList
           sections={groupAppointmentsByDate()}
-          keyExtractor={(item) => item.sessionId.toString()}
+          keyExtractor={(item, index) =>
+            item.sessionId ? item.sessionId.toString() : `header-${index}`
+          }
           contentContainerStyle={appointmentStyles.listContainer}
           stickySectionHeadersEnabled={false}
-          renderSectionHeader={({ section: { title } }) => (
-            <Text style={appointmentStyles.dateHeader}>{title}</Text>
+          onScroll={Animated.event(
+            [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+            { useNativeDriver: true }
           )}
-          renderItem={({ item }) => (
-            <Card style={appointmentStyles.card}>
-              <Card.Content style={appointmentStyles.cardContent}>
-                <View style={appointmentStyles.therapistInfo}>
-                  <Avatar.Icon
-                    size={40}
-                    icon="account"
-                    style={appointmentStyles.avatar}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              colors={[colors.primary.main]}
+              tintColor={colors.primary.main}
+            />
+          }
+          renderSectionHeader={({ section }) => {
+            if ("isHeader" in section && section.isHeader) {
+              return (
+                <MotiView
+                  from={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ type: "timing", duration: 500 }}
+                >
+                  <Text style={appointmentStyles.sectionHeader}>
+                    {section.title}
+                  </Text>
+                </MotiView>
+              );
+            }
+
+            return (
+              <MotiView
+                from={{ opacity: 0, translateY: 10 }}
+                animate={{ opacity: 1, translateY: 0 }}
+                transition={{ type: "timing", duration: 500 }}
+                style={appointmentStyles.dateHeader}
+              >
+                <View style={appointmentStyles.dateIcon}>
+                  <MaterialCommunityIcons
+                    name="calendar"
+                    size={18}
+                    color={colors.primary.main}
                   />
-                  <View>
-                    <Text style={appointmentStyles.cardTitle}>
-                      Psicól. {item.therapistName}
-                    </Text>
-                    <Text style={appointmentStyles.cardSubtitle}>
-                      Terapeuta
-                    </Text>
-                  </View>
                 </View>
+                <Text style={appointmentStyles.dateText}>{section.title}</Text>
+              </MotiView>
+            );
+          }}
+          renderItem={({ item, index, section }) => {
+            const isPast = isPastAppointment(item);
 
-                <Divider style={appointmentStyles.divider} />
-
-                <View style={appointmentStyles.appointmentActions}>
-                  <Button
-                    mode="outlined"
-                    icon={() => (
-                      <MaterialCommunityIcons
-                        name="clock-outline"
-                        size={16}
-                        color="#8C9EFF"
-                        style={{ marginRight: 4 }}
-                      />
-                    )}
-                    style={appointmentStyles.sessionButton}
-                    labelStyle={appointmentStyles.sessionButtonLabel}
-                    contentStyle={{
-                      flexDirection: "row",
-                      alignItems: "center",
-                    }}
+            return (
+              <MotiView
+                from={{ opacity: 0, translateY: 10 }}
+                animate={{ opacity: 1, translateY: 0 }}
+                transition={{
+                  delay: index * 80,
+                  type: "timing",
+                  duration: 400,
+                }}
+              >
+                <TouchableOpacity
+                  activeOpacity={0.8}
+                  onPress={() =>
+                    navigation.navigate("AppointmentDetail", {
+                      sessionId: item.sessionId,
+                    })
+                  }
+                >
+                  <View
+                    style={[
+                      appointmentStyles.card,
+                      isPast && appointmentStyles.pastCard,
+                    ]}
                   >
-                    {item.startTime} - {item.endTime}
-                  </Button>
+                    <View style={appointmentStyles.cardContent}>
+                      <View style={appointmentStyles.therapistInfo}>
+                        <View style={appointmentStyles.avatar}>
+                          <Text
+                            style={{
+                              color: colors.primary.main,
+                              fontWeight: "600",
+                            }}
+                          >
+                            {item.therapistName.charAt(0)}
+                          </Text>
+                        </View>
+                        <View style={appointmentStyles.therapistTextContainer}>
+                          <Text style={appointmentStyles.cardTitle}>
+                            Psicól.{" "}
+                            {(() => {
+                              const parts = item.therapistName
+                                .trim()
+                                .split(" ");
+                              const firstName =
+                                parts[0]?.charAt(0).toUpperCase() +
+                                parts[0]?.slice(1).toLowerCase();
+                              const firstSurnameInitial = parts[2]
+                                ?.charAt(0)
+                                .toUpperCase();
+                              return firstSurnameInitial
+                                ? `${firstName} ${firstSurnameInitial}.`
+                                : firstName;
+                            })()}
+                          </Text>
+                          <Text style={appointmentStyles.cardSubtitle}>
+                            Terapeuta
+                          </Text>
+                        </View>
 
-                  <View style={appointmentStyles.contactButtons}>
-                    <TouchableOpacity style={appointmentStyles.iconButton}>
-                      <MaterialCommunityIcons
-                        name="phone"
-                        size={20}
-                        color="#8C9EFF"
-                      />
-                    </TouchableOpacity>
-                    <TouchableOpacity style={appointmentStyles.iconButton}>
-                      <MaterialCommunityIcons
-                        name="message-text"
-                        size={20}
-                        color="#8C9EFF"
-                      />
-                    </TouchableOpacity>
+                        {renderAppointmentStatus(item)}
+                      </View>
+
+                      <View style={appointmentStyles.appointmentDetails}>
+                        <View style={appointmentStyles.detailItem}>
+                          <MaterialCommunityIcons
+                            name="clock-outline"
+                            size={16}
+                            color={colors.text.secondary}
+                            style={appointmentStyles.detailIcon}
+                          />
+                          <Text style={appointmentStyles.detailText}>
+                            {formatTime(item.startTime)} -{" "}
+                            {formatTime(item.endTime)}
+                          </Text>
+                        </View>
+                      </View>
+
+                      <View style={appointmentStyles.divider} />
+
+                      <View style={appointmentStyles.appointmentActions}>
+                        <TouchableOpacity
+                          style={[
+                            appointmentStyles.sessionButton,
+                            {
+                              backgroundColor: colors.background.paper,
+                              borderWidth: 1,
+                              borderColor: colors.secondary.main,
+                              borderRadius: 12,
+                              paddingHorizontal: 16,
+                              paddingVertical: 8,
+                              flexDirection: "row",
+                              alignItems: "center",
+                              justifyContent: "center",
+                            },
+                          ]}
+                          onPress={() =>
+                            navigation.navigate("AppointmentDetail", {
+                              sessionId: item.sessionId,
+                            })
+                          }
+                        >
+                          <MaterialCommunityIcons
+                            name="calendar-clock"
+                            size={16}
+                            color={colors.secondary.main}
+                            style={{ marginRight: 6 }}
+                          />
+                          <Text
+                            style={{
+                              color: colors.secondary.main,
+                              fontSize: 13,
+                              fontWeight: "600",
+                            }}
+                          >
+                            Ver detalles
+                          </Text>
+                        </TouchableOpacity>
+
+                        <View style={appointmentStyles.contactButtons}>
+                          <TouchableOpacity
+                            style={appointmentStyles.iconButton}
+                            activeOpacity={0.7}
+                          >
+                            <MaterialCommunityIcons
+                              name="phone"
+                              size={18}
+                              color={colors.secondary.main}
+                            />
+                          </TouchableOpacity>
+                          <TouchableOpacity
+                            style={appointmentStyles.iconButton}
+                            activeOpacity={0.7}
+                          >
+                            <MaterialCommunityIcons
+                              name="message-text-outline"
+                              size={18}
+                              color={colors.secondary.main}
+                            />
+                          </TouchableOpacity>
+                        </View>
+                      </View>
+                    </View>
                   </View>
-                </View>
-              </Card.Content>
-            </Card>
-          )}
+                </TouchableOpacity>
+              </MotiView>
+            );
+          }}
         />
       )}
-    </View>
+    </SafeAreaView>
   );
 };
 
