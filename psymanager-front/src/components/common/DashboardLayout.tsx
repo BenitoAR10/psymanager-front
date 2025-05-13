@@ -29,6 +29,10 @@ const DashboardLayout: React.FC = () => {
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
 
+  const isTreatmentDetailPage = /^\/dashboard\/tratamientos\/\d+$/.test(
+    location.pathname
+  );
+
   // Decodifica los claims del JWT
   let displayName = "Invitado";
   if (accessToken) {
@@ -79,9 +83,21 @@ const DashboardLayout: React.FC = () => {
   const handleDrawerToggle = () => setMobileOpen((o) => !o);
 
   const getPageTitle = () => {
-    const paths = location.pathname.split("/").filter(Boolean);
-    if (paths.length === 1 && paths[0] === "dashboard") return "Dashboard";
-    const last = paths[paths.length - 1];
+    const path = location.pathname;
+
+    if (path === "/dashboard") return "Dashboard";
+
+    if (/^\/dashboard\/historiales\/\d+$/.test(path)) {
+      return "Historial del tratamiento";
+    }
+
+    if (/^\/dashboard\/tratamientos\/\d+$/.test(path)) {
+      return "Gestión del tratamiento";
+    }
+
+    const parts = path.split("/").filter(Boolean);
+    const last = parts[parts.length - 1];
+
     return last.charAt(0).toUpperCase() + last.slice(1).toLowerCase();
   };
 
@@ -137,9 +153,11 @@ const DashboardLayout: React.FC = () => {
         }}
       >
         <Box sx={{ mb: 2 }}>
-          <Typography variant="h4" sx={{ fontWeight: 700, mb: 3 }}>
-            {getPageTitle()}
-          </Typography>
+          {!isTreatmentDetailPage && (
+            <Typography variant="h4" sx={{ fontWeight: 700, mb: 3 }}>
+              {getPageTitle()}
+            </Typography>
+          )}
         </Box>
 
         <Box sx={{ flexGrow: 1 }}>

@@ -13,6 +13,7 @@ import {
   alpha,
   useTheme,
   Avatar,
+  Tooltip,
   Stack,
 } from "@mui/material";
 import ArrowForwardIosIcon from "@mui/icons-material/ArrowForwardIos";
@@ -21,8 +22,12 @@ import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
 import CancelOutlinedIcon from "@mui/icons-material/CancelOutlined";
 import ScheduleIcon from "@mui/icons-material/Schedule";
+import TodayIcon from "@mui/icons-material/Today";
+import MedicalServicesOutlinedIcon from "@mui/icons-material/MedicalServicesOutlined";
 import type { UpcomingAppointmentDto } from "../types";
 import CalendarTodayOutlinedIcon from "@mui/icons-material/CalendarTodayOutlined";
+import UpcomingAppointmentsModal from "./UpcomingAppointmentsModal";
+import { useState } from "react";
 
 /**
  * Interfaz que representa una cita programada.
@@ -33,54 +38,60 @@ export type Appointment = UpcomingAppointmentDto;
  * Props del componente UpcomingAppointments.
  */
 interface UpcomingAppointmentsProps {
-  /** Lista de hasta 5 próximas citas */
   appointments: Appointment[];
-  /** Manejador para el botón "Ver todas" */
   onViewAll?: () => void;
+  onStartTreatment?: (
+    patientId: number,
+    therapistId: number,
+    patientName: string
+  ) => void;
 }
 
-/**
- * UpcomingAppointments muestra una lista de las próximas citas programadas.
- * Si no hay citas, muestra un mensaje de fallback.
- * Incluye un botón "Ver todas" para manejar la navegación.
- */
+const isInProgress = (dateTimeStr: string) => {
+  const now = new Date();
+  const start = new Date(dateTimeStr);
+  const end = new Date(start.getTime() + 60 * 60 * 1000); // +1h
+  return now >= start && now <= end;
+};
+
+const isFuture = (dateTimeStr: string) => {
+  const now = new Date();
+  const start = new Date(dateTimeStr);
+  return start > now;
+};
+
 const UpcomingAppointments: React.FC<UpcomingAppointmentsProps> = ({
   appointments,
   onViewAll,
+  onStartTreatment,
 }) => {
   const theme = useTheme();
 
-  // Función para formatear la fecha y hora de manera más legible
+  const [modalOpen, setModalOpen] = useState(false);
+
   const formatDateTime = (dateTimeStr: string) => {
     const date = new Date(dateTimeStr);
-
-    // Formatear fecha: "lun, 5 may"
-    const dateFormatted = date.toLocaleDateString("es-ES", {
-      weekday: "short",
-      day: "numeric",
-      month: "short",
-    });
-
-    // Formatear hora: "15:30"
-    const timeFormatted = date.toLocaleTimeString("es-ES", {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-
-    return { dateFormatted, timeFormatted };
+    return {
+      dateFormatted: date.toLocaleDateString("es-ES", {
+        weekday: "short",
+        day: "numeric",
+        month: "short",
+      }),
+      timeFormatted: date.toLocaleTimeString("es-ES", {
+        hour: "2-digit",
+        minute: "2-digit",
+      }),
+    };
   };
 
-  // Función para obtener las iniciales del nombre
-  const getInitials = (name: string) => {
-    return name
+  const getInitials = (name: string) =>
+    name
       .split(" ")
       .map((n) => n[0])
       .join("")
       .toUpperCase()
       .substring(0, 2);
-  };
 
-  // Función para obtener el color del avatar según el estado
   const getAvatarColor = (state: Appointment["state"]) => {
     switch (state) {
       case "ACCEPTED":
@@ -101,8 +112,11 @@ const UpcomingAppointments: React.FC<UpcomingAppointmentsProps> = ({
     }
   };
 
-  // Función para obtener el icono según el estado
-  const getStatusIcon = (state: Appointment["state"]) => {
+  const getStatusIcon = (state: Appointment["state"], dateTime: string) => {
+    if (isInProgress(dateTime)) {
+      return <TodayIcon fontSize="small" />;
+    }
+
     switch (state) {
       case "ACCEPTED":
         return <CheckCircleOutlineIcon fontSize="small" />;
@@ -113,9 +127,38 @@ const UpcomingAppointments: React.FC<UpcomingAppointmentsProps> = ({
     }
   };
 
+  // Función para obtener el texto de estado apropiado
+  const getStatusText = (state: Appointment["state"], dateTime: string) => {
+    if (isInProgress(dateTime)) {
+      return "En curso";
+    }
+
+    if (state === "ACCEPTED" && isFuture(dateTime)) {
+      return "Programada";
+    }
+
+    switch (state) {
+      case "ACCEPTED":
+        return "Confirmada";
+      case "REJECTED":
+        return "Cancelada";
+      default:
+        return "Pendiente";
+    }
+  };
+
+  // Reordenar: primero en curso, luego las demás por fecha
+  const sortedAppointments = [...appointments].sort((a, b) => {
+    const aInProgress = isInProgress(a.dateTime);
+    const bInProgress = isInProgress(b.dateTime);
+    if (aInProgress && !bInProgress) return -1;
+    if (!aInProgress && bInProgress) return 1;
+    return new Date(a.dateTime).getTime() - new Date(b.dateTime).getTime();
+  });
+
   return (
     <Box sx={{ mt: 2 }}>
-      {appointments.length === 0 ? (
+      {sortedAppointments.length === 0 ? (
         <Box
           sx={{
             textAlign: "center",
@@ -158,7 +201,10 @@ const UpcomingAppointments: React.FC<UpcomingAppointmentsProps> = ({
             variant="outlined"
             color="primary"
             endIcon={<ArrowForwardIosIcon sx={{ fontSize: 14 }} />}
-            onClick={onViewAll}
+            onClick={() => {
+              setModalOpen(true);
+              onViewAll?.();
+            }}
             sx={{
               mt: 1,
               borderRadius: 2,
@@ -178,126 +224,187 @@ const UpcomingAppointments: React.FC<UpcomingAppointmentsProps> = ({
       ) : (
         <Box>
           <List disablePadding>
-            {appointments.map((appt, index) => {
+            {sortedAppointments.map((appt, index) => {
               const { dateFormatted, timeFormatted } = formatDateTime(
                 appt.dateTime
               );
+              const status = getStatusText(appt.state, appt.dateTime);
+              const isActive = isInProgress(appt.dateTime);
 
               return (
                 <React.Fragment key={appt.appointmentId}>
-                  <ListItem
-                    disableGutters
-                    sx={{
-                      py: 1.5,
-                      px: 0.5,
-                      borderRadius: 1,
-                      transition: "all 0.2s ease",
-                      "&:hover": {
-                        bgcolor: alpha(theme.palette.background.default, 0.6),
-                      },
-                    }}
+                  <Tooltip
+                    title={
+                      appt.isPartOfTreatment
+                        ? "Esta sesión ya forma parte de un tratamiento"
+                        : "Iniciar tratamiento"
+                    }
+                    arrow
                   >
-                    <Avatar
+                    <ListItem
+                      disableGutters
                       sx={{
-                        ...getAvatarColor(appt.state),
-                        width: 40,
-                        height: 40,
-                        mr: 2,
-                        fontWeight: 600,
+                        py: 1.5,
+                        px: 0.5,
+                        borderRadius: 2,
+                        transition:
+                          "transform 0.25s ease, box-shadow 0.25s ease",
+                        cursor: appt.isPartOfTreatment ? "default" : "pointer",
+                        backgroundColor: isActive
+                          ? alpha(theme.palette.info.light, 0.1)
+                          : appt.isPartOfTreatment
+                          ? alpha(theme.palette.grey[300], 0.2)
+                          : "transparent",
+                        "&:hover": appt.isPartOfTreatment
+                          ? {}
+                          : {
+                              bgcolor: alpha(
+                                theme.palette.background.default,
+                                0.6
+                              ),
+                              transform: "translateY(-2px)",
+                              boxShadow: theme.shadows[2],
+                            },
+                      }}
+                      onClick={() => {
+                        if (!appt.isPartOfTreatment) {
+                          onStartTreatment?.(
+                            appt.patientId,
+                            appt.therapistId,
+                            appt.studentName
+                          );
+                        }
                       }}
                     >
-                      {getInitials(appt.studentName)}
-                    </Avatar>
-                    <ListItemText
-                      primary={
-                        <Typography
-                          variant="body1"
-                          fontWeight={600}
-                          color="text.primary"
-                          sx={{ mb: 0.5, lineHeight: 1.2 }}
-                        >
-                          {appt.studentName}
-                        </Typography>
-                      }
-                      secondary={
-                        <Stack direction="row" spacing={2} alignItems="center">
-                          <Box
-                            sx={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 0.5,
-                            }}
-                          >
-                            <AccessTimeIcon
-                              sx={{ fontSize: 14, color: "text.secondary" }}
-                            />
+                      <Avatar
+                        sx={{
+                          ...getAvatarColor(appt.state),
+                          width: 40,
+                          height: 40,
+                          mr: 2,
+                          fontWeight: 600,
+                          border: isActive
+                            ? `2px solid ${theme.palette.info.main}`
+                            : "none",
+                        }}
+                      >
+                        {getInitials(appt.studentName)}
+                      </Avatar>
+                      <ListItemText
+                        primary={
+                          <Box display="flex" alignItems="center" gap={1}>
                             <Typography
-                              variant="caption"
-                              color="text.secondary"
+                              variant="body1"
+                              fontWeight={600}
+                              color="text.primary"
+                              sx={{ mb: 0.5, lineHeight: 1.2 }}
                             >
-                              {timeFormatted}
+                              {appt.studentName}
                             </Typography>
+                            {appt.isPartOfTreatment && (
+                              <Chip
+                                icon={
+                                  <MedicalServicesOutlinedIcon
+                                    style={{ fontSize: 12 }}
+                                  />
+                                }
+                                label="Tratamiento"
+                                color="default"
+                                size="small"
+                                sx={{
+                                  fontWeight: 600,
+                                  fontSize: "0.7rem",
+                                  height: 20,
+                                  bgcolor: alpha(theme.palette.grey[600], 0.1),
+                                  "& .MuiChip-icon": {
+                                    color: theme.palette.grey[600],
+                                  },
+                                }}
+                              />
+                            )}
                           </Box>
-                          <Box
-                            sx={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 0.5,
-                            }}
+                        }
+                        secondary={
+                          <Stack
+                            direction="row"
+                            spacing={2}
+                            alignItems="center"
                           >
-                            <EventNoteIcon
-                              sx={{ fontSize: 14, color: "text.secondary" }}
-                            />
-                            <Typography
-                              variant="caption"
-                              color="text.secondary"
-                              sx={{ textTransform: "capitalize" }}
+                            <Box
+                              sx={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 0.5,
+                              }}
                             >
-                              {dateFormatted}
-                            </Typography>
-                          </Box>
-                        </Stack>
-                      }
-                      secondaryTypographyProps={{
-                        component: "div",
-                      }}
-                    />
+                              <AccessTimeIcon
+                                sx={{ fontSize: 14, color: "text.secondary" }}
+                              />
+                              <Typography
+                                variant="caption"
+                                color="text.secondary"
+                              >
+                                {timeFormatted}
+                              </Typography>
+                            </Box>
+                            <Box
+                              sx={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 0.5,
+                              }}
+                            >
+                              <EventNoteIcon
+                                sx={{ fontSize: 14, color: "text.secondary" }}
+                              />
+                              <Typography
+                                variant="caption"
+                                color="text.secondary"
+                                sx={{ textTransform: "capitalize" }}
+                              >
+                                {dateFormatted}
+                              </Typography>
+                            </Box>
+                          </Stack>
+                        }
+                        secondaryTypographyProps={{ component: "div" }}
+                      />
 
-                    <Chip
-                      icon={getStatusIcon(appt.state)}
-                      label={
-                        appt.state === "PENDING"
-                          ? "Pendiente"
-                          : appt.state === "ACCEPTED"
-                          ? "Confirmada"
-                          : "Rechazada"
-                      }
-                      size="small"
-                      sx={{
-                        ml: 1,
-                        textTransform: "capitalize",
-                        fontWeight: 600,
-                        fontSize: "0.7rem",
-                        height: 24,
-                        bgcolor:
-                          appt.state === "PENDING"
+                      <Chip
+                        icon={getStatusIcon(appt.state, appt.dateTime)}
+                        label={status}
+                        size="small"
+                        sx={{
+                          ml: 1,
+                          textTransform: "capitalize",
+                          fontWeight: 600,
+                          fontSize: "0.7rem",
+                          height: 24,
+                          bgcolor: isActive
+                            ? alpha(theme.palette.info.main, 0.1)
+                            : appt.state === "PENDING"
                             ? alpha(theme.palette.warning.main, 0.1)
                             : appt.state === "ACCEPTED"
                             ? alpha(theme.palette.success.main, 0.1)
                             : alpha(theme.palette.error.main, 0.1),
-                        color:
-                          appt.state === "PENDING"
+                          color: isActive
+                            ? theme.palette.info.dark
+                            : appt.state === "PENDING"
                             ? theme.palette.warning.dark
                             : appt.state === "ACCEPTED"
                             ? theme.palette.success.dark
                             : theme.palette.error.dark,
-                        "& .MuiChip-icon": {
-                          fontSize: 14,
-                        },
-                      }}
-                    />
-                  </ListItem>
-                  {index < appointments.length - 1 && (
+                          "& .MuiChip-icon": {
+                            fontSize: 14,
+                          },
+                          border: isActive
+                            ? `1px solid ${alpha(theme.palette.info.main, 0.3)}`
+                            : "none",
+                        }}
+                      />
+                    </ListItem>
+                  </Tooltip>
+                  {index < sortedAppointments.length - 1 && (
                     <Divider sx={{ opacity: 0.6 }} />
                   )}
                 </React.Fragment>
@@ -320,6 +427,11 @@ const UpcomingAppointments: React.FC<UpcomingAppointmentsProps> = ({
               Ver todas
             </Button>
           </Box>
+          <UpcomingAppointmentsModal
+            open={modalOpen}
+            onClose={() => setModalOpen(false)}
+            appointments={appointments}
+          />
         </Box>
       )}
     </Box>

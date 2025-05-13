@@ -1,76 +1,108 @@
 "use client";
 
-import React from "react";
-import {
-  Box,
-  Typography,
-  Grid,
-  Card,
-  CardContent,
-  Button,
-  Paper,
-  Divider,
-  CircularProgress,
-} from "@mui/material";
-import AddIcon from "@mui/icons-material/Add";
-import EventNoteIcon from "@mui/icons-material/EventNote";
-import SchoolOutlinedIcon from "@mui/icons-material/SchoolOutlined";
-import ArrowForwardIosIcon from "@mui/icons-material/ArrowForwardIos";
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { Box, Typography, Card, CardContent, Paper } from "@mui/material";
+
 import AssignedStudents, {
   AssignedStudent,
 } from "../components/AssignedStudents";
 import CalendarWidget from "../components/CalendarWidget";
-import UpcomingAppointments from "../components/UpcomingAppointments";
 import { useUpcomingAppointmentsQuery } from "../hooks/useUpcomingAppointmentsQuery";
+import { useActiveTreatmentPatientsQuery } from "../hooks/useActiveTreatmentPatientsQuery";
+import { ActiveTreatmentStudentDto } from "../types";
+import TreatmentModal from "../../treatments/components/TreatmentModal";
+import { useAuth } from "../../auth/context/AuthContext";
+import UpcomingAppointmentsModal from "../components/UpcomingAppointmentsModal";
+
+import UpcomingAppointments from "../components/UpcomingAppointments";
 
 const Dashboard: React.FC = () => {
-  // React Query hook para cargar las próximas 5 citas
-  const {
-    data: upcomingAppointments = [],
-    isLoading,
-    isError,
-  } = useUpcomingAppointmentsQuery(5);
+  const { user } = useAuth();
+  const therapistId = user?.userId;
 
-  // Datos de ejemplo para la sección de estudiantes asignados
-  const assignedStudents: AssignedStudent[] = [
-    {
-      name: "Amanda Clara",
-      days: "Lu, Ma",
-      time: "10:00 AM - 01:00 PM",
-      status: "Activo",
-    },
-    {
-      name: "Juan Perez",
-      days: "Mi, Ju",
-      time: "10:00 AM - 01:00 PM",
-      status: "Pendiente",
-    },
-    {
-      name: "Jessica Morales",
-      days: "Vi",
-      time: "10:00 AM - 01:00 PM",
-      status: "Activo",
-    },
-  ];
+  const navigate = useNavigate();
 
-  // Extraer las fechas completas de cada cita para marcar eventos
+  const { data: upcomingAppointments = [] } = useUpcomingAppointmentsQuery(
+    therapistId ?? 0
+  );
+  const { data: activeTreatmentStudents = [] } =
+    useActiveTreatmentPatientsQuery(therapistId ?? 0);
+
+  const [isTreatmentModalOpen, setIsTreatmentModalOpen] = useState(false);
+  const [isAppointmentsModalOpen, setIsAppointmentsModalOpen] = useState(false);
+
+  const [selectedPatientId, setSelectedPatientId] = useState<number | null>(
+    null
+  );
+  const [selectedTherapistId, setSelectedTherapistId] = useState<number | null>(
+    null
+  );
+  const [selectedPatientName, setSelectedPatientName] = useState<string | null>(
+    null
+  );
+
+  const handleStartTreatment = (
+    patientId: number,
+    therapistId: number,
+    patientName: string
+  ) => {
+    setSelectedPatientId(patientId);
+    setSelectedTherapistId(therapistId);
+    setSelectedPatientName(patientName);
+    setIsTreatmentModalOpen(true);
+  };
+  function mapToAssignedStudentFromTreatment(
+    dto: ActiveTreatmentStudentDto
+  ): AssignedStudent {
+    return {
+      patientId: dto.patientId,
+      therapistId: therapistId ?? 0,
+      name: dto.studentName,
+      status: "En tratamiento",
+      startDate: dto.startDate,
+      endDate: dto.endDate,
+      assignedSessions: dto.totalSessions ?? 0,
+      completedSessions: dto.completedSessions ?? 0,
+    };
+  }
+
+  const assignedStudents = activeTreatmentStudents.map(
+    mapToAssignedStudentFromTreatment
+  );
   const eventDates = upcomingAppointments.map(
     (appt) => new Date(appt.dateTime)
   );
 
-  const handleViewAll = () => {
-    console.log("Ver todas las citas");
-    // TODO: navegar a la página completa de citas
+  useEffect(() => {
+    if (!isTreatmentModalOpen) {
+      setHighlightedAppointmentId(null);
+    }
+  }, [isTreatmentModalOpen]);
+
+  const [highlightedAppointmentId, setHighlightedAppointmentId] = useState<
+    number | null
+  >(null);
+
+  const handleViewAllStudents = () => {
+    navigate("/dashboard/estudiantes");
   };
 
-  const handleViewStudents = () => {
-    console.log("Ver todos los estudiantes asignados");
-    // TODO: navegar a la lista de estudiantes
+  const handleViewAllAppointments = () => {
+    const upcoming = [...upcomingAppointments].filter(
+      (a) => a.state === "ACCEPTED" && new Date(a.dateTime) >= new Date()
+    );
+
+    const next = upcoming.sort(
+      (a, b) => new Date(a.dateTime).getTime() - new Date(b.dateTime).getTime()
+    )[0];
+
+    setHighlightedAppointmentId(next?.appointmentId ?? null);
+    setIsAppointmentsModalOpen(true);
   };
 
   return (
     <Box sx={{ width: "100%", pb: 6 }}>
-      {/* Banner principal */}
       <Paper
         elevation={3}
         sx={{
@@ -112,10 +144,7 @@ const Dashboard: React.FC = () => {
           </Typography>
           <Typography
             variant="body1"
-            sx={{
-              color: "rgba(255, 255, 255, 0.9)",
-              maxWidth: "90%",
-            }}
+            sx={{ color: "rgba(255, 255, 255, 0.9)", maxWidth: "90%" }}
           >
             Organiza tu agenda, visualiza tus citas y accede al historial de tus
             estudiantes en un solo lugar.
@@ -123,114 +152,28 @@ const Dashboard: React.FC = () => {
         </Box>
       </Paper>
 
-      <Grid container spacing={4}>
-        {/* Columna izquierda: accesos y estudiantes asignados */}
-        <Grid item xs={12} md={8}>
-          {/* Accesos directos */}
-          <Box sx={{ mb: 4 }}>
-            <Typography
-              variant="h5"
-              sx={{
-                mb: 3,
-                fontWeight: 600,
-                color: "text.primary",
-                display: "flex",
-                alignItems: "center",
-                "&::after": {
-                  content: '""',
-                  display: "block",
-                  width: 40,
-                  height: 3,
-                  backgroundColor: "primary.main",
-                  marginLeft: 2,
-                  borderRadius: 1.5,
-                },
-              }}
-            >
-              Accesos directos
-            </Typography>
-            <Grid container spacing={3}>
-              {[
-                {
-                  icon: <AddIcon />,
-                  label: "Historial de estudiantes",
-                  description:
-                    "Accede y gestiona los historiales de tus estudiantes",
-                  color: "#4DB6AC",
-                },
-                {
-                  icon: <EventNoteIcon />,
-                  label: "Añadir Horarios",
-                  description: "Configura tus horarios de disponibilidad",
-                  color: "#64B5F6",
-                },
-                {
-                  icon: <SchoolOutlinedIcon />,
-                  label: "Recursos académicos",
-                  description: "Material de apoyo para tus sesiones",
-                  color: "#FDD835",
-                },
-              ].map(({ icon, label, description, color }) => (
-                <Grid item xs={12} sm={6} md={4} key={label}>
-                  <Card
-                    elevation={2}
-                    sx={{
-                      borderRadius: 3,
-                      transition: "all 0.3s",
-                      height: "100%",
-                      "&:hover": {
-                        boxShadow: 6,
-                        transform: "translateY(-4px)",
-                      },
-                    }}
-                  >
-                    <CardContent sx={{ p: 3 }}>
-                      <Box
-                        sx={{
-                          width: 56,
-                          height: 56,
-                          borderRadius: 2,
-                          bgcolor: color,
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          mb: 2,
-                          boxShadow: `0 4px 12px ${color}40`,
-                        }}
-                      >
-                        {React.cloneElement(icon, {
-                          style: { color: "white", fontSize: 28 },
-                        })}
-                      </Box>
-                      <Typography variant="h6" fontWeight={600} mb={1}>
-                        {label}
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        {description}
-                      </Typography>
-                    </CardContent>
-                  </Card>
-                </Grid>
-              ))}
-            </Grid>
-          </Box>
-
-          {/* Estudiantes asignados */}
+      {/* Reemplazando Grid container por Box con flexbox */}
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: { xs: "column", md: "row" },
+          gap: 4,
+        }}
+      >
+        {/* Columna izquierda (antes Grid item xs={12} md={8}) */}
+        <Box sx={{ width: { xs: "100%", md: "66.666%" } }}>
           <AssignedStudents
             students={assignedStudents}
-            onViewAll={handleViewStudents}
+            onViewAll={handleViewAllStudents}
+            onStartTreatment={handleStartTreatment}
           />
-        </Grid>
+        </Box>
 
-        {/* Columna derecha: calendario y próximas citas */}
-        <Grid item xs={12} md={4}>
+        {/* Columna derecha (antes Grid item xs={12} md={4}) */}
+        <Box sx={{ width: { xs: "100%", md: "33.333%" } }}>
           <Card
             elevation={2}
-            sx={{
-              borderRadius: 3,
-              position: "sticky",
-              top: 24,
-            }}
+            sx={{ borderRadius: 3, position: "sticky", top: 24 }}
           >
             <CardContent sx={{ p: 0 }}>
               <Box
@@ -249,53 +192,39 @@ const Dashboard: React.FC = () => {
                 >
                   Próximas citas
                 </Typography>
-                <Button
-                  variant="text"
-                  color="primary"
-                  endIcon={<ArrowForwardIosIcon sx={{ fontSize: 14 }} />}
-                  sx={{
-                    fontWeight: 600,
-                    "&:hover": {
-                      backgroundColor: "rgba(77, 182, 172, 0.08)",
-                    },
-                  }}
-                  onClick={handleViewAll}
-                >
-                  Ver todas
-                </Button>
               </Box>
 
               <Box sx={{ p: 3 }}>
-                {/* Mini calendario con puntos en días de cita */}
                 <CalendarWidget eventDates={eventDates} />
-
-                <Divider sx={{ my: 3 }} />
-
-                {/* Carga / Error / Lista de próximas citas */}
-                {isLoading ? (
-                  <Box textAlign="center" mt={2}>
-                    <CircularProgress />
-                    <Typography variant="body2" color="text.secondary" mt={1}>
-                      Cargando citas...
-                    </Typography>
-                  </Box>
-                ) : isError ? (
-                  <Box textAlign="center" mt={2}>
-                    <Typography variant="body2" color="error">
-                      Error al cargar citas
-                    </Typography>
-                  </Box>
-                ) : (
+                <Box sx={{ mt: 3 }}>
                   <UpcomingAppointments
                     appointments={upcomingAppointments}
-                    onViewAll={handleViewAll}
+                    onViewAll={handleViewAllAppointments}
+                    onStartTreatment={handleStartTreatment}
                   />
-                )}
+
+                  <UpcomingAppointmentsModal
+                    open={isAppointmentsModalOpen}
+                    onClose={() => setIsAppointmentsModalOpen(false)}
+                    appointments={upcomingAppointments}
+                    highlightedId={highlightedAppointmentId}
+                  />
+                </Box>
               </Box>
             </CardContent>
           </Card>
-        </Grid>
-      </Grid>
+        </Box>
+      </Box>
+
+      {selectedPatientId && selectedTherapistId && selectedPatientName && (
+        <TreatmentModal
+          open={isTreatmentModalOpen}
+          onClose={() => setIsTreatmentModalOpen(false)}
+          patientId={selectedPatientId}
+          therapistId={selectedTherapistId}
+          patientName={selectedPatientName}
+        />
+      )}
     </Box>
   );
 };

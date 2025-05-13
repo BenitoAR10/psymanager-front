@@ -33,11 +33,9 @@ const Login: React.FC = () => {
       }}
     >
       {/* Sección izquierda/superior */}
-      <Grid
-        item
-        xs={12}
-        md={6}
+      <Box
         sx={{
+          width: { xs: "100%", md: "50%" }, // Equivalente a xs={12} md={6}
           position: "relative",
           background: `linear-gradient(135deg, ${theme.palette.primary.light}, ${theme.palette.primary.dark})`,
           display: "flex",
@@ -125,14 +123,12 @@ const Login: React.FC = () => {
             }}
           />
         </Box>
-      </Grid>
+      </Box>
 
       {/* Sección derecha/inferior */}
-      <Grid
-        item
-        xs={12}
-        md={6}
+      <Box
         sx={{
+          width: { xs: "100%", md: "50%" }, // Equivalente a xs={12} md={6}
           backgroundColor: theme.palette.grey[50],
           display: "flex",
           flexDirection: "column",
@@ -257,7 +253,7 @@ const Login: React.FC = () => {
         >
           © {new Date().getFullYear()} PSI UCB - Todos los derechos reservados
         </Typography>
-      </Grid>
+      </Box>
     </Grid>
   );
 };

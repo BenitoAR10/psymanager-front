@@ -132,12 +132,17 @@ const CalendarWidget: React.FC<CalendarWidgetProps> = ({
       </Box>
 
       {/* Encabezado de días de la semana */}
-      <Grid container spacing={0.5} sx={{ mb: 1 }}>
+      <Box sx={{ display: "flex", mb: 1 }}>
         {["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"].map((d) => (
-          <Grid item xs={12 / 7} key={d}>
+          <Box
+            key={d}
+            sx={{
+              width: "14.28%",
+              textAlign: "center",
+            }}
+          >
             <Typography
               variant="caption"
-              align="center"
               sx={{
                 display: "block",
                 color: "text.secondary",
@@ -149,9 +154,9 @@ const CalendarWidget: React.FC<CalendarWidgetProps> = ({
             >
               {d}
             </Typography>
-          </Grid>
+          </Box>
         ))}
-      </Grid>
+      </Box>
 
       {/* Celdas del calendario */}
       <Grid container spacing={0.5}>
@@ -159,9 +164,13 @@ const CalendarWidget: React.FC<CalendarWidgetProps> = ({
           if (day === null) {
             // Celda en blanco para offset
             return (
-              <Grid item xs={12 / 7} key={`blank-${idx}`}>
-                <Box sx={{ height: 32 }} />
-              </Grid>
+              <Box
+                key={`blank-${idx}`}
+                sx={{
+                  width: "14.28%",
+                  height: 32,
+                }}
+              />
             );
           }
 
@@ -184,7 +193,14 @@ const CalendarWidget: React.FC<CalendarWidgetProps> = ({
               : theme.palette.text.primary;
 
           return (
-            <Grid item xs={12 / 7} key={iso}>
+            <Box
+              key={iso}
+              sx={{
+                width: "14.28%",
+                display: "flex",
+                justifyContent: "center",
+              }}
+            >
               <Box
                 onClick={() => onDateClick?.(cellDate)}
                 sx={{
@@ -227,7 +243,7 @@ const CalendarWidget: React.FC<CalendarWidgetProps> = ({
                   {day}
                 </Typography>
               </Box>
-            </Grid>
+            </Box>
           );
         })}
       </Grid>

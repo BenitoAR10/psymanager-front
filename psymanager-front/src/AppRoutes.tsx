@@ -21,6 +21,22 @@ const ProfilePage = lazy(
 );
 const HelpPage = lazy(() => import("./features/dashboard/pages/HelpPage"));
 
+const StudentsPage = lazy(
+  () => import("./features/students/pages/StudentsPage")
+);
+
+const TreatmentDetailPage = lazy(
+  () => import("./features/treatments/pages/TreatmentDetailPage")
+);
+
+const ClosedTreatmentsPage = lazy(
+  () => import("./features/treatments/pages/ClosedTreatmentsPage")
+);
+
+const ClosedTreatmentDetailPage = lazy(
+  () => import("./features/treatments/pages/ClosedTreatmentDetailPage")
+);
+
 const AppRoutes: React.FC = () => {
   return (
     <Suspense
@@ -47,8 +63,15 @@ const AppRoutes: React.FC = () => {
           <Route path="/dashboard" element={<DashboardLayout />}>
             <Route index element={<DashboardHome />} />
             <Route path="calendario" element={<CalendarPage />} />
+            <Route path="estudiantes" element={<StudentsPage />} />
             <Route path="perfil" element={<ProfilePage />} />
             <Route path="ayuda" element={<HelpPage />} />
+            <Route path="tratamientos/:id" element={<TreatmentDetailPage />} />
+            <Route path="historiales" element={<ClosedTreatmentsPage />} />
+            <Route
+              path="historiales/:id"
+              element={<ClosedTreatmentDetailPage />}
+            />
           </Route>
         </Route>
 
