@@ -19,10 +19,14 @@ export const getActiveTreatmentPlan = async (patientId: number) => {
     }
   );
 
-  if (response.status === 204) return null;
+  if (response.status === 204 || response.status === 409) {
+    // 204: sin contenido, 409: sin tratamiento activo
+    return null;
+  }
 
   if (!response.ok) {
-    throw new Error("Error al obtener tratamiento activo");
+    const errorText = await response.text();
+    throw new Error(errorText || "Error al obtener tratamiento activo");
   }
 
   return response.json();

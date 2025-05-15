@@ -118,7 +118,7 @@ const AppNavigator: React.FC = () => {
   } = useQuery({
     queryKey: ["auth", "me"],
     queryFn: getUserProfileInfo,
-    enabled: isAuthenticated && isPatient,
+    enabled: isAuthenticated && isPatient && !isInitializing,
   });
 
   if (isInitializing || isLoading) {

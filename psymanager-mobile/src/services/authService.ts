@@ -25,6 +25,11 @@ export async function getUserProfileInfo(): Promise<{
 }> {
   const token = await storage.getItem("accessToken");
 
+  if (!token) {
+    console.warn("⚠️ Token no disponible. Abortando llamada a /auth/me.");
+    throw new Error("Token de acceso no disponible");
+  }
+
   const response = await fetch(`${API_URL}/api/auth/me`, {
     method: "GET",
     headers: {
