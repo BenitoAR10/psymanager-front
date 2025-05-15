@@ -64,6 +64,7 @@ const Dashboard: React.FC = () => {
       endDate: dto.endDate,
       assignedSessions: dto.totalSessions ?? 0,
       completedSessions: dto.completedSessions ?? 0,
+      treatmentId: dto.treatmentId,
     };
   }
 

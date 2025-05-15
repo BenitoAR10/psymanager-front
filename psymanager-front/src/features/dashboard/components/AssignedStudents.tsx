@@ -23,6 +23,7 @@ import CalendarMonthOutlinedIcon from "@mui/icons-material/CalendarMonthOutlined
 import PeopleAltOutlinedIcon from "@mui/icons-material/PeopleAltOutlined";
 import EventNoteOutlinedIcon from "@mui/icons-material/EventNoteOutlined";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
+import { useNavigate } from "react-router-dom";
 
 export interface AssignedStudent {
   patientId: number;
@@ -33,6 +34,7 @@ export interface AssignedStudent {
   endDate?: string;
   assignedSessions: number;
   completedSessions: number;
+  treatmentId: number;
 }
 
 interface AssignedStudentsProps {
@@ -48,9 +50,10 @@ interface AssignedStudentsProps {
 const AssignedStudents: React.FC<AssignedStudentsProps> = ({
   students,
   onViewAll,
-  onStartTreatment,
 }) => {
   const theme = useTheme();
+
+  const navigate = useNavigate();
 
   const getInitials = (name: string) => {
     return name
@@ -261,6 +264,7 @@ const AssignedStudents: React.FC<AssignedStudentsProps> = ({
 
             return (
               <Box
+                key={student.treatmentId}
                 sx={{ width: { xs: "100%", sm: "50%", md: "33.333%" }, p: 1.5 }}
               >
                 <Card
@@ -279,6 +283,7 @@ const AssignedStudents: React.FC<AssignedStudentsProps> = ({
                 >
                   {/* Barra de estado en la parte superior */}
                   <Box
+                    key={student.treatmentId}
                     sx={{
                       height: 4,
                       width: "100%",
@@ -468,13 +473,25 @@ const AssignedStudents: React.FC<AssignedStudentsProps> = ({
                       fullWidth
                       color="primary"
                       startIcon={<PersonOutlineIcon />}
-                      onClick={() =>
-                        onStartTreatment?.(
-                          student.patientId,
-                          student.therapistId,
-                          student.name
-                        )
-                      }
+                      onClick={() => {
+                        if (
+                          !student.treatmentId ||
+                          isNaN(student.treatmentId)
+                        ) {
+                          console.warn(
+                            "❌ treatmentId no válido para estudiante:",
+                            student
+                          );
+                          return;
+                        }
+
+                        navigate(
+                          `/dashboard/tratamientos/${student.treatmentId}`,
+                          {
+                            state: { studentName: student.name },
+                          }
+                        );
+                      }}
                       sx={{
                         py: 1.2,
                         fontWeight: 600,
