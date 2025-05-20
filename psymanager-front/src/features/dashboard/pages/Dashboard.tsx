@@ -68,9 +68,10 @@ const Dashboard: React.FC = () => {
     };
   }
 
-  const assignedStudents = activeTreatmentStudents.map(
-    mapToAssignedStudentFromTreatment
-  );
+  const assignedStudents = Array.isArray(activeTreatmentStudents)
+    ? activeTreatmentStudents.map(mapToAssignedStudentFromTreatment)
+    : [];
+
   const eventDates = upcomingAppointments.map(
     (appt) => new Date(appt.dateTime)
   );

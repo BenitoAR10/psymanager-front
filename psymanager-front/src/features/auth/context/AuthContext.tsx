@@ -11,10 +11,8 @@ import React, {
 import { jwtDecode } from "jwt-decode";
 import { getTokenExpirationDelay } from "../../../utils/tokenUtils";
 import { refreshTokenService } from "../services/authService";
+import { getTherapistProfile } from "../../profile/services/profileService";
 
-/**
- * Estructura del JWT recibido tras autenticación.
- */
 interface JwtPayload {
   sub: string;
   roles?: string[];
@@ -25,9 +23,6 @@ interface JwtPayload {
   lastName: string;
 }
 
-/**
- * Información del usuario decodificada desde el token.
- */
 export interface User {
   userId: number;
   email: string;
@@ -36,12 +31,11 @@ export interface User {
   roles: string[];
 }
 
-/**
- * Estado general del contexto de autenticación.
- */
 interface AuthState {
   accessToken: string | null;
   refreshToken: string | null;
+  justRegistered: boolean;
+  setJustRegistered: (val: boolean) => void;
   isAuthenticated: boolean;
   loading: boolean;
   user: User | null;
@@ -53,6 +47,8 @@ const AuthContext = createContext<AuthState>({
   accessToken: null,
   refreshToken: null,
   isAuthenticated: false,
+  justRegistered: false,
+  setJustRegistered: () => {},
   loading: true,
   user: null,
   login: () => {},
@@ -63,27 +59,24 @@ interface AuthProviderProps {
   children: ReactNode;
 }
 
-/**
- * Proveedor de autenticación que maneja login/logout y refresco de tokens.
- */
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [refreshToken, setRefreshToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<User | null>(null);
+  const [justRegistered, setJustRegistered] = useState(false);
   const refreshTimeoutId = useRef<NodeJS.Timeout | null>(null);
 
-  // Se considera autenticado si hay un accessToken
   const isAuthenticated = Boolean(accessToken);
 
   /**
-   * Maneja la lógica de logout:
-   * - Limpia tokens y datos de usuario.
+   * Cierra sesión y limpia todo.
    */
   const logout = useCallback(() => {
     setAccessToken(null);
     setRefreshToken(null);
     setUser(null);
+    setJustRegistered(false);
     localStorage.removeItem("accessToken");
     localStorage.removeItem("refreshToken");
     if (refreshTimeoutId.current) {
@@ -92,9 +85,31 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }, []);
 
   /**
-   * Maneja la lógica de login:
-   * - Guarda los tokens.
-   * - Decodifica y almacena el usuario.
+   * Verifica si el perfil del terapeuta está incompleto
+   * y marca `justRegistered` si es necesario.
+   */
+  const checkIfJustRegistered = async () => {
+    if (!accessToken) return;
+
+    try {
+      const profile = await getTherapistProfile();
+      const isIncomplete =
+        !profile.ciNumber ||
+        !profile.ciExtension ||
+        !profile.phoneNumber ||
+        !Array.isArray(profile.specialties) ||
+        profile.specialties.length === 0;
+
+      setJustRegistered(isIncomplete);
+    } catch (error) {
+      console.warn("No se pudo verificar si el perfil está completo:", error);
+      setJustRegistered(false);
+    }
+  };
+
+  /**
+   * Guarda tokens y usuario al hacer login,
+   * y verifica si debe completar su perfil.
    */
   const login = useCallback((access: string, refresh: string) => {
     setAccessToken(access);
@@ -111,6 +126,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         lastName: decoded.lastName,
         roles: decoded.roles || [],
       });
+
+      // Verifica si debe completar el perfil
+      checkIfJustRegistered();
     } catch (error) {
       console.error("Error decodificando el accessToken en login", error);
       setUser(null);
@@ -118,7 +136,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }, []);
 
   /**
-   * Función para refrescar el token automáticamente antes de su expiración.
+   * Refresca tokens automáticamente antes de que expiren.
    */
   const refreshTokens = useCallback(async () => {
     if (!refreshToken) {
@@ -127,7 +145,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
     try {
       const data = await refreshTokenService(refreshToken);
-      // Reutilizamos login para setear todo correctamente
       login(data.accessToken, data.refreshToken);
     } catch (error) {
       logout();
@@ -135,7 +152,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }, [refreshToken, login, logout]);
 
   /**
-   * Carga inicial de tokens y usuario desde localStorage.
+   * Carga tokens y usuario desde localStorage al iniciar la app.
    */
   useEffect(() => {
     const storedAccess = localStorage.getItem("accessToken");
@@ -152,6 +169,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           lastName: decoded.lastName,
           roles: decoded.roles || [],
         });
+
+        // También verifica si está registrado o no
+        setTimeout(() => {
+          checkIfJustRegistered();
+        }, 0);
       } catch (error) {
         console.error("Error decodificando el accessToken", error);
         setUser(null);
@@ -166,8 +188,34 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }, []);
 
   /**
-   * Configuración del timeout para refrescar automáticamente el accessToken.
-   * Solo corre si loading terminó y accessToken está disponible.
+   * Sincroniza los datos del usuario (nombre, email, etc.) con los datos reales del backend
+   */
+  useEffect(() => {
+    if (!accessToken) return;
+
+    const syncUserWithProfile = async () => {
+      try {
+        const profile = await getTherapistProfile();
+        setUser((prev) =>
+          prev
+            ? {
+                ...prev,
+                firstName: profile.firstName,
+                lastName: profile.lastName,
+                email: profile.email,
+              }
+            : null
+        );
+      } catch (error) {
+        console.warn("No se pudo sincronizar el perfil del usuario:", error);
+      }
+    };
+
+    syncUserWithProfile();
+  }, [accessToken]);
+
+  /**
+   * Programa el refresco automático del token.
    */
   useEffect(() => {
     if (loading || !accessToken) return;
@@ -190,7 +238,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     };
   }, [accessToken, loading, refreshTokens]);
 
-  // Memoizamos el valor del contexto para estabilidad
   const value = useMemo(
     () => ({
       accessToken,
@@ -200,14 +247,22 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       user,
       login,
       logout,
+      justRegistered,
+      setJustRegistered,
     }),
-    [accessToken, refreshToken, isAuthenticated, loading, user, login, logout]
+    [
+      accessToken,
+      refreshToken,
+      isAuthenticated,
+      loading,
+      user,
+      login,
+      logout,
+      justRegistered,
+    ]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
-/**
- * Hook para usar el contexto de autenticación.
- */
 export const useAuth = (): AuthState => useContext(AuthContext);

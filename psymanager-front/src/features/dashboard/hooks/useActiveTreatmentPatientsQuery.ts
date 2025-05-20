@@ -11,5 +11,6 @@ export function useActiveTreatmentPatientsQuery(therapistId: number) {
     queryKey: ["active-treatment-patients", therapistId],
     queryFn: () => getActiveTreatmentPatientsByTherapist(therapistId),
     enabled: !!therapistId,
+    placeholderData: [],
   });
 }
