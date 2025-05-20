@@ -17,7 +17,7 @@ const CalendarPage = lazy(
   () => import("./features/calendar/pages/CalendarPage")
 );
 const ProfilePage = lazy(() => import("./features/profile/pages/ProfilePage"));
-const HelpPage = lazy(() => import("./features/dashboard/pages/HelpPage"));
+const HelpPage = lazy(() => import("./features/help/pages/HelpPage"));
 
 const StudentsPage = lazy(
   () => import("./features/students/pages/StudentsPage")

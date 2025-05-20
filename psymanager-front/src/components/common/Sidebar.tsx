@@ -23,7 +23,6 @@ import CalendarTodayOutlinedIcon from "@mui/icons-material/CalendarTodayOutlined
 import PersonOutlineOutlinedIcon from "@mui/icons-material/PersonOutlineOutlined";
 import HelpOutlineOutlinedIcon from "@mui/icons-material/HelpOutlineOutlined";
 import LogoutOutlinedIcon from "@mui/icons-material/LogoutOutlined";
-import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
 import SchoolOutlinedIcon from "@mui/icons-material/SchoolOutlined";
 import AssignmentOutlinedIcon from "@mui/icons-material/AssignmentOutlined";
 
@@ -71,11 +70,6 @@ const secondaryMenuItems = [
     text: "Ayuda",
     path: "/dashboard/ayuda",
     icon: <HelpOutlineOutlinedIcon />,
-  },
-  {
-    text: "Configuración",
-    path: "/dashboard/configuracion",
-    icon: <SettingsOutlinedIcon />,
   },
 ];
 
