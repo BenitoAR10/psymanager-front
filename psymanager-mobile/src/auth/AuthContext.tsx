@@ -9,6 +9,7 @@ import React, {
 import { jwtDecode } from "jwt-decode";
 import { AppState } from "react-native";
 import { storage } from "../utils/storage";
+import { API_URL } from "../utils/constants";
 
 // Payload esperado del JWT
 interface JwtPayload {
@@ -26,9 +27,15 @@ export interface AuthContextType {
   refreshToken: string | null;
   userInfo?: JwtPayload | null;
   isAuthenticated: boolean;
-  login: (accessToken: string, refreshToken: string) => Promise<void>;
+  login: (
+    accessToken: string,
+    refreshToken: string,
+    isNewUser?: boolean
+  ) => Promise<void>;
   logout: () => Promise<void>;
   isInitializing: boolean;
+  justRegistered: boolean;
+  setJustRegistered: (value: boolean) => void;
 }
 
 // Creación del contexto con valores por defecto
@@ -40,6 +47,8 @@ export const AuthContext = createContext<AuthContextType>({
   login: async () => {},
   logout: async () => {},
   isInitializing: true,
+  justRegistered: false,
+  setJustRegistered: () => {},
 });
 
 interface AuthProviderProps {
@@ -61,27 +70,33 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [refreshToken, setRefreshToken] = useState<string | null>(null);
   const [userInfo, setUserInfo] = useState<JwtPayload | null>(null);
   const [isInitializing, setIsInitializing] = useState(true);
+  const [justRegistered, setJustRegistered] = useState(false);
   const refreshTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Manejo de inicio de sesión y persistencia
-  const login = useCallback(async (accessToken: string, rt: string) => {
-    try {
-      const decoded = jwtDecode<JwtPayload>(accessToken);
-      setToken(accessToken);
-      setRefreshToken(rt);
-      setUserInfo(decoded);
-      await storage.setItem("accessToken", accessToken);
-      await storage.setItem("refreshToken", rt);
-    } catch (error) {
-      console.error("Error during login:", error);
-    }
-  }, []);
+  const login = useCallback(
+    async (accessToken: string, rt: string, isNewUser = false) => {
+      try {
+        const decoded = jwtDecode<JwtPayload>(accessToken);
+        setToken(accessToken);
+        setRefreshToken(rt);
+        setUserInfo(decoded);
+        setJustRegistered(isNewUser);
+        await storage.setItem("accessToken", accessToken);
+        await storage.setItem("refreshToken", rt);
+      } catch (error) {
+        console.error("Error during login:", error);
+      }
+    },
+    []
+  );
 
   // Cierre de sesión y limpieza total
   const logout = useCallback(async () => {
     setToken(null);
     setRefreshToken(null);
     setUserInfo(null);
+    setJustRegistered(false);
     if (refreshTimeoutRef.current) clearTimeout(refreshTimeoutRef.current);
     await storage.removeItem("accessToken");
     await storage.removeItem("refreshToken");
@@ -104,14 +119,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setRefreshToken(storedRefresh);
         setUserInfo(decoded);
       } else {
-        const response = await fetch(
-          "http://localhost:8080/api/auth/token/refresh",
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ refreshToken: storedRefresh }),
-          }
-        );
+        const response = await fetch(`${API_URL}/api/auth/token/refresh`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ refreshToken: storedRefresh }),
+        });
 
         if (response.ok) {
           const data = await response.json();
@@ -184,6 +196,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         login,
         logout,
         isInitializing,
+        justRegistered,
+        setJustRegistered,
       }}
     >
       {children}

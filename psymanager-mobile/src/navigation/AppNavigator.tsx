@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { View, Text } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
 import {
@@ -13,13 +13,13 @@ import CustomHeader from "../components/CustomHeader";
 import PatientTabs from "./PatientTabs";
 import AppointmentDetailScreen from "../screens/AppointmentDetailScreen";
 import AccountSettingsScreen from "../screens/AccountSettingsScreen";
-import CompleteProfileScreen from "../screens/CompleteProfileScreen";
-import { useQuery } from "@tanstack/react-query";
-import { getUserProfileInfo } from "../services/authService";
+import RegisterStep1Screen from "../screens/RegisterStep1Screen";
+import RegisterStep2Screen from "../screens/RegisterStep2Screen";
 
 export type RootStackParamList = {
   Login: undefined;
   AuthSuccess: undefined;
+  RegisterStep1: undefined;
   MainTabs: { screen: keyof RootStackParamList } | undefined;
   Schedule: undefined;
   ScheduleWeekly: undefined;
@@ -52,7 +52,7 @@ const linking = {
 };
 
 const PatientStack = () => (
-  <Stack.Navigator initialRouteName="MainTabs">
+  <Stack.Navigator>
     <Stack.Screen
       name="MainTabs"
       component={PatientTabs}
@@ -82,11 +82,11 @@ const PatientStack = () => (
   </Stack.Navigator>
 );
 
-const CompleteProfileStack = () => (
+const RegistrationStack = () => (
   <Stack.Navigator>
     <Stack.Screen
       name="CompleteProfile"
-      component={CompleteProfileScreen}
+      component={RegisterStep2Screen}
       options={{ headerShown: false }}
     />
   </Stack.Navigator>
@@ -104,24 +104,20 @@ const PublicStack = () => (
       component={AuthSuccessScreen}
       options={{ headerShown: false }}
     />
+    <Stack.Screen
+      name="RegisterStep1"
+      component={RegisterStep1Screen}
+      options={{ headerShown: false }}
+    />
   </Stack.Navigator>
 );
 
 const AppNavigator: React.FC = () => {
-  const { isAuthenticated, userInfo, isInitializing } = useAuth();
+  const { isAuthenticated, userInfo, isInitializing, justRegistered } =
+    useAuth();
   const isPatient = userInfo?.roles?.includes("PATIENT");
 
-  const {
-    data: profileData,
-    isLoading,
-    isSuccess,
-  } = useQuery({
-    queryKey: ["auth", "me"],
-    queryFn: getUserProfileInfo,
-    enabled: isAuthenticated && isPatient && !isInitializing,
-  });
-
-  if (isInitializing || isLoading) {
+  if (isInitializing) {
     return (
       <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
         <Text>Cargando sesión...</Text>
@@ -132,10 +128,10 @@ const AppNavigator: React.FC = () => {
   return (
     <NavigationContainer linking={linking}>
       {isAuthenticated && isPatient ? (
-        profileData?.profileComplete ? (
-          <PatientStack />
+        justRegistered ? (
+          <RegistrationStack />
         ) : (
-          <CompleteProfileStack />
+          <PatientStack />
         )
       ) : (
         <PublicStack />

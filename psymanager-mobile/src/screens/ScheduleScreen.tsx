@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useCallback, useState, useEffect } from "react";
+import type React from "react";
+import { useCallback, useState, useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -10,15 +11,19 @@ import {
   ToastAndroid,
   Platform,
   Alert,
+  ScrollView,
 } from "react-native";
 import { Calendar, type ICalendarEventBase } from "react-native-big-calendar";
 import { useTreatmentScheduleSessions } from "../services/hooks/useTreatmentScheduleSessions";
 
 import dayjs from "dayjs";
 import "dayjs/locale/es";
-import { useFocusEffect, useNavigation } from "@react-navigation/native";
+import {
+  useFocusEffect,
+  useNavigation,
+  useIsFocused,
+} from "@react-navigation/native";
 import { Skeleton } from "moti/skeleton";
-import { MotiView } from "moti";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 
 import WeekHeader from "../components/WeekHeader";
@@ -62,6 +67,10 @@ const ScheduleScreen: React.FC = () => {
   const { token, userInfo } = useAuth();
   const userId = userInfo?.userId;
   const { height } = useWindowDimensions();
+  const isFocused = useIsFocused();
+
+  // Referencia para controlar si el componente está montado
+  const isMounted = useRef(true);
 
   const [weekStart, setWeekStart] = useState(
     dayjs().startOf("week").add(1, "day").toDate()
@@ -72,13 +81,16 @@ const ScheduleScreen: React.FC = () => {
 
   const [loading, setLoading] = useState(true);
   const [initialLoadComplete, setInitialLoadComplete] = useState(false);
+  const [calendarKey, setCalendarKey] = useState(0); // Clave para forzar re-renderizado
+  const [showEmptyState, setShowEmptyState] = useState(false); // Estado para controlar la visualización del estado vacío
 
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedSession, setSelectedSession] = useState<CustomEvent | null>(
     null
   );
 
-  const calendarHeight = height - 150;
+  // Altura del calendario - ajustada para permitir scroll
+  const calendarHeight = height - 180; // Reducimos un poco para asegurar que haya espacio para scroll
 
   // Función para mostrar notificaciones según la plataforma
   const showNotification = (message: string) => {
@@ -89,8 +101,15 @@ const ScheduleScreen: React.FC = () => {
     }
   };
 
+  // Efecto para limpiar la referencia cuando el componente se desmonta
+  useEffect(() => {
+    return () => {
+      isMounted.current = false;
+    };
+  }, []);
+
   const fetchSchedules = useCallback(async () => {
-    if (!token) return;
+    if (!token || !isMounted.current) return;
     if (initialLoadComplete) setLoading(true);
 
     try {
@@ -117,7 +136,7 @@ const ScheduleScreen: React.FC = () => {
             })(),
             start: startDateTime.toDate(),
             end: endDateTime.toDate(),
-            availabilityStatus: "treatment-assigned" as "treatment-assigned",
+            availabilityStatus: "treatment-assigned" as const,
             reservedByUserId: item.reservedByUserId,
             sessionState: item.sessionState,
             therapistName: item.therapistName,
@@ -126,7 +145,12 @@ const ScheduleScreen: React.FC = () => {
           };
         });
 
-        setEvents(mappedEvents);
+        if (isMounted.current) {
+          setEvents(mappedEvents);
+          setShowEmptyState(mappedEvents.length === 0);
+          // Forzar re-renderizado del calendario
+          setCalendarKey((prev) => prev + 1);
+        }
       } else {
         // Si no está en tratamiento → traer horarios disponibles como antes
         const startDate = dayjs(weekStart).format("YYYY-MM-DD");
@@ -178,26 +202,51 @@ const ScheduleScreen: React.FC = () => {
           };
         });
 
-        setEvents(mappedEvents);
+        if (isMounted.current) {
+          setEvents(mappedEvents);
+          setShowEmptyState(mappedEvents.length === 0);
+          // Forzar re-renderizado del calendario
+          setCalendarKey((prev) => prev + 1);
+        }
       }
     } catch (error) {
       console.error("Error al cargar horarios semanales:", error);
+      if (isMounted.current) {
+        setShowEmptyState(true);
+      }
     } finally {
-      setLoading(false);
-      if (!initialLoadComplete) setInitialLoadComplete(true);
+      if (isMounted.current) {
+        setLoading(false);
+        if (!initialLoadComplete) setInitialLoadComplete(true);
+      }
     }
   }, [token, userId, weekStart, initialLoadComplete, treatmentSessions]);
 
+  // Efecto para cargar datos iniciales
   useEffect(() => {
     if (token && !initialLoadComplete && !loadingTreatment) {
       fetchSchedules();
     }
   }, [token, initialLoadComplete, loadingTreatment, fetchSchedules]);
 
+  // Efecto para recargar datos cuando cambia la semana
+  useEffect(() => {
+    if (initialLoadComplete && isFocused) {
+      fetchSchedules();
+    }
+  }, [weekStart, isFocused, initialLoadComplete, fetchSchedules]);
+
+  // Usar useFocusEffect para recargar al volver a la pantalla
   useFocusEffect(
     useCallback(() => {
       if (initialLoadComplete) {
-        fetchSchedules();
+        // Pequeño retraso para evitar problemas de renderizado
+        const timer = setTimeout(() => {
+          if (isMounted.current) {
+            fetchSchedules();
+          }
+        }, 300);
+        return () => clearTimeout(timer);
       }
     }, [fetchSchedules, initialLoadComplete])
   );
@@ -264,6 +313,25 @@ const ScheduleScreen: React.FC = () => {
     );
   };
 
+  // Renderizar el estado vacío sin animaciones
+  const renderEmptyState = () => (
+    <View style={[styles.emptyContainer, { height: calendarHeight }]}>
+      <MaterialCommunityIcons
+        name="calendar-blank"
+        size={60}
+        style={styles.emptyIcon}
+      />
+      <Text style={styles.emptyText}>
+        {treatmentSessions && treatmentSessions.length === 0
+          ? "No tienes sesiones asignadas para esta semana"
+          : "No hay horarios disponibles"}
+      </Text>
+      <Text style={[styles.emptyText, { fontSize: 14, marginTop: 8 }]}>
+        Intenta seleccionar otra semana
+      </Text>
+    </View>
+  );
+
   const renderContent = () => {
     if (loading && !initialLoadComplete) {
       return (
@@ -279,39 +347,20 @@ const ScheduleScreen: React.FC = () => {
       );
     }
 
-    if (!loading && initialLoadComplete && events.length === 0) {
-      return (
-        <MotiView
-          from={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ type: "timing", duration: 500 }}
-          style={[styles.emptyContainer, { height: calendarHeight }]}
-        >
-          <MaterialCommunityIcons
-            name="calendar-blank"
-            size={60}
-            style={styles.emptyIcon}
-          />
-          <Text style={styles.emptyText}>
-            {treatmentSessions && treatmentSessions.length === 0
-              ? "No tienes sesiones asignadas para esta semana"
-              : "No hay horarios disponibles"}
-          </Text>
-          <Text style={[styles.emptyText, { fontSize: 14, marginTop: 8 }]}>
-            Intenta seleccionar otra semana
-          </Text>
-        </MotiView>
-      );
+    if (showEmptyState) {
+      return renderEmptyState();
     }
 
     return (
-      <MotiView
-        from={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ type: "timing", duration: 500 }}
+      <ScrollView
         style={{ flex: 1 }}
+        contentContainerStyle={{ flexGrow: 1 }}
+        scrollEnabled={true}
+        showsVerticalScrollIndicator={true}
+        nestedScrollEnabled={true}
       >
         <Calendar
+          key={`calendar-${calendarKey}`} // Usar una key para forzar re-renderizado
           height={calendarHeight}
           mode="custom"
           weekStartsOn={1}
@@ -323,6 +372,7 @@ const ScheduleScreen: React.FC = () => {
           events={events}
           minHour={8}
           maxHour={18}
+          scrollOffsetMinutes={0} // Comenzar desde la parte superior
           renderHeader={() => null}
           headerContainerAccessibilityProps={{ accessibilityRole: "header" }}
           dayHeaderStyle={scheduleStyles.dayHeader}
@@ -352,14 +402,16 @@ const ScheduleScreen: React.FC = () => {
           })}
           renderEvent={renderEvent}
           onChangeDate={(dates) => {
-            const first = dates[0];
-            if (first && !dayjs(first).isSame(weekStart, "day")) {
-              setWeekStart(new Date(first));
+            if (dates && dates.length > 0) {
+              const first = dates[0];
+              if (first && !dayjs(first).isSame(weekStart, "day")) {
+                setWeekStart(new Date(first));
+              }
             }
           }}
           onPressEvent={handlePressEvent}
         />
-      </MotiView>
+      </ScrollView>
     );
   };
 
