@@ -35,10 +35,10 @@ import type { RootStackParamList } from "../navigation/AppNavigator";
 import type { NavigationProp } from "@react-navigation/native";
 import type { ScheduleAvailabilityDto } from "../types/scheduleTypes";
 import scheduleStyles from "./styles/scheduleStyles";
+import type { SessionState } from "../types/sessionTypes";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 dayjs.locale("es");
-
-type SessionState = "PENDING" | "ACCEPTED" | "REJECTED";
 
 const colors = {
   primary: "#4DB6AC",
@@ -49,7 +49,7 @@ const colors = {
   available: "#9AE6B4",
   reserved: "#8C9EFF",
   taken: "#FEB2B2",
-  pastEvent: "#E2E8F0", // Color para eventos pasados
+  pastEvent: "#E2E8F0",
 };
 
 interface CustomEvent extends ICalendarEventBase {
@@ -59,7 +59,7 @@ interface CustomEvent extends ICalendarEventBase {
   reservedByUserId?: number | null;
   sessionState?: SessionState;
   color: string;
-  isPast?: boolean; // Nueva propiedad para marcar eventos pasados
+  isPast?: boolean;
 }
 
 const ScheduleScreen: React.FC = () => {
@@ -68,31 +68,43 @@ const ScheduleScreen: React.FC = () => {
   const userId = userInfo?.userId;
   const { height } = useWindowDimensions();
   const isFocused = useIsFocused();
-
-  // Referencia para controlar si el componente está montado
+  const queryClient = useQueryClient();
   const isMounted = useRef(true);
 
   const [weekStart, setWeekStart] = useState(
     dayjs().startOf("week").add(1, "day").toDate()
   );
-  const [events, setEvents] = useState<CustomEvent[]>([]);
+
   const { data: treatmentSessions, isLoading: loadingTreatment } =
     useTreatmentScheduleSessions();
 
-  const [loading, setLoading] = useState(true);
+  const startDate = dayjs(weekStart).format("YYYY-MM-DD");
+  const endDate = dayjs(weekStart).add(6, "day").format("YYYY-MM-DD");
+
+  const { data: availableSchedules, isLoading: loadingAvailable } = useQuery({
+    queryKey: ["available-schedules", startDate, endDate],
+    queryFn: () =>
+      getAvailableSchedules({
+        token: token!,
+        startDate,
+        endDate,
+      }),
+    enabled: !!token && (!treatmentSessions || treatmentSessions.length === 0),
+    staleTime: 1000 * 60 * 5, // 5 min
+  });
+
+  const [events, setEvents] = useState<CustomEvent[]>([]);
   const [initialLoadComplete, setInitialLoadComplete] = useState(false);
-  const [calendarKey, setCalendarKey] = useState(0); // Clave para forzar re-renderizado
-  const [showEmptyState, setShowEmptyState] = useState(false); // Estado para controlar la visualización del estado vacío
+  const [calendarKey, setCalendarKey] = useState(0);
+  const [showEmptyState, setShowEmptyState] = useState(false);
 
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedSession, setSelectedSession] = useState<CustomEvent | null>(
     null
   );
 
-  // Altura del calendario - ajustada para permitir scroll
-  const calendarHeight = height - 180; // Reducimos un poco para asegurar que haya espacio para scroll
+  const calendarHeight = height - 180;
 
-  // Función para mostrar notificaciones según la plataforma
   const showNotification = (message: string) => {
     if (Platform.OS === "android") {
       ToastAndroid.show(message, ToastAndroid.SHORT);
@@ -101,155 +113,118 @@ const ScheduleScreen: React.FC = () => {
     }
   };
 
-  // Efecto para limpiar la referencia cuando el componente se desmonta
   useEffect(() => {
     return () => {
       isMounted.current = false;
     };
   }, []);
 
-  const fetchSchedules = useCallback(async () => {
-    if (!token || !isMounted.current) return;
-    if (initialLoadComplete) setLoading(true);
+  useEffect(() => {
+    const now = dayjs();
 
-    try {
+    if (treatmentSessions && treatmentSessions.length > 0) {
+      const mappedEvents = treatmentSessions.map((item) => {
+        const startDateTime = dayjs(`${item.date}T${item.startTime}`);
+        const endDateTime = dayjs(`${item.date}T${item.endTime}`);
+        const isPast = endDateTime.isBefore(now);
+
+        return {
+          scheduleId: item.scheduleId,
+          title: (() => {
+            const parts = item.therapistName.trim().split(" ");
+            const firstName =
+              parts[0]?.charAt(0).toUpperCase() +
+              parts[0]?.slice(1).toLowerCase();
+            const firstSurnameInitial = parts[2]?.charAt(0).toUpperCase();
+            return firstSurnameInitial
+              ? `${firstName} ${firstSurnameInitial}.`
+              : firstName;
+          })(),
+          start: startDateTime.toDate(),
+          end: endDateTime.toDate(),
+          availabilityStatus: "treatment-assigned" as const,
+          reservedByUserId: item.reservedByUserId,
+          sessionState: item.sessionState,
+          therapistName: item.therapistName,
+          color: isPast ? colors.pastEvent : colors.reserved,
+          isPast,
+        };
+      });
+
+      setEvents(mappedEvents);
+      setShowEmptyState(mappedEvents.length === 0);
+      setCalendarKey((prev) => prev + 1);
+      setInitialLoadComplete(true);
+    } else if (availableSchedules) {
       const now = dayjs();
+      const mappedEvents = availableSchedules.map((item) => {
+        const startDateTime = dayjs(`${item.date}T${item.startTime}`);
+        const endDateTime = dayjs(`${item.date}T${item.endTime}`);
+        const isPast = endDateTime.isBefore(now);
 
-      // Si el paciente está en tratamiento, usar las sesiones del tratamiento
-      if (treatmentSessions && treatmentSessions.length > 0) {
-        const mappedEvents = treatmentSessions.map((item) => {
-          const startDateTime = dayjs(`${item.date}T${item.startTime}`);
-          const endDateTime = dayjs(`${item.date}T${item.endTime}`);
-          const isPast = endDateTime.isBefore(now);
+        let eventColor: string;
 
-          return {
-            scheduleId: item.scheduleId,
-            title: (() => {
-              const parts = item.therapistName.trim().split(" ");
-              const firstName =
-                parts[0]?.charAt(0).toUpperCase() +
-                parts[0]?.slice(1).toLowerCase();
-              const firstSurnameInitial = parts[2]?.charAt(0).toUpperCase();
-              return firstSurnameInitial
-                ? `${firstName} ${firstSurnameInitial}.`
-                : firstName;
-            })(),
-            start: startDateTime.toDate(),
-            end: endDateTime.toDate(),
-            availabilityStatus: "treatment-assigned" as const,
-            reservedByUserId: item.reservedByUserId,
-            sessionState: item.sessionState,
-            therapistName: item.therapistName,
-            color: isPast ? colors.pastEvent : colors.reserved,
-            isPast,
-          };
-        });
-
-        if (isMounted.current) {
-          setEvents(mappedEvents);
-          setShowEmptyState(mappedEvents.length === 0);
-          // Forzar re-renderizado del calendario
-          setCalendarKey((prev) => prev + 1);
+        if (isPast) {
+          eventColor = colors.pastEvent;
+        } else if (item.sessionState === "CANCELED") {
+          eventColor = "#FFCDD2";
+        } else if (item.sessionState === "REJECTED") {
+          eventColor = "#FFE082";
+        } else if (item.sessionState === "COMPLETED") {
+          eventColor = "#C5E1A5";
+        } else if (item.availabilityStatus === "available") {
+          eventColor = colors.available;
+        } else if (item.reservedByUserId === userId) {
+          eventColor = colors.reserved;
+        } else {
+          eventColor = colors.taken;
         }
-      } else {
-        // Si no está en tratamiento → traer horarios disponibles como antes
-        const startDate = dayjs(weekStart).format("YYYY-MM-DD");
-        const endDate = dayjs(weekStart).add(6, "day").format("YYYY-MM-DD");
 
-        const result: ScheduleAvailabilityDto[] = await getAvailableSchedules({
+        return {
+          scheduleId: item.scheduleId,
+          title: (() => {
+            const parts = item.therapistName.trim().split(" ");
+            const firstName =
+              parts[0]?.charAt(0).toUpperCase() +
+              parts[0]?.slice(1).toLowerCase();
+            const firstSurnameInitial = parts[2]?.charAt(0).toUpperCase();
+            return firstSurnameInitial
+              ? `${firstName} ${firstSurnameInitial}.`
+              : firstName;
+          })(),
+          start: startDateTime.toDate(),
+          end: endDateTime.toDate(),
+          availabilityStatus: item.availabilityStatus,
+          reservedByUserId: item.reservedByUserId,
+          sessionState: item.sessionState,
+          therapistName: item.therapistName,
+          color: eventColor,
+          isPast,
+        };
+      });
+
+      setEvents(mappedEvents);
+      setShowEmptyState(mappedEvents.length === 0);
+      setCalendarKey((prev) => prev + 1);
+      setInitialLoadComplete(true);
+    }
+  }, [treatmentSessions, availableSchedules, userId]);
+
+  useEffect(() => {
+    if (!token) return;
+    const preloadStart = dayjs(weekStart).add(7, "day").format("YYYY-MM-DD");
+    const preloadEnd = dayjs(weekStart).add(13, "day").format("YYYY-MM-DD");
+
+    queryClient.prefetchQuery({
+      queryKey: ["available-schedules", preloadStart, preloadEnd],
+      queryFn: () =>
+        getAvailableSchedules({
           token,
-          startDate,
-          endDate,
-        });
-
-        const mappedEvents = result.map((item) => {
-          const startDateTime = dayjs(`${item.date}T${item.startTime}`);
-          const endDateTime = dayjs(`${item.date}T${item.endTime}`);
-          const isPast = endDateTime.isBefore(now);
-
-          let eventColor;
-          if (isPast) {
-            eventColor = colors.pastEvent;
-          } else {
-            eventColor =
-              item.availabilityStatus === "available"
-                ? colors.available
-                : item.reservedByUserId === userId
-                ? colors.reserved
-                : colors.taken;
-          }
-
-          return {
-            scheduleId: item.scheduleId,
-            title: (() => {
-              const parts = item.therapistName.trim().split(" ");
-              const firstName =
-                parts[0]?.charAt(0).toUpperCase() +
-                parts[0]?.slice(1).toLowerCase();
-              const firstSurnameInitial = parts[2]?.charAt(0).toUpperCase();
-              return firstSurnameInitial
-                ? `${firstName} ${firstSurnameInitial}.`
-                : firstName;
-            })(),
-            start: startDateTime.toDate(),
-            end: endDateTime.toDate(),
-            availabilityStatus: item.availabilityStatus,
-            reservedByUserId: item.reservedByUserId,
-            sessionState: item.sessionState,
-            therapistName: item.therapistName,
-            color: eventColor,
-            isPast,
-          };
-        });
-
-        if (isMounted.current) {
-          setEvents(mappedEvents);
-          setShowEmptyState(mappedEvents.length === 0);
-          // Forzar re-renderizado del calendario
-          setCalendarKey((prev) => prev + 1);
-        }
-      }
-    } catch (error) {
-      console.error("Error al cargar horarios semanales:", error);
-      if (isMounted.current) {
-        setShowEmptyState(true);
-      }
-    } finally {
-      if (isMounted.current) {
-        setLoading(false);
-        if (!initialLoadComplete) setInitialLoadComplete(true);
-      }
-    }
-  }, [token, userId, weekStart, initialLoadComplete, treatmentSessions]);
-
-  // Efecto para cargar datos iniciales
-  useEffect(() => {
-    if (token && !initialLoadComplete && !loadingTreatment) {
-      fetchSchedules();
-    }
-  }, [token, initialLoadComplete, loadingTreatment, fetchSchedules]);
-
-  // Efecto para recargar datos cuando cambia la semana
-  useEffect(() => {
-    if (initialLoadComplete && isFocused) {
-      fetchSchedules();
-    }
-  }, [weekStart, isFocused, initialLoadComplete, fetchSchedules]);
-
-  // Usar useFocusEffect para recargar al volver a la pantalla
-  useFocusEffect(
-    useCallback(() => {
-      if (initialLoadComplete) {
-        // Pequeño retraso para evitar problemas de renderizado
-        const timer = setTimeout(() => {
-          if (isMounted.current) {
-            fetchSchedules();
-          }
-        }, 300);
-        return () => clearTimeout(timer);
-      }
-    }, [fetchSchedules, initialLoadComplete])
-  );
+          startDate: preloadStart,
+          endDate: preloadEnd,
+        }),
+    });
+  }, [weekStart, token]);
 
   const handleWeekChange = (direction: "prev" | "next") => {
     const newStart = dayjs(weekStart)
@@ -259,7 +234,6 @@ const ScheduleScreen: React.FC = () => {
   };
 
   const handlePressEvent = (event: CustomEvent) => {
-    // Si el evento ya pasó, mostrar un mensaje informativo y no hacer nada más
     if (event.isPast) {
       showNotification("Este horario ya ha pasado y no está disponible");
       return;
@@ -333,7 +307,7 @@ const ScheduleScreen: React.FC = () => {
   );
 
   const renderContent = () => {
-    if (loading && !initialLoadComplete) {
+    if (loadingAvailable && !initialLoadComplete) {
       return (
         <View style={styles.skeletonContainer}>
           <Skeleton

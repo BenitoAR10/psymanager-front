@@ -18,14 +18,13 @@ import {
   shadows,
   typography,
 } from "../screens/styles/themeConstants";
+import type { SessionState } from "../types/sessionTypes";
 import dayjs from "dayjs";
 import "dayjs/locale/es";
 import { MotiView } from "moti";
 
 // Configurar dayjs para español
 dayjs.locale("es");
-
-type SessionState = "PENDING" | "ACCEPTED" | "REJECTED";
 
 interface ReservedSessionModalProps {
   visible: boolean;
@@ -91,6 +90,23 @@ const ReservedSessionModal: React.FC<ReservedSessionModalProps> = ({
     return `${hour12}:${minutes} ${ampm}`;
   };
 
+  const getStateLabel = (state: SessionState) => {
+    switch (state) {
+      case "PENDING":
+        return "Pendiente";
+      case "ACCEPTED":
+        return "Confirmada";
+      case "REJECTED":
+        return "Rechazada";
+      case "CANCELED":
+        return "Cancelada";
+      case "COMPLETED":
+        return "Completada";
+      default:
+        return "Desconocido";
+    }
+  };
+
   const getStatusInfo = (): {
     icon: React.ComponentProps<typeof MaterialCommunityIcons>["name"];
     color: string;
@@ -136,6 +152,25 @@ const ReservedSessionModal: React.FC<ReservedSessionModalProps> = ({
             "Lo sentimos, tu cita fue rechazada. Puedes elegir otro horario disponible.",
           actionText: "Buscar otro horario",
         };
+      case "CANCELED":
+        return {
+          icon: "calendar-remove-outline",
+          color: colors.error.main,
+          title: "Cita cancelada",
+          message:
+            "Has cancelado esta cita. Puedes reservar otro horario si lo deseas.",
+          actionText: "Cerrar",
+        };
+      case "COMPLETED":
+        return {
+          icon: "check-decagram",
+          color: colors.success.main,
+          title: "Sesión completada",
+          message:
+            "Esta sesión fue marcada como completada. Puedes revisar tu progreso con tu terapeuta.",
+          actionText: "Entendido",
+        };
+
       default:
         return {
           icon: "help-circle-outline",
@@ -213,13 +248,7 @@ const ReservedSessionModal: React.FC<ReservedSessionModalProps> = ({
 
             <View style={styles.statusBadge}>
               <Text style={[styles.statusText, { color: statusInfo.color }]}>
-                {state === "PENDING"
-                  ? "Pendiente"
-                  : state === "ACCEPTED"
-                  ? "Confirmada"
-                  : state === "REJECTED"
-                  ? "Rechazada"
-                  : "Desconocido"}
+                {getStateLabel(state)}
               </Text>
             </View>
           </MotiView>

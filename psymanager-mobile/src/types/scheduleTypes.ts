@@ -7,5 +7,5 @@ export interface ScheduleAvailabilityDto {
   therapistName: string;
   reservedByUserId?: number | null;
   date: string;
-  sessionState?: "PENDING" | "ACCEPTED" | "REJECTED";
+  sessionState?: "PENDING" | "ACCEPTED" | "REJECTED" | "CANCELED" | "COMPLETED";
 }

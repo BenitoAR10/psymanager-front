@@ -22,7 +22,6 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../navigation/AppNavigator";
 import dayjs from "dayjs";
 import "dayjs/locale/es";
-import CustomHeader from "../components/CustomHeader";
 
 // Configurar dayjs para español
 dayjs.locale("es");

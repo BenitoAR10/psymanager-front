@@ -1,4 +1,4 @@
-import { API_URL } from "../utils/constants";
+import { API_URL } from "../utils/urlConstant";
 import { ScheduleAvailabilityDto } from "../types/scheduleTypes";
 import { storage } from "../utils/storage";
 
@@ -99,6 +99,9 @@ export const getTreatmentScheduleSessions = async (): Promise<
   ScheduleAvailabilityDto[]
 > => {
   const token = await storage.getItem("accessToken");
+  if (!token) {
+    throw new Error("No se encontró el token de autenticación");
+  }
 
   const response = await fetch(
     `${API_URL}/api/sessions/my/treatment-sessions`,

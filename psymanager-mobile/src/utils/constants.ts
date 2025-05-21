@@ -1,7 +1,3 @@
-export const API_URL =
-  process.env.EXPO_PUBLIC_API_URL ||
-  "https://45bf-200-105-158-140.ngrok-free.app";
-
 // src/utils/constants.ts
 export const GENDER_OPTIONS = [
   { label: "Selecciona género biológico", value: "" },

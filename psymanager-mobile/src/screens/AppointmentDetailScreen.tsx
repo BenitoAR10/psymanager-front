@@ -16,6 +16,8 @@ import {
 import { Avatar, Button } from "react-native-paper";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { MotiView } from "moti";
+import CancelModal from "../components/CancelModal";
+
 import {
   type RouteProp,
   useRoute,
@@ -27,6 +29,8 @@ import { useAuth } from "../auth/useAuth";
 import type { UserAppointmentDetailDto } from "../types/appointmentTypes";
 import appointmentDetailStyles from "../screens/styles/appointmentDetailStyles";
 import { theme } from "../screens/styles/themeConstants";
+import { cancelAppointment } from "../services/appointmentService";
+import { useToast } from "react-native-toast-notifications";
 import dayjs from "dayjs";
 import "dayjs/locale/es";
 
@@ -46,12 +50,16 @@ const AppointmentDetailScreen: React.FC = () => {
   const navigation = useNavigation();
   const { sessionId } = route.params;
 
+  const toast = useToast();
+
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [appointment, setAppointment] =
     useState<UserAppointmentDetailDto | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [notes, setNotes] = useState<string>("");
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [cancelReason, setCancelReason] = useState("");
 
   const loadDetails = async (showLoader = true) => {
     if (!token) return;
@@ -104,27 +112,49 @@ const AppointmentDetailScreen: React.FC = () => {
   };
 
   const handleCancelAppointment = () => {
-    Alert.alert(
-      "Cancelar cita",
-      "¿Estás seguro que deseas cancelar esta cita?",
-      [
-        {
-          text: "No",
-          style: "cancel",
-        },
-        {
-          text: "Sí, cancelar",
-          style: "destructive",
-          onPress: () => {
-            // Implementar funcionalidad de cancelación
-            Alert.alert(
-              "Información",
-              "Funcionalidad de cancelación pendiente"
-            );
-          },
-        },
-      ]
+    if (!appointment) return;
+
+    const appointmentDateTime = dayjs(
+      `${appointment.date} ${appointment.startTime}`,
+      "YYYY-MM-DD HH:mm"
     );
+    const nowPlus2h = dayjs().add(2, "hour");
+
+    if (nowPlus2h.isAfter(appointmentDateTime)) {
+      toast.show(
+        "No puedes cancelar una cita con menos de 2 horas de anticipación.",
+        {
+          type: "danger",
+        }
+      );
+      return;
+    }
+
+    setShowCancelModal(true);
+  };
+
+  const confirmCancellation = async () => {
+    if (!cancelReason.trim()) {
+      toast.show("Debes ingresar un motivo para cancelar.", {
+        type: "warning",
+      });
+      return;
+    }
+
+    try {
+      setLoading(true);
+      await cancelAppointment(sessionId, cancelReason.trim(), token!);
+      toast.show("Cita cancelada exitosamente.", { type: "success" });
+      setShowCancelModal(false);
+      navigation.goBack();
+    } catch (error: any) {
+      toast.show(error.message || "No se pudo cancelar la cita.", {
+        type: "danger",
+      });
+    } finally {
+      setLoading(false);
+      setCancelReason("");
+    }
   };
 
   if (loading && !refreshing) {
@@ -495,6 +525,13 @@ const AppointmentDetailScreen: React.FC = () => {
           </View>
         </MotiView>
       )}
+      <CancelModal
+        visible={showCancelModal}
+        reason={cancelReason}
+        onChangeReason={setCancelReason}
+        onCancel={() => setShowCancelModal(false)}
+        onConfirm={confirmCancellation}
+      />
     </View>
   );
 };

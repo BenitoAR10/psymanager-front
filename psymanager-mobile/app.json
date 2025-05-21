@@ -19,6 +19,7 @@
     },
     "android": {
       "package": "com.amirrojas.psymanager",
+      "icon": "./assets/icon.png",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"

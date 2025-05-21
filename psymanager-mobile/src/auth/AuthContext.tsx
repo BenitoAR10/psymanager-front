@@ -9,7 +9,7 @@ import React, {
 import { jwtDecode } from "jwt-decode";
 import { AppState } from "react-native";
 import { storage } from "../utils/storage";
-import { API_URL } from "../utils/constants";
+import { API_URL } from "../utils/urlConstant";
 
 // Payload esperado del JWT
 interface JwtPayload {
@@ -58,12 +58,16 @@ interface AuthProviderProps {
 // Utilitario para calcular tiempo restante del token
 const getTokenExpirationDelay = (token: string): number => {
   try {
-    const decoded = jwtDecode<JwtPayload>(token);
-    return decoded.exp * 1000 - Date.now();
+    const { exp } = jwtDecode<JwtPayload>(token);
+    if (!exp) return 0;
+    return exp * 1000 - Date.now();
   } catch {
     return 0;
   }
 };
+
+let isRefreshing = false;
+let refreshPromise: Promise<void> | null = null;
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [token, setToken] = useState<string | null>(null);
@@ -104,40 +108,55 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   // Refresca el token si está expirado
   const refreshTokenIfNeeded = useCallback(async () => {
-    setIsInitializing(true);
-    try {
-      const storedToken = await storage.getItem("accessToken");
-      const storedRefresh = await storage.getItem("refreshToken");
-
-      if (!storedToken || !storedRefresh) return;
-
-      const decoded = jwtDecode<JwtPayload>(storedToken);
-      const isExpired = decoded.exp * 1000 < Date.now();
-
-      if (!isExpired) {
-        setToken(storedToken);
-        setRefreshToken(storedRefresh);
-        setUserInfo(decoded);
-      } else {
-        const response = await fetch(`${API_URL}/api/auth/token/refresh`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ refreshToken: storedRefresh }),
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          await login(data.accessToken, data.refreshToken);
-        } else {
-          await logout();
-        }
-      }
-    } catch (error) {
-      console.error("Error al refrescar token:", error);
-      await logout();
-    } finally {
-      setIsInitializing(false);
+    if (isRefreshing && refreshPromise) {
+      return refreshPromise;
     }
+
+    isRefreshing = true;
+    refreshPromise = (async () => {
+      setIsInitializing(true);
+      try {
+        const storedToken = await storage.getItem("accessToken");
+        const storedRefresh = await storage.getItem("refreshToken");
+
+        if (!storedToken || !storedRefresh) return;
+
+        const decoded = jwtDecode<JwtPayload>(storedToken);
+        const isExpired = decoded.exp * 1000 < Date.now();
+
+        if (!isExpired) {
+          setToken(storedToken);
+          setRefreshToken(storedRefresh);
+          setUserInfo(decoded);
+        } else {
+          const response = await fetch(`${API_URL}/api/auth/token/refresh`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ refreshToken: storedRefresh }),
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            if (data.accessToken && data.refreshToken) {
+              await login(data.accessToken, data.refreshToken);
+            } else {
+              throw new Error("Tokens faltantes en la respuesta");
+            }
+          } else {
+            await logout();
+          }
+        }
+      } catch (error) {
+        console.error("Error al refrescar token:", error);
+        await logout();
+      } finally {
+        setIsInitializing(false);
+        isRefreshing = false;
+        refreshPromise = null;
+      }
+    })();
+
+    return refreshPromise;
   }, [login, logout]);
 
   // Inicializa la sesión al montar el contexto

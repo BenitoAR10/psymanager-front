@@ -1,4 +1,4 @@
-import { API_URL } from "../utils/constants";
+import { API_URL } from "../utils/urlConstant";
 import {
   UserAppointmentDto,
   UserAppointmentDetailDto,
@@ -43,4 +43,35 @@ export async function getAppointmentDetail(
   }
 
   return await response.json();
+}
+
+/**
+ * Cancela una cita específica del usuario.
+ * @param sessionId ID de la sesión a cancelar
+ * @param reason Motivo de la cancelación
+ * @param token Token JWT del usuario autenticado
+ */
+export async function cancelAppointment(
+  sessionId: number,
+  reason: string,
+  token: string
+): Promise<void> {
+  const response = await fetch(`${API_URL}/api/sessions/cancel`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({
+      scheduleSessionId: sessionId,
+      cancellationReason: reason,
+    }),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(
+      errorText || "No se pudo cancelar la cita. Intenta nuevamente."
+    );
+  }
 }

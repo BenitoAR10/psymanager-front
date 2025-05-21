@@ -1,4 +1,4 @@
-import { API_URL } from "../utils/constants";
+import { API_URL } from "../utils/urlConstant";
 import { storage } from "../utils/storage";
 
 const GOOGLE_MOBILE_AUTH_PATH = "/oauth2/authorization/google-mobile";
