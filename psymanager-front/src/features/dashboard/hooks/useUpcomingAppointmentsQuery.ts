@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { getUpcomingAppointments } from "../services/appointments";
+import { getUpcomingAppointments } from "../services/appointmentsService";
 import type { UpcomingAppointmentDto } from "../types";
 
 /**

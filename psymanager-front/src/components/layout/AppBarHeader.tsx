@@ -13,6 +13,7 @@ import MenuIcon from "@mui/icons-material/Menu";
 import NotificationsOutlinedIcon from "@mui/icons-material/NotificationsOutlined";
 import type { NotificationsMenuProps } from "./NotificationsMenu";
 import NotificationsMenu from "./NotificationsMenu";
+import { useNavigate } from "react-router-dom";
 
 export interface AppBarHeaderProps {
   displayName: string;
@@ -49,6 +50,8 @@ const AppBarHeader: React.FC<AppBarHeaderProps> = ({
   onViewAllRequests,
 }) => {
   const bellOpen = Boolean(anchorEl);
+
+  const navigate = useNavigate();
 
   return (
     <AppBar
@@ -128,6 +131,7 @@ const AppBarHeader: React.FC<AppBarHeaderProps> = ({
             </Box>
             <Tooltip title="Perfil">
               <Avatar
+                onClick={() => navigate("/dashboard/perfil")}
                 sx={{
                   bgcolor: "primary.main",
                   width: 40,

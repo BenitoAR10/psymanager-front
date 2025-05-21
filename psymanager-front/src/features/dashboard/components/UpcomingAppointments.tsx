@@ -21,6 +21,7 @@ import EventNoteIcon from "@mui/icons-material/EventNote";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
 import CancelOutlinedIcon from "@mui/icons-material/CancelOutlined";
+import { markSessionAsCompleted } from "../services/sessionsService";
 import ScheduleIcon from "@mui/icons-material/Schedule";
 import TodayIcon from "@mui/icons-material/Today";
 import MedicalServicesOutlinedIcon from "@mui/icons-material/MedicalServicesOutlined";
@@ -28,12 +29,12 @@ import type { UpcomingAppointmentDto } from "../types";
 import CalendarTodayOutlinedIcon from "@mui/icons-material/CalendarTodayOutlined";
 import UpcomingAppointmentsModal from "./UpcomingAppointmentsModal";
 import { useState } from "react";
+import { toast } from "sonner";
 
 /**
  * Interfaz que representa una cita programada.
  */
 export type Appointment = UpcomingAppointmentDto;
-
 /**
  * Props del componente UpcomingAppointments.
  */
@@ -68,6 +69,26 @@ const UpcomingAppointments: React.FC<UpcomingAppointmentsProps> = ({
   const theme = useTheme();
 
   const [modalOpen, setModalOpen] = useState(false);
+
+  const [completingId, setCompletingId] = useState<number | null>(null);
+
+  const handleMarkCompleted = async (sessionId: number) => {
+    setCompletingId(sessionId);
+    try {
+      await markSessionAsCompleted(sessionId);
+      toast.success("Sesión marcada como completada");
+
+      onViewAll?.();
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "No se pudo completar la sesión";
+      toast.error(message);
+    } finally {
+      setCompletingId(null);
+    }
+  };
 
   const formatDateTime = (dateTimeStr: string) => {
     const date = new Date(dateTimeStr);
@@ -301,6 +322,28 @@ const UpcomingAppointments: React.FC<UpcomingAppointmentsProps> = ({
                             >
                               {appt.studentName}
                             </Typography>
+                            {isInProgress(appt.dateTime) &&
+                              !appt.isPartOfTreatment && (
+                                <Button
+                                  size="small"
+                                  variant="outlined"
+                                  color="success"
+                                  disabled={completingId === appt.appointmentId}
+                                  onClick={() =>
+                                    handleMarkCompleted(appt.appointmentId)
+                                  }
+                                  sx={{
+                                    ml: 2,
+                                    textTransform: "none",
+                                    borderRadius: 2,
+                                  }}
+                                >
+                                  {completingId === appt.appointmentId
+                                    ? "Guardando..."
+                                    : "Completar"}
+                                </Button>
+                              )}
+
                             {appt.isPartOfTreatment && (
                               <Chip
                                 icon={
