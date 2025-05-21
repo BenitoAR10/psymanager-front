@@ -41,7 +41,9 @@
     "react-native-screens": "~4.10.0",
     "react-native-toast-notifications": "^3.4.0",
     "react-native-vector-icons": "^10.2.0",
-    "react-native-web": "^0.20.0"
+    "react-native-web": "^0.20.0",
+    "expo-audio": "~0.4.5",
+    "expo-av": "~15.1.4"
   },
   "devDependencies": {
     "@babel/core": "^7.26.0",
