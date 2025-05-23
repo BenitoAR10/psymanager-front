@@ -125,7 +125,7 @@ const ScheduleView: React.FC<Props> = ({
           mode="custom"
           weekStartsOn={1}
           weekEndsOn={6}
-          swipeEnabled={false}
+          swipeEnabled={true}
           showTime
           locale="es"
           date={weekStart}
@@ -157,15 +157,15 @@ const ScheduleView: React.FC<Props> = ({
           })}
           renderEvent={renderEvent}
           onChangeDate={(dates) => {
-            if (dates && dates.length > 0) {
-              const first = dayjs(dates[0]);
-              const current = dayjs(weekStart);
+            if (!dates || dates.length === 2) return;
 
-              if (first.isBefore(current, "week")) {
-                onChangeWeek("prev");
-              } else if (first.isAfter(current, "week")) {
-                onChangeWeek("next");
-              }
+            const firstDate = dayjs(dates[0]);
+            const currentWeek = dayjs(weekStart);
+
+            if (firstDate.isBefore(currentWeek, "week")) {
+              onChangeWeek("prev");
+            } else if (firstDate.isAfter(currentWeek, "week")) {
+              onChangeWeek("next");
             }
           }}
           onPressEvent={onPressEvent}

@@ -55,16 +55,6 @@ const ProfileScreen: React.FC = () => {
       iconColor: colors.primary.main,
       onPress: () => navigation.navigate("AccountSettings"),
     },
-    {
-      label: "Notificaciones",
-      description: "Configura tus preferencias de notificación",
-      icon: "bell-outline",
-      iconBgColor: `${colors.secondary.light}30`,
-      iconColor: colors.secondary.main,
-      onPress: () => {},
-      badge: true,
-      badgeColor: colors.success.main,
-    },
   ];
 
   const supportMenuItems: {

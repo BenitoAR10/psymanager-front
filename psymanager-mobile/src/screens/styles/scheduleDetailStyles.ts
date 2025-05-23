@@ -1,175 +1,290 @@
-// scheduleDetailStyles.ts
-import { StyleSheet, Platform, Dimensions } from "react-native";
+import { StyleSheet } from "react-native";
+import { theme } from "../styles/themeConstants";
 
-// Colores consistentes con tu tema
-export const colors = {
-  primary: "#4DB6AC",
-  primaryLight: "#80CBC4",
-  primaryDark: "#00897B",
-  secondary: "#64B5F6",
-  textPrimary: "#2A3548",
-  textSecondary: "#6B7A99",
-  background: "#F5F7FA",
-  surface: "#FFFFFF",
-  border: "#E3E8EF",
-  success: "#43A047",
-  error: "#E53935",
-  warning: "#FDD835",
-};
+const { colors, typography, spacing, borderRadius, shadows } = theme;
 
-const { width } = Dimensions.get("window");
-const cardRadius = 16;
-const buttonRadius = 28;
-
-// Definir los estilos correctamente
 const scheduleDetailStyles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
   container: {
     flex: 1,
-    backgroundColor: colors.background,
-  },
-  contentContainer: {
-    padding: 16,
-    paddingBottom: 100, // Espacio para el botón fijo
+    backgroundColor: colors.background.paper,
+    padding: spacing.md,
   },
   header: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    backgroundColor: colors.surface,
+    paddingVertical: spacing.sm,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-    ...Platform.select({
-      ios: {
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.05,
-        shadowRadius: 5,
-      },
-      android: {
-        elevation: 2,
-      },
-    }),
+    borderBottomColor: colors.border.light,
+    marginBottom: spacing.md,
   },
   backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: colors.background,
+    padding: spacing.sm,
   },
   headerTitle: {
-    fontSize: 17,
-    fontWeight: "600",
-    color: colors.textPrimary,
+    fontSize: typography.sizes.lg,
+    fontWeight: "bold",
+    color: colors.text.primary,
+    flex: 1,
     textAlign: "center",
   },
-  therapistCard: {
-    backgroundColor: colors.surface,
-    borderRadius: cardRadius,
-    padding: 16,
-    marginBottom: 16,
-    ...Platform.select({
-      ios: {
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.05,
-        shadowRadius: 8,
-      },
-      android: {
-        elevation: 2,
-      },
-    }),
+  profileContainer: {
+    alignItems: "center",
+    marginVertical: spacing.lg,
   },
+  avatar: {
+    backgroundColor: colors.grey[100],
+    ...shadows.sm,
+  },
+  therapistName: {
+    fontSize: typography.sizes.lg,
+    fontWeight: "bold",
+    color: colors.text.primary,
+    marginTop: spacing.sm,
+    textAlign: "center",
+  },
+  therapistSpecialty: {
+    fontSize: typography.sizes.sm,
+    color: colors.text.secondary,
+    textAlign: "center",
+    marginTop: spacing.xs,
+  },
+  section: {
+    marginBottom: spacing.xl,
+    backgroundColor: colors.background.paper,
+    borderRadius: borderRadius.md,
+  },
+  sectionTitle: {
+    fontSize: typography.sizes.md,
+    fontWeight: "bold",
+    color: colors.text.primary,
+    marginBottom: spacing.sm,
+  },
+  sectionSubtitle: {
+    fontSize: typography.sizes.sm,
+    color: colors.text.secondary,
+    marginBottom: spacing.md,
+  },
+  sectionText: {
+    fontSize: typography.sizes.sm,
+    color: colors.text.secondary,
+    lineHeight: 20,
+  },
+  hoursContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    marginTop: spacing.sm,
+  },
+  hourItem: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    borderRadius: borderRadius.xl,
+    backgroundColor: colors.background.default,
+    marginRight: spacing.sm,
+    marginBottom: spacing.sm,
+    borderWidth: 1,
+    borderColor: colors.border.main,
+  },
+  selectedHourItem: {
+    backgroundColor: colors.primary.main,
+    borderColor: colors.primary.main,
+  },
+  hourText: {
+    fontSize: typography.sizes.sm,
+    color: colors.grey[600],
+    fontWeight: "medium",
+  },
+  selectedHourText: {
+    color: colors.primary.contrastText,
+  },
+  reserveButton: {
+    backgroundColor: colors.primary.main,
+    borderRadius: borderRadius.md,
+    paddingVertical: spacing.md,
+    alignItems: "center",
+    marginTop: spacing.xl,
+    marginBottom: spacing.xl,
+    ...shadows.md,
+  },
+  reserveButtonText: {
+    color: colors.primary.contrastText,
+    fontSize: typography.sizes.md,
+    fontWeight: "semibold",
+  },
+  // Estilos para la sección de motivo
+  reasonContainer: {
+    backgroundColor: colors.background.paper,
+    borderRadius: borderRadius.lg,
+    padding: spacing.lg,
+    marginBottom: spacing.lg,
+    borderWidth: 1,
+    borderColor: colors.border.light,
+    ...shadows.sm,
+  },
+  reasonHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: spacing.sm,
+  },
+  reasonIcon: {
+    marginRight: spacing.sm,
+  },
+  reasonTitle: {
+    fontSize: typography.sizes.md,
+    fontWeight: "semibold",
+    color: colors.text.primary,
+    flex: 1,
+  },
+  reasonSubtitle: {
+    fontSize: typography.sizes.sm,
+    color: colors.text.secondary,
+    marginBottom: spacing.md,
+    lineHeight: 20,
+  },
+  reasonInput: {
+    backgroundColor: colors.grey[50],
+    marginBottom: spacing.sm,
+  },
+  reasonInputContent: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.sm,
+    fontSize: typography.sizes.sm,
+    lineHeight: 20,
+    color: colors.text.primary,
+  },
+  reasonInputOutline: {
+    borderRadius: borderRadius.md,
+    borderWidth: 1.5,
+  },
+  characterCount: {
+    fontSize: typography.sizes.xs,
+    color: colors.text.secondary,
+    textAlign: "right",
+    marginTop: spacing.xs,
+  },
+  // Estilos para el estado vacío
+  emptyState: {
+    alignItems: "center",
+    justifyContent: "center",
+    padding: spacing.xl,
+  },
+  emptyText: {
+    fontSize: typography.sizes.sm,
+    color: colors.text.secondary,
+    textAlign: "center",
+    marginTop: spacing.md,
+  },
+  // Estilos para el contenedor del botón fijo
+  buttonContainer: {
+    padding: spacing.md,
+    backgroundColor: colors.background.paper,
+    borderTopWidth: 1,
+    borderTopColor: colors.border.light,
+    ...shadows.md,
+  },
+  // Estilos para el botón deshabilitado
+  disabledButton: {
+    backgroundColor: colors.grey[300],
+    opacity: 0.7,
+  },
+  // Estilos para el icono del botón
+  buttonIcon: {
+    marginRight: spacing.sm,
+  },
+  // Estilos para el SafeArea
+  safeArea: {
+    flex: 1,
+    backgroundColor: colors.background.paper,
+  },
+  // Estilos para el contenedor de contenido
+  contentContainer: {
+    paddingBottom: spacing.xl,
+  },
+  // Estilos para la tarjeta del terapeuta
+  therapistCard: {
+    backgroundColor: colors.background.paper,
+    borderRadius: borderRadius.lg,
+    padding: spacing.md,
+    marginBottom: spacing.lg,
+    borderWidth: 1,
+    borderColor: colors.border.light,
+    ...shadows.sm,
+  },
+  // Estilos para la información del terapeuta
   therapistInfo: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 16,
-  },
-  avatar: {
-    backgroundColor: colors.primaryLight + "20",
-    marginRight: 12,
+    marginBottom: spacing.md,
   },
   therapistTextContainer: {
+    marginLeft: spacing.md,
     flex: 1,
   },
-  therapistName: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: colors.textPrimary,
-    marginBottom: 4,
-  },
-  therapistSpecialty: {
-    fontSize: 13,
-    color: colors.textSecondary,
-  },
+  // Estilos para el contenedor de horarios
   scheduleContainer: {
-    backgroundColor: colors.surface,
-    borderRadius: cardRadius,
-    padding: 20,
-    ...Platform.select({
-      ios: {
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.05,
-        shadowRadius: 8,
-      },
-      android: {
-        elevation: 2,
-      },
-    }),
+    backgroundColor: colors.background.paper,
+    borderRadius: borderRadius.lg,
+    padding: spacing.md,
+    marginBottom: spacing.lg,
+    borderWidth: 1,
+    borderColor: colors.border.light,
+    ...shadows.sm,
   },
+  // Estilos para el título principal
   mainTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: colors.textPrimary,
-    marginBottom: 8,
+    fontSize: typography.sizes.lg,
+    fontWeight: "bold",
+    color: colors.text.primary,
+    marginBottom: spacing.xs,
   },
   subtitle: {
-    fontSize: 14,
-    color: colors.textSecondary,
-    marginBottom: 20,
+    fontSize: typography.sizes.sm,
+    color: colors.text.secondary,
+    marginBottom: spacing.md,
   },
+  // Estilos para la sección de fecha
   dateSection: {
-    marginBottom: 24,
+    marginBottom: spacing.md,
   },
   dateHeader: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 16,
+    marginBottom: spacing.sm,
   },
   dateCircle: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: colors.primaryLight + "20",
+    backgroundColor: colors.primary.light,
     alignItems: "center",
     justifyContent: "center",
-    marginRight: 12,
+    marginRight: spacing.sm,
   },
   dateDay: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: colors.primary,
+    fontSize: typography.sizes.md,
+    fontWeight: "bold",
+    color: colors.primary.contrastText,
   },
   dateInfo: {
     flex: 1,
   },
   dateMonth: {
-    fontSize: 15,
-    fontWeight: "600",
-    color: colors.textPrimary,
+    fontSize: typography.sizes.sm,
+    fontWeight: "medium",
+    color: colors.text.primary,
   },
   dateWeekday: {
-    fontSize: 13,
-    color: colors.textSecondary,
+    fontSize: typography.sizes.xs,
+    color: colors.text.secondary,
   },
+
+  disabledReserveButton: {
+    backgroundColor: "#CBD5E0",
+    opacity: 0.6,
+  },
+
+  // Estilos para los slots de tiempo
   timeSlots: {
     flexDirection: "row",
     flexWrap: "wrap",
@@ -177,119 +292,28 @@ const scheduleDetailStyles = StyleSheet.create({
   timeSlot: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: colors.background,
-    borderRadius: 12,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    marginRight: 10,
-    marginBottom: 10,
+    backgroundColor: colors.background.default,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    borderRadius: borderRadius.md,
+    marginRight: spacing.sm,
+    marginBottom: spacing.sm,
     borderWidth: 1,
-    borderColor: colors.border,
-    minWidth: width / 2 - 40,
-    ...Platform.select({
-      ios: {
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.05,
-        shadowRadius: 2,
-      },
-      android: {
-        elevation: 1,
-      },
-    }),
+    borderColor: colors.border.main,
   },
   selectedTimeSlot: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
-    ...Platform.select({
-      ios: {
-        shadowColor: colors.primary,
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.2,
-        shadowRadius: 4,
-      },
-      android: {
-        elevation: 3,
-      },
-    }),
+    backgroundColor: colors.primary.main,
+    borderColor: colors.primary.main,
   },
   timeIcon: {
-    marginRight: 8,
+    marginRight: spacing.xs,
   },
   timeText: {
-    fontSize: 14,
-    color: colors.textPrimary,
-    fontWeight: "500",
+    fontSize: typography.sizes.sm,
+    color: colors.text.secondary,
   },
   selectedTimeText: {
-    color: "#FFFFFF",
-    fontWeight: "600",
-  },
-  emptyState: {
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 40,
-  },
-  emptyText: {
-    fontSize: 15,
-    color: colors.textSecondary,
-    textAlign: "center",
-    marginTop: 16,
-    maxWidth: "80%",
-  },
-  buttonContainer: {
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    backgroundColor: colors.surface,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    width: "100%",
-    ...Platform.select({
-      ios: {
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: -2 },
-        shadowOpacity: 0.05,
-        shadowRadius: 3,
-      },
-      android: {
-        elevation: 8,
-      },
-    }),
-  },
-  reserveButton: {
-    backgroundColor: colors.primary,
-    borderRadius: buttonRadius,
-    paddingVertical: 16,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    ...Platform.select({
-      ios: {
-        shadowColor: colors.primary,
-        shadowOffset: { width: 0, height: 3 },
-        shadowOpacity: 0.2,
-        shadowRadius: 5,
-      },
-      android: {
-        elevation: 3,
-      },
-    }),
-  },
-  disabledButton: {
-    backgroundColor: colors.primary + "80",
-  },
-  reserveButtonText: {
-    color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "600",
-    letterSpacing: 0.5,
-  },
-  buttonIcon: {
-    marginRight: 8,
+    color: colors.primary.contrastText,
   },
 });
 

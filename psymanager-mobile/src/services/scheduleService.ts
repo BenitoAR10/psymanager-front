@@ -1,5 +1,6 @@
 import { API_URL } from "../utils/urlConstant";
 import { ScheduleAvailabilityDto } from "../types/scheduleTypes";
+import type { ScheduleAvailabilityWithContactDto } from "../types/scheduleTypes";
 import { storage } from "../utils/storage";
 
 /**
@@ -38,7 +39,8 @@ export async function getAvailableSchedules({
 }
 
 /**
- * Obtiene los horarios disponibles del mismo terapeuta y fecha usando un horario base.
+ * Obtiene los horarios disponibles del mismo terapeuta y fecha usando un horario base,
+ * incluyendo email y teléfono del terapeuta.
  */
 export async function getRelatedSchedulesByScheduleId({
   token,
@@ -46,7 +48,7 @@ export async function getRelatedSchedulesByScheduleId({
 }: {
   token: string;
   scheduleId: number;
-}): Promise<ScheduleAvailabilityDto[]> {
+}): Promise<ScheduleAvailabilityWithContactDto[]> {
   const response = await fetch(
     `${API_URL}/api/schedules/available/by-schedule/${scheduleId}`,
     {
@@ -62,16 +64,17 @@ export async function getRelatedSchedulesByScheduleId({
 
   return await response.json();
 }
-
 /**
  * Crea una sesión programada para un horario específico.
  */
 export async function createScheduledSession({
   token,
   scheduleId,
+  reason,
 }: {
   token: string;
   scheduleId: number;
+  reason?: string;
 }): Promise<void> {
   const response = await fetch(`${API_URL}/api/sessions`, {
     method: "POST",
@@ -79,7 +82,10 @@ export async function createScheduledSession({
       "Content-Type": "application/json",
       Authorization: `Bearer ${token}`,
     },
-    body: JSON.stringify({ therapistScheduledId: scheduleId }),
+    body: JSON.stringify({
+      therapistScheduledId: scheduleId,
+      reason,
+    }),
   });
 
   if (!response.ok) {

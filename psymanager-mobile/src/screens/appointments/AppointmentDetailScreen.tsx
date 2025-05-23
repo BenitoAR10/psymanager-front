@@ -2,6 +2,8 @@
 "use client";
 
 import type React from "react";
+import { Linking } from "react-native";
+
 import { useEffect, useState } from "react";
 import {
   View,
@@ -61,6 +63,30 @@ const AppointmentDetailScreen: React.FC = () => {
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [cancelReason, setCancelReason] = useState("");
 
+  const handleCall = () => {
+    if (!appointment?.therapistPhoneNumber) return;
+
+    const phoneNumber = `tel:${appointment.therapistPhoneNumber}`;
+    Linking.openURL(phoneNumber).catch(() =>
+      Alert.alert("Error", "No se pudo abrir la aplicación de llamadas.")
+    );
+  };
+
+  const handleWhatsApp = () => {
+    if (!appointment?.therapistPhoneNumber) return;
+
+    // Elimina cualquier carácter no numérico y prepende el código de país
+    const localPhone = appointment.therapistPhoneNumber.replace(/\D+/g, "");
+    const fullPhone = `591${localPhone}`;
+    const url = `https://wa.me/${fullPhone}?text=${encodeURIComponent(
+      "Hola, me gustaría consultar sobre mi cita."
+    )}`;
+
+    // Simplemente intenta abrir, sin usar canOpenURL en Expo
+    Linking.openURL(url).catch(() =>
+      Alert.alert("Error", "No se pudo abrir WhatsApp.")
+    );
+  };
   const loadDetails = async (showLoader = true) => {
     if (!token) return;
 
@@ -352,9 +378,7 @@ const AppointmentDetailScreen: React.FC = () => {
               <View style={appointmentDetailStyles.therapistActions}>
                 <TouchableOpacity
                   style={appointmentDetailStyles.actionButton}
-                  onPress={() =>
-                    Alert.alert("Llamar", "Funcionalidad pendiente")
-                  }
+                  onPress={handleCall}
                 >
                   <MaterialCommunityIcons
                     name="phone"
@@ -367,9 +391,7 @@ const AppointmentDetailScreen: React.FC = () => {
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={appointmentDetailStyles.actionButton}
-                  onPress={() =>
-                    Alert.alert("Mensaje", "Funcionalidad pendiente")
-                  }
+                  onPress={handleWhatsApp}
                 >
                   <MaterialCommunityIcons
                     name="message-text-outline"

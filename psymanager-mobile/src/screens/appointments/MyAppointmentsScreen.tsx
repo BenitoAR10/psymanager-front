@@ -372,6 +372,15 @@ const MyAppointmentsScreen: React.FC = () => {
           }}
           renderItem={({ item, index, section }) => {
             const isPast = isPastAppointment(item);
+            const pastInSection = section.data.filter(isPastAppointment);
+            const futureInSection = section.data.filter(
+              (a) => !isPastAppointment(a)
+            );
+
+            const showPastSubtitle =
+              isPast && pastInSection[0]?.sessionId === item.sessionId;
+            const showFutureSubtitle =
+              !isPast && futureInSection[0]?.sessionId === item.sessionId;
 
             return (
               <MotiView

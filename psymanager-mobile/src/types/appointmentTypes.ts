@@ -12,6 +12,7 @@ export interface UserAppointmentDto {
 export interface UserAppointmentDetailDto {
   sessionId: number;
   therapistName: string;
+  therapistPhoneNumber: string;
   date: string;
   startTime: string;
   endTime: string;
