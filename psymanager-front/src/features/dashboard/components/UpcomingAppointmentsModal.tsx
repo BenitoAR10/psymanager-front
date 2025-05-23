@@ -68,6 +68,18 @@ const isFuture = (dateTimeStr: string) => {
   return start > now;
 };
 
+function groupByPatient(appointments: UpcomingAppointmentDto[]) {
+  const map = new Map<string, UpcomingAppointmentDto[]>();
+  for (const appt of appointments) {
+    const name = appt.studentName.trim();
+    if (!map.has(name)) {
+      map.set(name, []);
+    }
+    map.get(name)!.push(appt);
+  }
+  return map;
+}
+
 const UpcomingAppointmentsModal: FC<UpcomingAppointmentsModalProps> = ({
   open,
   onClose,
@@ -169,7 +181,7 @@ const UpcomingAppointmentsModal: FC<UpcomingAppointmentsModalProps> = ({
   const filteredAppointments = useMemo(() => {
     let filtered = [...appointments];
 
-    // Aplicar filtro de búsqueda
+    // Filtro de búsqueda
     if (searchTerm.trim()) {
       const term = searchTerm.toLowerCase();
       filtered = filtered.filter((appt) =>
@@ -177,41 +189,34 @@ const UpcomingAppointmentsModal: FC<UpcomingAppointmentsModalProps> = ({
       );
     }
 
-    // Aplicar filtro por tab
-    if (tabValue === 1) {
-      // Solo citas en curso
-      filtered = filtered.filter((appt) => isInProgress(appt.dateTime));
-    } else if (tabValue === 2) {
-      // Solo citas programadas (futuras y aceptadas)
+    // Filtro por pestaña
+    if (tabValue === 0) {
+      // "Todas": solo citas individuales
+      filtered = filtered.filter((appt) => !appt.isPartOfTreatment);
+    } else if (tabValue === 1) {
+      // "Programadas": individuales futuras y aceptadas
       filtered = filtered.filter(
-        (appt) => isFuture(appt.dateTime) && appt.state === "ACCEPTED"
+        (appt) =>
+          !appt.isPartOfTreatment &&
+          isFuture(appt.dateTime) &&
+          appt.state === "ACCEPTED"
       );
-    } else if (tabValue === 3) {
-      // Solo citas pendientes
-      filtered = filtered.filter((appt) => appt.state === "PENDING");
+    } else if (tabValue === 2) {
+      // "Tratamientos activos": en tratamiento, futuras
+      filtered = filtered.filter(
+        (appt) => appt.isPartOfTreatment && isFuture(appt.dateTime)
+      );
     }
 
-    // Reordenar para mostrar primero la cita destacada
-    if (highlightedId) {
-      const idx = filtered.findIndex((a) => a.appointmentId === highlightedId);
-      if (idx >= 0) {
-        const [highlighted] = filtered.splice(idx, 1);
-        filtered.unshift(highlighted);
-      }
-    }
-
-    // Ordenar por fecha (más reciente primero)
+    // Ordenar: En curso primero, luego por fecha
     return filtered.sort((a, b) => {
-      // Primero las citas en curso
       const aInProgress = isInProgress(a.dateTime);
       const bInProgress = isInProgress(b.dateTime);
       if (aInProgress && !bInProgress) return -1;
       if (!aInProgress && bInProgress) return 1;
-
-      // Luego por fecha
       return new Date(a.dateTime).getTime() - new Date(b.dateTime).getTime();
     });
-  }, [appointments, searchTerm, tabValue, highlightedId]);
+  }, [appointments, searchTerm, tabValue]);
 
   return (
     <Dialog
@@ -326,16 +331,18 @@ const UpcomingAppointmentsModal: FC<UpcomingAppointmentsModalProps> = ({
             },
           }}
         >
-          <Tab label="Todas" />
-          <Tab label="En curso" />
-          <Tab label="Programadas" />
-          <Tab label="Pendientes" />
+          <Tab label="Citas individuales" />
+          <Tab label="Citas individuales programadas" />
+          <Tab label="Citas de tratamiento activas" />
         </Tabs>
       </Box>
 
       <DialogContent
         sx={{
           p: 0,
+          minHeight: 400,
+          maxHeight: 600,
+          overflowY: "auto",
           "&::-webkit-scrollbar": {
             width: "8px",
           },
@@ -392,8 +399,183 @@ const UpcomingAppointmentsModal: FC<UpcomingAppointmentsModalProps> = ({
                 : "No tienes citas próximas registradas en este momento."}
             </Typography>
           </Box>
+        ) : tabValue === 2 ? (
+          // Tratamientos activos agrupados por paciente
+          <Box>
+            {[...groupByPatient(filteredAppointments)].map(
+              ([patientName, citas], i) => (
+                <Box key={patientName}>
+                  <Typography
+                    variant="subtitle2"
+                    sx={{
+                      px: 2,
+                      pt: i === 0 ? 2 : 4,
+                      pb: 1,
+                      fontWeight: 600,
+                      color: "text.primary",
+                      textTransform: "uppercase",
+                      fontSize: "0.75rem",
+                    }}
+                  >
+                    {patientName}
+                  </Typography>
+                  <List disablePadding>
+                    {citas.map((appt, index) => {
+                      const { dateFormatted, timeFormatted } = formatDateTime(
+                        appt.dateTime
+                      );
+                      const isActive = isInProgress(appt.dateTime);
+                      const statusText = getStatusText(
+                        appt.state,
+                        appt.dateTime
+                      );
+
+                      return (
+                        <React.Fragment key={appt.appointmentId}>
+                          <ListItem
+                            sx={{
+                              px: 2,
+                              py: 1.5,
+                              bgcolor: isActive
+                                ? alpha(theme.palette.info.light, 0.05)
+                                : "transparent",
+                              borderLeft: isActive
+                                ? `4px solid ${theme.palette.info.light}`
+                                : "none",
+                              pl: isActive ? 1.5 : 2,
+                            }}
+                          >
+                            <Avatar
+                              sx={{
+                                width: 40,
+                                height: 40,
+                                fontWeight: 600,
+                                bgcolor: alpha(theme.palette.primary.main, 0.1),
+                                color: theme.palette.primary.main,
+                                mr: 2,
+                                border: isActive
+                                  ? `2px solid ${theme.palette.info.main}`
+                                  : "none",
+                              }}
+                            >
+                              {getInitials(appt.studentName)}
+                            </Avatar>
+                            <ListItemText
+                              primary={
+                                <Box display="flex" alignItems="center" gap={1}>
+                                  <Typography
+                                    variant="body1"
+                                    fontWeight={600}
+                                    color="text.primary"
+                                  >
+                                    {appt.studentName}
+                                  </Typography>
+                                  <Chip
+                                    icon={
+                                      <MedicalServicesOutlinedIcon
+                                        style={{ fontSize: 12 }}
+                                      />
+                                    }
+                                    label="Tratamiento"
+                                    color="default"
+                                    size="small"
+                                    sx={{
+                                      fontWeight: 600,
+                                      fontSize: "0.7rem",
+                                      height: 20,
+                                      bgcolor: alpha(
+                                        theme.palette.grey[600],
+                                        0.1
+                                      ),
+                                      "& .MuiChip-icon": {
+                                        color: theme.palette.grey[600],
+                                      },
+                                    }}
+                                  />
+                                </Box>
+                              }
+                              secondary={
+                                <Stack
+                                  direction="row"
+                                  spacing={2}
+                                  alignItems="center"
+                                >
+                                  <Box
+                                    sx={{
+                                      display: "flex",
+                                      gap: 0.5,
+                                      alignItems: "center",
+                                    }}
+                                  >
+                                    <AccessTimeIcon
+                                      sx={{
+                                        fontSize: 14,
+                                        color: "text.secondary",
+                                      }}
+                                    />
+                                    <Typography
+                                      variant="caption"
+                                      color="text.secondary"
+                                    >
+                                      {timeFormatted}
+                                    </Typography>
+                                  </Box>
+                                  <Box
+                                    sx={{
+                                      display: "flex",
+                                      gap: 0.5,
+                                      alignItems: "center",
+                                    }}
+                                  >
+                                    <EventNoteIcon
+                                      sx={{
+                                        fontSize: 14,
+                                        color: "text.secondary",
+                                      }}
+                                    />
+                                    <Typography
+                                      variant="caption"
+                                      color="text.secondary"
+                                      sx={{ textTransform: "capitalize" }}
+                                    >
+                                      {dateFormatted}
+                                    </Typography>
+                                  </Box>
+                                </Stack>
+                              }
+                            />
+                            <Tooltip title={statusText} arrow>
+                              <Chip
+                                icon={getStatusIcon(appt.state, appt.dateTime)}
+                                label={statusText}
+                                size="small"
+                                sx={{
+                                  ml: 2,
+                                  fontWeight: 600,
+                                  fontSize: "0.75rem",
+                                  height: 24,
+                                  ...getChipStyles(appt.state, appt.dateTime),
+                                  "& .MuiChip-icon": {
+                                    fontSize: 14,
+                                  },
+                                }}
+                              />
+                            </Tooltip>
+                          </ListItem>
+                          {index < citas.length - 1 && (
+                            <Divider sx={{ opacity: 0.6 }} />
+                          )}
+                        </React.Fragment>
+                      );
+                    })}
+                  </List>
+                </Box>
+              )
+            )}
+          </Box>
         ) : (
-          <List sx={{ py: 0 }}>
+          // Citas individuales (planas)
+          <List disablePadding>
             {filteredAppointments.map((appt, index) => {
               const { dateFormatted, timeFormatted } = formatDateTime(
                 appt.dateTime
@@ -464,49 +646,13 @@ const UpcomingAppointmentsModal: FC<UpcomingAppointmentsModalProps> = ({
                     </Avatar>
                     <ListItemText
                       primary={
-                        <Box display="flex" alignItems="center" gap={1}>
-                          <Typography
-                            variant="body1"
-                            fontWeight={600}
-                            color="text.primary"
-                          >
-                            {appt.studentName}
-                          </Typography>
-                          {appt.isPartOfTreatment && (
-                            <Chip
-                              icon={
-                                <MedicalServicesOutlinedIcon
-                                  style={{ fontSize: 12 }}
-                                />
-                              }
-                              label="Tratamiento"
-                              color="default"
-                              size="small"
-                              sx={{
-                                fontWeight: 600,
-                                fontSize: "0.7rem",
-                                height: 20,
-                                bgcolor: alpha(theme.palette.grey[600], 0.1),
-                                "& .MuiChip-icon": {
-                                  color: theme.palette.grey[600],
-                                },
-                              }}
-                            />
-                          )}
-                          {appt.appointmentId === highlightedId && (
-                            <Chip
-                              label="Destacada"
-                              size="small"
-                              sx={{
-                                fontWeight: 600,
-                                fontSize: "0.7rem",
-                                height: 20,
-                                bgcolor: alpha(theme.palette.info.main, 0.1),
-                                color: theme.palette.info.dark,
-                              }}
-                            />
-                          )}
-                        </Box>
+                        <Typography
+                          variant="body1"
+                          fontWeight={600}
+                          color="text.primary"
+                        >
+                          {appt.studentName}
+                        </Typography>
                       }
                       secondary={
                         <Stack direction="row" spacing={2} alignItems="center">

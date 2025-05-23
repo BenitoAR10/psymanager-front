@@ -1,16 +1,11 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { Box, Typography, Card, CardContent, Paper } from "@mui/material";
+import { Box, Typography, Paper } from "@mui/material";
 
-import AssignedStudents, {
-  AssignedStudent,
-} from "../components/AssignedStudents";
 import CalendarWidget from "../components/CalendarWidget";
 import { useUpcomingAppointmentsQuery } from "../hooks/useUpcomingAppointmentsQuery";
-import { useActiveTreatmentPatientsQuery } from "../hooks/useActiveTreatmentPatientsQuery";
-import { ActiveTreatmentStudentDto } from "../types";
+
 import TreatmentModal from "../../treatments/components/TreatmentModal";
 import { useAuth } from "../../auth/context/AuthContext";
 import UpcomingAppointmentsModal from "../components/UpcomingAppointmentsModal";
@@ -21,13 +16,9 @@ const Dashboard: React.FC = () => {
   const { user } = useAuth();
   const therapistId = user?.userId;
 
-  const navigate = useNavigate();
-
   const { data: upcomingAppointments = [] } = useUpcomingAppointmentsQuery(
     therapistId ?? 0
   );
-  const { data: activeTreatmentStudents = [] } =
-    useActiveTreatmentPatientsQuery(therapistId ?? 0);
 
   const [isTreatmentModalOpen, setIsTreatmentModalOpen] = useState(false);
   const [isAppointmentsModalOpen, setIsAppointmentsModalOpen] = useState(false);
@@ -52,25 +43,6 @@ const Dashboard: React.FC = () => {
     setSelectedPatientName(patientName);
     setIsTreatmentModalOpen(true);
   };
-  function mapToAssignedStudentFromTreatment(
-    dto: ActiveTreatmentStudentDto
-  ): AssignedStudent {
-    return {
-      patientId: dto.patientId,
-      therapistId: therapistId ?? 0,
-      name: dto.studentName,
-      status: "En tratamiento",
-      startDate: dto.startDate,
-      endDate: dto.endDate,
-      assignedSessions: dto.totalSessions ?? 0,
-      completedSessions: dto.completedSessions ?? 0,
-      treatmentId: dto.treatmentId,
-    };
-  }
-
-  const assignedStudents = Array.isArray(activeTreatmentStudents)
-    ? activeTreatmentStudents.map(mapToAssignedStudentFromTreatment)
-    : [];
 
   const eventDates = upcomingAppointments.map(
     (appt) => new Date(appt.dateTime)
@@ -85,10 +57,6 @@ const Dashboard: React.FC = () => {
   const [highlightedAppointmentId, setHighlightedAppointmentId] = useState<
     number | null
   >(null);
-
-  const handleViewAllStudents = () => {
-    navigate("/dashboard/estudiantes");
-  };
 
   const handleViewAllAppointments = () => {
     const upcoming = [...upcomingAppointments].filter(
@@ -105,6 +73,7 @@ const Dashboard: React.FC = () => {
 
   return (
     <Box sx={{ width: "100%", pb: 6 }}>
+      {/* Banner informativo (más corto) */}
       <Paper
         elevation={3}
         sx={{
@@ -112,11 +81,6 @@ const Dashboard: React.FC = () => {
           mb: 4,
           borderRadius: 3,
           background: "linear-gradient(135deg, #4DB6AC, #26A69A)",
-          display: "flex",
-          flexDirection: { xs: "column", md: "row" },
-          justifyContent: "space-between",
-          alignItems: { xs: "flex-start", md: "center" },
-          gap: { xs: 4, md: 0 },
           position: "relative",
           overflow: "hidden",
           "&::before": {
@@ -132,7 +96,7 @@ const Dashboard: React.FC = () => {
           },
         }}
       >
-        <Box sx={{ maxWidth: { xs: "100%", md: "60%" }, zIndex: 1 }}>
+        <Box sx={{ maxWidth: "100%", zIndex: 1 }}>
           <Typography
             variant="h4"
             sx={{
@@ -151,10 +115,17 @@ const Dashboard: React.FC = () => {
             Organiza tu agenda, visualiza tus citas y accede al historial de tus
             estudiantes en un solo lugar.
           </Typography>
+          <Typography
+            variant="body1"
+            sx={{ color: "rgba(255, 255, 255, 0.9)", maxWidth: "90%" }}
+          >
+            Aquí podrás ver tus citas próximas y gestionar los tratamientos de
+            tus pacientes.
+          </Typography>
         </Box>
       </Paper>
 
-      {/* Reemplazando Grid container por Box con flexbox */}
+      {/* Contenedor de calendario + lista de citas */}
       <Box
         sx={{
           display: "flex",
@@ -162,59 +133,32 @@ const Dashboard: React.FC = () => {
           gap: 4,
         }}
       >
-        {/* Columna izquierda (antes Grid item xs={12} md={8}) */}
-        <Box sx={{ width: { xs: "100%", md: "66.666%" } }}>
-          <AssignedStudents
-            students={assignedStudents}
-            onViewAll={handleViewAllStudents}
+        {/* Lista de citas */}
+        <Box sx={{ flex: 1 }}>
+          <UpcomingAppointments
+            appointments={upcomingAppointments}
+            onViewAll={handleViewAllAppointments}
             onStartTreatment={handleStartTreatment}
+          />
+
+          <UpcomingAppointmentsModal
+            open={isAppointmentsModalOpen}
+            onClose={() => setIsAppointmentsModalOpen(false)}
+            appointments={upcomingAppointments}
+            highlightedId={highlightedAppointmentId}
           />
         </Box>
 
-        {/* Columna derecha (antes Grid item xs={12} md={4}) */}
-        <Box sx={{ width: { xs: "100%", md: "33.333%" } }}>
-          <Card
-            elevation={2}
-            sx={{ borderRadius: 3, position: "sticky", top: 24 }}
-          >
-            <CardContent sx={{ p: 0 }}>
-              <Box
-                sx={{
-                  p: 3,
-                  borderBottom: "1px solid",
-                  borderColor: "divider",
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                }}
-              >
-                <Typography
-                  variant="h6"
-                  sx={{ fontWeight: 600, color: "text.primary" }}
-                >
-                  Próximas citas
-                </Typography>
-              </Box>
-
-              <Box sx={{ p: 3 }}>
-                <CalendarWidget eventDates={eventDates} />
-                <Box sx={{ mt: 3 }}>
-                  <UpcomingAppointments
-                    appointments={upcomingAppointments}
-                    onViewAll={handleViewAllAppointments}
-                    onStartTreatment={handleStartTreatment}
-                  />
-
-                  <UpcomingAppointmentsModal
-                    open={isAppointmentsModalOpen}
-                    onClose={() => setIsAppointmentsModalOpen(false)}
-                    appointments={upcomingAppointments}
-                    highlightedId={highlightedAppointmentId}
-                  />
-                </Box>
-              </Box>
-            </CardContent>
-          </Card>
+        {/* Calendario flotante a la derecha */}
+        <Box
+          sx={{
+            width: { xs: "100%", md: "300px" },
+            flexShrink: 0,
+            position: "sticky",
+            top: 24,
+          }}
+        >
+          <CalendarWidget eventDates={eventDates} />
         </Box>
       </Box>
 

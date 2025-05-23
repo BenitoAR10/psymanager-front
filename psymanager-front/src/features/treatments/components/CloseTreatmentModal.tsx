@@ -33,14 +33,12 @@ interface CloseTreatmentModalProps {
   open: boolean;
   onClose: () => void;
   treatmentId: number;
-  onSuccess: () => void;
 }
 
 const CloseTreatmentModal: React.FC<CloseTreatmentModalProps> = ({
   open,
   onClose,
   treatmentId,
-  onSuccess,
 }) => {
   const theme = useTheme();
   const [reason, setReason] = useState("");
@@ -59,7 +57,6 @@ const CloseTreatmentModal: React.FC<CloseTreatmentModalProps> = ({
     try {
       await mutation.mutateAsync({ reason, closingDate: date });
       toast.success("Tratamiento cerrado exitosamente.");
-      onSuccess();
       onClose();
 
       setTimeout(() => {

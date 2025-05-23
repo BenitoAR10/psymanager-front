@@ -9,6 +9,7 @@ export interface UpcomingAppointmentDto {
   dateTime: string;
   state: string;
   isPartOfTreatment: boolean;
+  isCompleted: boolean;
 }
 
 export interface CreateTreatmentPlanRequestDto {

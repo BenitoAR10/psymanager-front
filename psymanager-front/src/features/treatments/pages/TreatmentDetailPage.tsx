@@ -569,7 +569,6 @@ const TreatmentDetailPage: React.FC = () => {
         open={isCloseModalOpen}
         onClose={closeCloseModal}
         treatmentId={data.treatmentId}
-        onSuccess={refetch}
       />
 
       <Dialog
