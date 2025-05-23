@@ -13,14 +13,19 @@ export function useUpcomingAppointmentsQuery(limit: number) {
     staleTime: 1000 * 60,
     select: (data) => {
       const now = new Date();
+      const GRACE_MINUTES = 10;
+
       return data
         .filter((appt) => {
-          if (appt.state !== "ACCEPTED") return false;
-
           const start = new Date(appt.dateTime);
           const end = new Date(start.getTime() + 60 * 60 * 1000);
 
-          return end >= now;
+          const isActiveAccepted = appt.state === "ACCEPTED" && end >= now;
+          const isGraceCompleted =
+            appt.state === "COMPLETED" &&
+            now <= new Date(end.getTime() + GRACE_MINUTES * 60 * 1000);
+
+          return isActiveAccepted || isGraceCompleted;
         })
         .slice(0, limit);
     },

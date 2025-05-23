@@ -89,6 +89,26 @@ const UpcomingAppointments: React.FC<UpcomingAppointmentsProps> = ({
     }
   };
 
+  const shouldKeepVisible = (appt: Appointment) => {
+    const start = new Date(appt.dateTime);
+    const end = new Date(start.getTime() + 60 * 60 * 1000); // duración 1h
+    const now = new Date();
+
+    // Mostrar si la sesión está en curso
+    if (now >= start && now <= end) return true;
+
+    // Mostrar si la sesión fue completada y estamos dentro de 10 minutos después
+    if (
+      appt.state === "COMPLETED" &&
+      now <= new Date(end.getTime() + 10 * 60 * 1000)
+    ) {
+      return true;
+    }
+
+    // Mostrar si todavía no terminó
+    return now <= end;
+  };
+
   const formatDateTime = (dateTimeStr: string) => {
     const date = new Date(dateTimeStr);
     return {
@@ -168,7 +188,8 @@ const UpcomingAppointments: React.FC<UpcomingAppointmentsProps> = ({
   };
 
   // Reordenar: primero en curso, luego las demás por fecha
-  const sortedAppointments = [...appointments]
+  const sortedAppointments = appointments
+    .filter(shouldKeepVisible)
     .sort((a, b) => {
       const aInProgress = isInProgress(a.dateTime);
       const bInProgress = isInProgress(b.dateTime);
@@ -283,7 +304,8 @@ const UpcomingAppointments: React.FC<UpcomingAppointmentsProps> = ({
               const startTime = new Date(appt.dateTime);
               const canMarkComplete = now >= startTime;
               const canStartTreatment =
-                appt.isCompleted && !appt.isPartOfTreatment;
+                appt.state === "COMPLETED" && !appt.isPartOfTreatment;
+
               const status = getStatusText(appt.state, appt.dateTime);
               const isActive = isInProgress(appt.dateTime);
               const isHovered = hoveredItem === appt.appointmentId;
@@ -533,7 +555,11 @@ const UpcomingAppointments: React.FC<UpcomingAppointmentsProps> = ({
                           mt: 0.5,
                         }}
                       >
-                        {canMarkComplete && !appt.isCompleted && (
+                        <Fade
+                          in={canMarkComplete && appt.state !== "COMPLETED"}
+                          timeout={300}
+                          unmountOnExit
+                        >
                           <Button
                             variant="outlined"
                             size="small"
@@ -571,9 +597,13 @@ const UpcomingAppointments: React.FC<UpcomingAppointmentsProps> = ({
                               "Completar"
                             )}
                           </Button>
-                        )}
+                        </Fade>
 
-                        {canStartTreatment && (
+                        <Fade
+                          in={canStartTreatment}
+                          timeout={300}
+                          unmountOnExit
+                        >
                           <Button
                             variant="contained"
                             size="small"
@@ -611,7 +641,7 @@ const UpcomingAppointments: React.FC<UpcomingAppointmentsProps> = ({
                           >
                             Iniciar tratamiento
                           </Button>
-                        )}
+                        </Fade>
                       </Box>
                     )}
                   </ListItem>

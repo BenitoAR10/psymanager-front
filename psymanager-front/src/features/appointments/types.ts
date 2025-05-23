@@ -6,4 +6,5 @@ export interface UpcomingAppointmentDto {
   studentName: string;
   dateTime: string;
   state: string;
+  reason?: string;
 }

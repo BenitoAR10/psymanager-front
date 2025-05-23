@@ -4,10 +4,8 @@ import type React from "react";
 import {
   Menu,
   MenuItem,
-  IconButton,
   Typography,
   Box,
-  Tooltip,
   Badge,
   Avatar,
   Button,
@@ -15,12 +13,16 @@ import {
   useTheme,
   CircularProgress,
   Stack,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from "@mui/material";
-import CheckCircleIcon from "@mui/icons-material/CheckCircle";
-import CancelIcon from "@mui/icons-material/Cancel";
+
 import NotificationsNoneIcon from "@mui/icons-material/NotificationsNone";
 import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
+import { useState } from "react";
 import type { UpcomingAppointmentDto } from "../../features/appointments/types";
 
 export interface NotificationsMenuProps {
@@ -46,8 +48,20 @@ const NotificationsMenu: React.FC<NotificationsMenuProps> = ({
   onReject,
 }) => {
   const theme = useTheme();
+  const [selectedAppointment, setSelectedAppointment] =
+    useState<UpcomingAppointmentDto | null>(null);
+  const [isModalOpen, setModalOpen] = useState(false);
 
-  // Función para formatear la fecha y hora
+  const handleOpenModal = (appt: UpcomingAppointmentDto) => {
+    setSelectedAppointment(appt);
+    setModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setSelectedAppointment(null);
+    setModalOpen(false);
+  };
+
   const formatDateTime = (dateTimeStr: string) => {
     const date = new Date(dateTimeStr);
     return date.toLocaleString("es-ES", {
@@ -58,7 +72,6 @@ const NotificationsMenu: React.FC<NotificationsMenuProps> = ({
     });
   };
 
-  // Función para obtener las iniciales del nombre
   const getInitials = (name: string) => {
     return name
       .split(" ")
@@ -69,168 +82,175 @@ const NotificationsMenu: React.FC<NotificationsMenuProps> = ({
   };
 
   return (
-    <Menu
-      anchorEl={anchorEl}
-      open={open}
-      onClose={onClose}
-      PaperProps={{
-        elevation: 3,
-        sx: {
-          width: 320,
-          maxHeight: 400,
-          overflow: "auto",
-          borderRadius: 2,
-          mt: 1,
-          boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
-          "&::-webkit-scrollbar": {
-            width: "6px",
+    <>
+      <Menu
+        anchorEl={anchorEl}
+        open={open}
+        onClose={onClose}
+        PaperProps={{
+          elevation: 3,
+          sx: {
+            width: 320,
+            maxHeight: 400,
+            overflow: "auto",
+            borderRadius: 2,
+            mt: 1,
+            boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
+            "&::-webkit-scrollbar": {
+              width: "6px",
+            },
+            "&::-webkit-scrollbar-track": {
+              background: "transparent",
+            },
+            "&::-webkit-scrollbar-thumb": {
+              background: theme.palette.grey[300],
+              borderRadius: "3px",
+            },
+            "&::-webkit-scrollbar-thumb:hover": {
+              background: theme.palette.grey[400],
+            },
           },
-          "&::-webkit-scrollbar-track": {
-            background: "transparent",
-          },
-          "&::-webkit-scrollbar-thumb": {
-            background: theme.palette.grey[300],
-            borderRadius: "3px",
-          },
-          "&::-webkit-scrollbar-thumb:hover": {
-            background: theme.palette.grey[400],
-          },
-        },
-      }}
-      transformOrigin={{ horizontal: "right", vertical: "top" }}
-      anchorOrigin={{ horizontal: "right", vertical: "bottom" }}
-    >
-      {/* Encabezado del menú */}
-      <Box
-        sx={{
-          px: 2.5,
-          py: 1.5,
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          borderBottom: "1px solid",
-          borderColor: "divider",
-          bgcolor: "background.paper",
-          position: "sticky",
-          top: 0,
-          zIndex: 1,
         }}
+        transformOrigin={{ horizontal: "right", vertical: "top" }}
+        anchorOrigin={{ horizontal: "right", vertical: "bottom" }}
       >
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-          <Badge
-            badgeContent={pending.length}
-            color="error"
-            sx={{
-              "& .MuiBadge-badge": {
-                fontSize: "0.65rem",
-                height: 18,
-                minWidth: 18,
-                fontWeight: 600,
-              },
-            }}
-          >
-            <NotificationsNoneIcon color="primary" fontSize="small" />
-          </Badge>
-          <Typography variant="subtitle1" fontWeight={600} color="text.primary">
-            Solicitudes pendientes
-          </Typography>
+        <Box
+          sx={{
+            px: 2.5,
+            py: 1.5,
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            borderBottom: "1px solid",
+            borderColor: "divider",
+            bgcolor: "background.paper",
+            position: "sticky",
+            top: 0,
+            zIndex: 1,
+          }}
+        >
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <Badge
+              badgeContent={pending.length}
+              color="error"
+              sx={{
+                "& .MuiBadge-badge": {
+                  fontSize: "0.65rem",
+                  height: 18,
+                  minWidth: 18,
+                  fontWeight: 600,
+                },
+              }}
+            >
+              <NotificationsNoneIcon color="primary" fontSize="small" />
+            </Badge>
+            <Typography
+              variant="subtitle1"
+              fontWeight={600}
+              color="text.primary"
+            >
+              Solicitudes pendientes
+            </Typography>
+          </Box>
+          {pending.length > 0 && (
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              fontWeight={500}
+            >
+              {pending.length} {pending.length === 1 ? "nueva" : "nuevas"}
+            </Typography>
+          )}
         </Box>
-        {pending.length > 0 && (
-          <Typography variant="caption" color="text.secondary" fontWeight={500}>
-            {pending.length} {pending.length === 1 ? "nueva" : "nuevas"}
-          </Typography>
-        )}
-      </Box>
 
-      {/* Contenido del menú */}
-      {loading ? (
-        <Box
-          sx={{
-            py: 4,
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            flexDirection: "column",
-          }}
-        >
-          <CircularProgress
-            size={32}
-            thickness={4}
-            color="primary"
-            sx={{ mb: 2 }}
-          />
-          <Typography variant="body2" color="text.secondary">
-            Cargando solicitudes...
-          </Typography>
-        </Box>
-      ) : error ? (
-        <Box
-          sx={{
-            py: 4,
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            flexDirection: "column",
-          }}
-        >
-          <Avatar
+        {loading ? (
+          <Box
             sx={{
-              bgcolor: alpha(theme.palette.error.main, 0.1),
-              color: theme.palette.error.main,
-              width: 48,
-              height: 48,
-              mb: 2,
+              py: 4,
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              flexDirection: "column",
             }}
           >
-            <ErrorOutlineIcon />
-          </Avatar>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-            Error al cargar las solicitudes
-          </Typography>
-          <Button
-            size="small"
-            variant="outlined"
-            color="primary"
-            onClick={onClose}
+            <CircularProgress
+              size={32}
+              thickness={4}
+              color="primary"
+              sx={{ mb: 2 }}
+            />
+            <Typography variant="body2" color="text.secondary">
+              Cargando solicitudes...
+            </Typography>
+          </Box>
+        ) : error ? (
+          <Box
             sx={{
-              borderRadius: 1.5,
-              textTransform: "none",
-              fontSize: "0.8rem",
+              py: 4,
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              flexDirection: "column",
             }}
           >
-            Intentar nuevamente
-          </Button>
-        </Box>
-      ) : pending.length === 0 ? (
-        <Box
-          sx={{
-            py: 4,
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            flexDirection: "column",
-          }}
-        >
-          <Avatar
+            <Avatar
+              sx={{
+                bgcolor: alpha(theme.palette.error.main, 0.1),
+                color: theme.palette.error.main,
+                width: 48,
+                height: 48,
+                mb: 2,
+              }}
+            >
+              <ErrorOutlineIcon />
+            </Avatar>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+              Error al cargar las solicitudes
+            </Typography>
+            <Button
+              size="small"
+              variant="outlined"
+              color="primary"
+              onClick={onClose}
+              sx={{
+                borderRadius: 1.5,
+                textTransform: "none",
+                fontSize: "0.8rem",
+              }}
+            >
+              Intentar nuevamente
+            </Button>
+          </Box>
+        ) : pending.length === 0 ? (
+          <Box
             sx={{
-              bgcolor: alpha(theme.palette.primary.main, 0.1),
-              color: theme.palette.primary.main,
-              width: 48,
-              height: 48,
-              mb: 2,
+              py: 4,
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              flexDirection: "column",
             }}
           >
-            <NotificationsNoneIcon />
-          </Avatar>
-          <Typography variant="body2" color="text.secondary">
-            No hay solicitudes pendientes
-          </Typography>
-        </Box>
-      ) : (
-        <>
-          {pending.slice(0, 5).map((appt, index) => (
+            <Avatar
+              sx={{
+                bgcolor: alpha(theme.palette.primary.main, 0.1),
+                color: theme.palette.primary.main,
+                width: 48,
+                height: 48,
+                mb: 2,
+              }}
+            >
+              <NotificationsNoneIcon />
+            </Avatar>
+            <Typography variant="body2" color="text.secondary">
+              No hay solicitudes pendientes
+            </Typography>
+          </Box>
+        ) : (
+          pending.slice(0, 5).map((appt, index) => (
             <MenuItem
               key={appt.appointmentId}
+              onClick={() => handleOpenModal(appt)}
               sx={{
                 py: 1.5,
                 px: 2,
@@ -239,6 +259,7 @@ const NotificationsMenu: React.FC<NotificationsMenuProps> = ({
                     ? "1px solid"
                     : "none",
                 borderColor: "divider",
+                cursor: "pointer",
                 "&:hover": {
                   bgcolor: alpha(theme.palette.primary.main, 0.04),
                 },
@@ -282,65 +303,81 @@ const NotificationsMenu: React.FC<NotificationsMenuProps> = ({
                       <Typography
                         variant="caption"
                         color="text.secondary"
-                        sx={{
-                          fontSize: "0.7rem",
-                          textTransform: "capitalize",
-                        }}
+                        sx={{ fontSize: "0.7rem", textTransform: "capitalize" }}
                       >
                         {formatDateTime(appt.dateTime)}
                       </Typography>
                     </Box>
                   </Stack>
                 </Box>
-                <Box sx={{ display: "flex", alignItems: "center", ml: 1 }}>
-                  <Tooltip title="Aceptar solicitud" arrow>
-                    <IconButton
-                      size="small"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onAccept(appt.appointmentId);
-                      }}
-                      sx={{
-                        color: theme.palette.success.main,
-                        bgcolor: alpha(theme.palette.success.main, 0.1),
-                        mr: 0.5,
-                        "&:hover": {
-                          bgcolor: alpha(theme.palette.success.main, 0.2),
-                        },
-                        width: 28,
-                        height: 28,
-                      }}
-                    >
-                      <CheckCircleIcon fontSize="small" />
-                    </IconButton>
-                  </Tooltip>
-                  <Tooltip title="Rechazar solicitud" arrow>
-                    <IconButton
-                      size="small"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onReject(appt.appointmentId);
-                      }}
-                      sx={{
-                        color: theme.palette.error.main,
-                        bgcolor: alpha(theme.palette.error.main, 0.1),
-                        "&:hover": {
-                          bgcolor: alpha(theme.palette.error.main, 0.2),
-                        },
-                        width: 28,
-                        height: 28,
-                      }}
-                    >
-                      <CancelIcon fontSize="small" />
-                    </IconButton>
-                  </Tooltip>
-                </Box>
               </Box>
             </MenuItem>
-          ))}
-        </>
-      )}
-    </Menu>
+          ))
+        )}
+      </Menu>
+
+      <Dialog
+        open={isModalOpen}
+        onClose={handleCloseModal}
+        fullWidth
+        maxWidth="sm"
+      >
+        <DialogTitle>Confirmar solicitud</DialogTitle>
+        <DialogContent dividers>
+          <Typography variant="subtitle2" gutterBottom>
+            Estudiante:
+          </Typography>
+          <Typography variant="body1" gutterBottom>
+            {selectedAppointment?.studentName}
+          </Typography>
+
+          <Typography variant="subtitle2" gutterBottom>
+            Fecha y hora:
+          </Typography>
+          <Typography variant="body1" gutterBottom>
+            {formatDateTime(selectedAppointment?.dateTime || "")}
+          </Typography>
+
+          {selectedAppointment?.reason && (
+            <>
+              <Typography variant="subtitle2" gutterBottom>
+                Motivo de la solicitud:
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                “{selectedAppointment.reason}”
+              </Typography>
+            </>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseModal}>Cerrar</Button>
+          <Button
+            onClick={() => {
+              if (selectedAppointment) {
+                onReject(selectedAppointment.appointmentId);
+                handleCloseModal();
+              }
+            }}
+            color="error"
+            variant="outlined"
+          >
+            Rechazar
+          </Button>
+          <Button
+            onClick={() => {
+              if (selectedAppointment) {
+                onAccept(selectedAppointment.appointmentId);
+                handleCloseModal();
+              }
+            }}
+            color="primary"
+            variant="contained"
+          >
+            Aceptar
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </>
   );
 };
 
