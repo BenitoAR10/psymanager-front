@@ -2,12 +2,11 @@ import React from "react";
 import { StatusBar } from "expo-status-bar";
 import { Provider as PaperProvider } from "react-native-paper";
 import { ToastProvider } from "react-native-toast-notifications";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClientProvider } from "@tanstack/react-query";
+import { queryClient } from "./src/utils/queryClient";
 
 import AppNavigator from "./src/navigation/AppNavigator";
 import { AuthProvider } from "./src/auth/AuthContext";
-
-const queryClient = new QueryClient();
 
 export default function App() {
   return (

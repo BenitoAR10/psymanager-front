@@ -6,15 +6,15 @@ import {
   NativeStackNavigationProp,
 } from "@react-navigation/native-stack";
 import { useAuth } from "../auth/useAuth";
-import LoginScreen from "../screens/LoginScreen";
-import AuthSuccessScreen from "../screens/AuthSuccessScreen";
-import ScheduleDetailScreen from "../screens/ScheduleDetailScreen";
-import CustomHeader from "../components/CustomHeader";
+import LoginScreen from "../screens/auth/LoginScreen";
+import AuthSuccessScreen from "../screens/auth/AuthSuccessScreen";
+import ScheduleDetailScreen from "../screens/schedule/ScheduleDetailScreen";
+import CustomHeader from "../components/common/CustomHeader";
 import PatientTabs from "./PatientTabs";
-import AppointmentDetailScreen from "../screens/AppointmentDetailScreen";
-import AccountSettingsScreen from "../screens/AccountSettingsScreen";
-import RegisterStep1Screen from "../screens/RegisterStep1Screen";
-import RegisterStep2Screen from "../screens/RegisterStep2Screen";
+import AppointmentDetailScreen from "../screens/appointments/AppointmentDetailScreen";
+import AccountSettingsScreen from "../screens/profile/AccountSettingsScreen";
+import RegisterStep1Screen from "../screens/auth/RegisterStep1Screen";
+import RegisterStep2Screen from "../screens/auth/RegisterStep2Screen";
 
 export type RootStackParamList = {
   Login: undefined;

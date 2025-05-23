@@ -10,6 +10,7 @@ import { jwtDecode } from "jwt-decode";
 import { AppState } from "react-native";
 import { storage } from "../utils/storage";
 import { API_URL } from "../utils/urlConstant";
+import { queryClient } from "../utils/queryClient";
 
 // Payload esperado del JWT
 interface JwtPayload {
@@ -19,6 +20,7 @@ interface JwtPayload {
   userId?: number;
   firstName?: string;
   lastName?: string;
+  profilePicture?: string;
 }
 
 // Contexto para acceso global a sesión
@@ -101,7 +103,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setRefreshToken(null);
     setUserInfo(null);
     setJustRegistered(false);
+
     if (refreshTimeoutRef.current) clearTimeout(refreshTimeoutRef.current);
+
+    // Limpieza global del estado react-query
+    await queryClient.cancelQueries();
+    await queryClient.clear();
+
     await storage.removeItem("accessToken");
     await storage.removeItem("refreshToken");
   }, []);

@@ -5,16 +5,15 @@ import { View, StyleSheet, Platform } from "react-native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Text } from "react-native-paper";
-import { MotiView } from "moti";
 import { useAuth } from "../auth/useAuth";
-import { useActiveTreatmentPlan } from "../services/hooks/useActiveTreatmentPlan";
+import { useActiveTreatmentPlan } from "../hooks/useActiveTreatmentPlan";
 
-import ScheduleScreen from "../screens/ScheduleScreen";
-import MyAppointmentsScreen from "../screens/MyAppointmentsScreen";
-import CustomHeader from "../components/CustomHeader";
-import ProfileScreen from "../screens/ProfileScreen";
+import ScheduleScreen from "../screens/schedule/ScheduleContainer";
+import MyAppointmentsScreen from "../screens/appointments/MyAppointmentsScreen";
+import CustomHeader from "../components/common/CustomHeader";
+import ProfileScreen from "../screens/profile/ProfileScreen";
 
-// Colores consistentes con tu tema
+// Colores mejorados y consistentes
 const colors = {
   primary: "#4DB6AC",
   primaryLight: "#80CBC4",
@@ -25,6 +24,7 @@ const colors = {
   background: "#F5F7FA",
   surface: "#FFFFFF",
   border: "#E3E8EF",
+  activeBackground: "#4DB6AC15", // 15% opacity
 };
 
 // Pantallas no implementadas aún
@@ -78,19 +78,20 @@ const PatientTabs: React.FC = () => {
           }
           return label ? (
             <Text
-              style={{
-                color,
-                fontSize: 12,
-                fontWeight: focused ? "600" : "400",
-                marginTop: 2,
-                opacity: focused ? 1 : 0.8,
-              }}
+              style={[
+                styles.tabLabel,
+                {
+                  color,
+                  fontWeight: focused ? "600" : "500",
+                  opacity: focused ? 1 : 0.8,
+                },
+              ]}
             >
               {label}
             </Text>
           ) : null;
         },
-        tabBarIcon: ({ color, size, focused }) => {
+        tabBarIcon: ({ color, focused }) => {
           let iconName: keyof typeof MaterialCommunityIcons.glyphMap;
 
           switch (route.name) {
@@ -111,27 +112,20 @@ const PatientTabs: React.FC = () => {
           }
 
           return (
-            <View style={styles.iconOuterContainer}>
-              {focused ? (
-                <MotiView
-                  from={{ opacity: 0, scale: 0.5 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ type: "timing", duration: 300 }}
-                  style={[styles.activeIconContainer]}
-                >
-                  <MaterialCommunityIcons
-                    name={iconName}
-                    size={size}
-                    color={color}
-                  />
-                </MotiView>
-              ) : (
+            <View style={styles.iconContainer}>
+              {focused && <View style={styles.activeIndicator} />}
+              <View
+                style={[
+                  styles.iconWrapper,
+                  focused && styles.activeIconWrapper,
+                ]}
+              >
                 <MaterialCommunityIcons
                   name={iconName}
-                  size={size}
+                  size={24}
                   color={color}
                 />
-              )}
+              </View>
             </View>
           );
         },
@@ -162,34 +156,53 @@ const PatientTabs: React.FC = () => {
 const styles = StyleSheet.create({
   tabBar: {
     backgroundColor: colors.surface,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-    height: 64,
+    borderTopWidth: 0.5,
+    borderTopColor: colors.border + "60",
+    height: Platform.OS === "ios" ? 84 : 64,
     paddingBottom: Platform.OS === "ios" ? 20 : 8,
     paddingTop: 8,
+    paddingHorizontal: 8,
     elevation: 8,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.05,
+    shadowOpacity: 0.08,
     shadowRadius: 8,
   },
   tabBarItem: {
     paddingVertical: 4,
+    paddingHorizontal: 4,
   },
-  iconOuterContainer: {
+  iconContainer: {
     alignItems: "center",
     justifyContent: "center",
-    height: 28,
-    width: 28,
+    position: "relative",
+    height: 32,
+    width: 32,
   },
-  activeIconContainer: {
-    backgroundColor: `${colors.primaryLight}30`,
-    borderRadius: 14,
-    padding: 6,
-    height: 28,
-    width: 28,
+  iconWrapper: {
     alignItems: "center",
     justifyContent: "center",
+    height: 32,
+    width: 32,
+    borderRadius: 16,
+    backgroundColor: "transparent",
+  },
+  activeIconWrapper: {
+    backgroundColor: colors.activeBackground,
+  },
+  activeIndicator: {
+    position: "absolute",
+    top: -2,
+    width: 20,
+    height: 2,
+    backgroundColor: colors.primary,
+    borderRadius: 1,
+    zIndex: 1,
+  },
+  tabLabel: {
+    fontSize: 11,
+    marginTop: 4,
+    textAlign: "center",
   },
   badge: {
     backgroundColor: colors.primary,
