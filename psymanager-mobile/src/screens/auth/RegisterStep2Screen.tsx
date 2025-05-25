@@ -1,10 +1,11 @@
-import React from "react";
+import React, { useState } from "react";
 import { KeyboardAvoidingView, Platform, ScrollView, View } from "react-native";
 import { Button } from "react-native-paper";
 import { MotiView } from "moti";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../../navigation/AppNavigator";
+import { useFaculties, useCareersByFaculty } from "../../hooks/useFaculties";
 
 import { Header } from "../../components/form/Header";
 import { ProgressIndicator } from "../../components/form/ProgressIndicator";
@@ -21,7 +22,6 @@ import {
   GENDER_OPTIONS,
   IDENTITY_GENDER_OPTIONS,
   CI_EXTENSION_OPTIONS,
-  CAREER_OPTIONS,
 } from "../../utils/constants";
 
 const RegisterStep2Screen: React.FC = () => {
@@ -49,6 +49,10 @@ const RegisterStep2Screen: React.FC = () => {
     setShowCareerPicker,
     handleCompleteProfile,
   } = useFormState(navigation);
+  const [showFacultyPicker, setShowFacultyPicker] = useState(false);
+
+  const { data: faculties = [] } = useFaculties();
+  const { data: careers = [] } = useCareersByFaculty(formState.faculty);
 
   return (
     <KeyboardAvoidingView
@@ -95,6 +99,7 @@ const RegisterStep2Screen: React.FC = () => {
               birthGender={formState.birthGender}
               identityGender={formState.identityGender}
               address={formState.address}
+              phoneNumber={formState.phoneNumber}
               errors={errors}
               touched={touched}
               onChangeText={handleInputChange}
@@ -105,10 +110,12 @@ const RegisterStep2Screen: React.FC = () => {
             />
 
             <AcademicSection
-              career={formState.career}
+              faculty={formState.faculty}
+              careerId={formState.careerId}
               errors={errors}
               touched={touched}
-              onCareerPress={() => setShowCareerPicker(true)}
+              onSelectFaculty={() => setShowFacultyPicker(true)}
+              onSelectCareer={() => setShowCareerPicker(true)}
             />
 
             <MotiView
@@ -179,11 +186,23 @@ const RegisterStep2Screen: React.FC = () => {
       />
 
       <CustomSelector
+        visible={showFacultyPicker}
+        title="Selecciona tu facultad"
+        options={faculties.map((f) => ({ label: f, value: f }))}
+        selectedValue={formState.faculty}
+        onSelect={(value) => handleInputChange("faculty", value)}
+        onClose={() => setShowFacultyPicker(false)}
+      />
+
+      <CustomSelector
         visible={showCareerPicker}
         title="Selecciona tu carrera"
-        options={CAREER_OPTIONS}
-        selectedValue={formState.career}
-        onSelect={(value) => handleInputChange("career", value)}
+        options={careers.map((c) => ({
+          label: c.careerName,
+          value: String(c.careerId),
+        }))}
+        selectedValue={formState.careerId ? String(formState.careerId) : ""}
+        onSelect={(value) => handleInputChange("careerId", Number(value))}
         onClose={() => setShowCareerPicker(false)}
       />
 

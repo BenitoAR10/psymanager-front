@@ -1,4 +1,5 @@
-import { storage } from "../utils/storage";
+import { fetcher } from "../utils/fetcher";
+import type { UserProfileUpdateDto } from "../types/userTypes";
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL || "http://localhost:8080";
 
@@ -20,22 +21,24 @@ export interface CompleteProfileRequest {
 export async function completeUserProfile(
   profile: CompleteProfileRequest
 ): Promise<void> {
-  const token = await storage.getItem("accessToken");
-
-  const response = await fetch(`${API_URL}/api/auth/complete-profile`, {
+  await fetcher(`${API_URL}/api/auth/complete-profile`, {
     method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
     body: JSON.stringify({
       ...profile,
       birthDate: profile.birthDate.toISOString().split("T")[0],
     }),
   });
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(errorText || "Error al completar el perfil");
-  }
 }
+
+/**
+ * Actualiza el perfil del usuario autenticado con los datos proporcionados.
+ * @param profile Datos del perfil a actualizar
+ */
+export const updateUserProfile = async (
+  payload: UserProfileUpdateDto
+): Promise<void> => {
+  return await fetcher("/api/users/me", {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  });
+};

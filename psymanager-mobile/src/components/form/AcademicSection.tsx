@@ -3,29 +3,79 @@ import { View, TouchableOpacity, Text } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { sharedStyles } from "../styles/styles";
 import theme from "../../screens/styles/themeConstants";
-import { CAREER_OPTIONS } from "../../utils/constants";
+import { useFaculties, useCareersByFaculty } from "../../hooks/useFaculties";
 
 interface AcademicSectionProps {
-  career: string;
-  errors: { career: string };
-  touched: { career: boolean };
-  onCareerPress: () => void;
+  faculty: string;
+  careerId: number | null;
+  errors: { faculty?: string; career?: string };
+  touched: { faculty?: boolean; career?: boolean };
+  onSelectFaculty: () => void;
+  onSelectCareer: () => void;
 }
 
 export const AcademicSection: React.FC<AcademicSectionProps> = React.memo(
-  ({ career, errors, touched, onCareerPress }) => {
+  ({ faculty, careerId, errors, touched, onSelectFaculty, onSelectCareer }) => {
+    const { data: faculties = [], isLoading: loadingFaculties } =
+      useFaculties();
+    const { data: careers = [], isLoading: loadingCareers } =
+      useCareersByFaculty(faculty);
+
+    const selectedFacultyLabel = faculty || "Selecciona facultad";
+    const selectedCareerLabel =
+      careers.find((c) => c.careerId === careerId)?.careerName ||
+      "Selecciona carrera";
+
     return (
       <View style={sharedStyles.sectionContainer}>
         <Text style={sharedStyles.sectionTitle}>Información académica</Text>
 
-        {/* Campo de carrera */}
+        {/* Selector de facultad */}
+        <View style={sharedStyles.inputContainer}>
+          <TouchableOpacity
+            style={[
+              sharedStyles.inputWrapper,
+              touched.faculty && errors.faculty
+                ? sharedStyles.inputError
+                : null,
+            ]}
+            onPress={onSelectFaculty}
+          >
+            <MaterialCommunityIcons
+              name="office-building-outline"
+              size={20}
+              color={theme.colors.text.secondary}
+              style={sharedStyles.inputIcon}
+            />
+            <Text
+              style={[
+                sharedStyles.input,
+                !faculty && { color: theme.colors.grey[400] },
+              ]}
+            >
+              {loadingFaculties ? "Cargando..." : selectedFacultyLabel}
+            </Text>
+            <MaterialCommunityIcons
+              name="chevron-down"
+              size={20}
+              color={theme.colors.grey[400]}
+              style={sharedStyles.dropdownIcon}
+            />
+          </TouchableOpacity>
+          {touched.faculty && errors.faculty && (
+            <Text style={sharedStyles.errorText}>{errors.faculty}</Text>
+          )}
+        </View>
+
+        {/* Selector de carrera */}
         <View style={sharedStyles.inputContainer}>
           <TouchableOpacity
             style={[
               sharedStyles.inputWrapper,
               touched.career && errors.career ? sharedStyles.inputError : null,
             ]}
-            onPress={onCareerPress}
+            onPress={onSelectCareer}
+            disabled={!faculty}
           >
             <MaterialCommunityIcons
               name="school-outline"
@@ -36,13 +86,14 @@ export const AcademicSection: React.FC<AcademicSectionProps> = React.memo(
             <Text
               style={[
                 sharedStyles.input,
-                !career && { color: theme.colors.grey[400] },
+                !careerId && { color: theme.colors.grey[400] },
               ]}
             >
-              {career
-                ? CAREER_OPTIONS.find((option) => option.value === career)
-                    ?.label
-                : "Carrera"}
+              {loadingCareers
+                ? "Cargando..."
+                : faculty
+                ? selectedCareerLabel
+                : "Selecciona primero una facultad"}
             </Text>
             <MaterialCommunityIcons
               name="chevron-down"
@@ -51,9 +102,9 @@ export const AcademicSection: React.FC<AcademicSectionProps> = React.memo(
               style={sharedStyles.dropdownIcon}
             />
           </TouchableOpacity>
-          {touched.career && errors.career ? (
+          {touched.career && errors.career && (
             <Text style={sharedStyles.errorText}>{errors.career}</Text>
-          ) : null}
+          )}
         </View>
       </View>
     );

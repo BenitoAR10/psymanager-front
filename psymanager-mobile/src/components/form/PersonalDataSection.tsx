@@ -20,13 +20,22 @@ interface PersonalDataSectionProps {
   birthGender: string;
   identityGender: string;
   address: string;
-  errors: { birthDate: string; birthGender: string };
-  touched: { birthDate: boolean; birthGender: boolean };
+  errors: {
+    birthDate: string;
+    birthGender: string;
+    phoneNumber?: string;
+  };
+  touched: {
+    birthDate: boolean;
+    birthGender: boolean;
+    phoneNumber?: boolean;
+  };
   onChangeText: (name: keyof FormState, value: any) => void;
   onBlur: (field: keyof FormTouched) => void;
   onDatePress: () => void;
   onGenderPress: () => void;
   onIdentityGenderPress: () => void;
+  phoneNumber: string;
 }
 
 export const PersonalDataSection: React.FC<PersonalDataSectionProps> =
@@ -36,6 +45,7 @@ export const PersonalDataSection: React.FC<PersonalDataSectionProps> =
       birthGender,
       identityGender,
       address,
+      phoneNumber,
       errors,
       touched,
       onChangeText,
@@ -180,6 +190,36 @@ export const PersonalDataSection: React.FC<PersonalDataSectionProps> =
                   placeholderTextColor={theme.colors.grey[400]}
                 />
               </View>
+            </View>
+            {/* Campo de teléfono */}
+            <View style={sharedStyles.inputContainer}>
+              <View
+                style={[
+                  sharedStyles.inputWrapper,
+                  touched.phoneNumber && errors.phoneNumber
+                    ? sharedStyles.inputError
+                    : null,
+                ]}
+              >
+                <MaterialCommunityIcons
+                  name="phone-outline"
+                  size={20}
+                  color={theme.colors.text.secondary}
+                  style={sharedStyles.inputIcon}
+                />
+                <RNTextInput
+                  placeholder="Teléfono"
+                  style={sharedStyles.input}
+                  keyboardType="phone-pad"
+                  value={phoneNumber}
+                  onChangeText={(text) => onChangeText("phoneNumber", text)}
+                  onBlur={() => onBlur("phoneNumber")}
+                  placeholderTextColor={theme.colors.grey[400]}
+                />
+              </View>
+              {touched.phoneNumber && errors.phoneNumber ? (
+                <Text style={sharedStyles.errorText}>{errors.phoneNumber}</Text>
+              ) : null}
             </View>
           </View>
           <Divider style={sharedStyles.divider} />

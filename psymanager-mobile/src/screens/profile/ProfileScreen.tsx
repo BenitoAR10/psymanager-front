@@ -71,15 +71,16 @@ const ProfileScreen: React.FC = () => {
       icon: "help-circle-outline",
       iconBgColor: `${colors.warning.light}30`,
       iconColor: colors.warning.main,
-      onPress: () => {},
+      onPress: () => navigation.navigate("HelpCenter"),
     },
+
     {
       label: "Términos y condiciones",
       description: "Políticas de privacidad y uso",
       icon: "file-document-outline",
       iconBgColor: `${colors.grey[400]}30`,
       iconColor: colors.grey[600],
-      onPress: () => {},
+      onPress: () => navigation.navigate("TermsAndConditions"),
     },
   ];
 
@@ -151,26 +152,6 @@ const ProfileScreen: React.FC = () => {
             >
               Estudiante
             </MotiText>
-
-            <MotiView
-              from={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 400, duration: 500 }}
-            >
-              <TouchableOpacity
-                style={profileStyles.editProfileButton}
-                onPress={() => navigation.navigate("AccountSettings")}
-                activeOpacity={0.8}
-              >
-                <MaterialCommunityIcons
-                  name="pencil"
-                  size={16}
-                  color={colors.primary.main}
-                  style={{ marginRight: 8 }}
-                />
-                <Text style={profileStyles.editProfileText}>Editar perfil</Text>
-              </TouchableOpacity>
-            </MotiView>
           </MotiView>
 
           {/* Sección de cuenta */}

@@ -10,6 +10,8 @@ import {
 } from "react-native";
 import { useQueryClient } from "@tanstack/react-query";
 import { useTreatmentScheduleSessions } from "../../hooks/useTreatmentScheduleSessions";
+import { useTreatmentStatus } from "../../hooks/useTreatmentStatus";
+
 import { useAvailableSchedules } from "../../hooks/useAvailableSchedules";
 import { getAvailableSchedules } from "../../services/scheduleService";
 import { useAuth } from "../../auth/useAuth";
@@ -41,7 +43,7 @@ const colors = {
   pastEvent: "#E2E8F0",
 };
 
-// 🧠 Formatea nombres como "Carlos A."
+// Formatea nombres como "Carlos A."
 const formatTherapistName = (name: string) => {
   const parts = name.trim().split(" ");
   const firstName =
@@ -50,7 +52,7 @@ const formatTherapistName = (name: string) => {
   return initial ? `${firstName} ${initial}.` : firstName;
 };
 
-// 🔄 Transforma sesiones en eventos
+// Transforma sesiones en eventos
 const mapToCustomEvents = (
   items: any[],
   type: "treatment" | "available",
@@ -112,14 +114,17 @@ const ScheduleContainer: React.FC = () => {
     dayjs().startOf("isoWeek").toDate()
   );
 
-  const {
-    sessions: treatmentSessions,
-    hasTreatmentActive,
-    isLoading: loadingTreatment,
-  } = useTreatmentScheduleSessions();
+  const { data: treatmentStatus, isLoading: loadingTreatmentStatus } =
+    useTreatmentStatus();
+  const hasTreatmentActive = treatmentStatus?.hasTreatment ?? false;
+
+  const { sessions: treatmentSessions, isLoading: loadingTreatmentSessions } =
+    useTreatmentScheduleSessions({
+      enabled: hasTreatmentActive,
+    });
 
   const shouldFetchAvailableSchedules: boolean =
-    Boolean(token) && !loadingTreatment && hasTreatmentActive === false;
+    Boolean(token) && !loadingTreatmentStatus && hasTreatmentActive === false;
 
   const { data: availableSchedules, isLoading: loadingAvailable } =
     useAvailableSchedules(weekStart, shouldFetchAvailableSchedules);
@@ -154,7 +159,7 @@ const ScheduleContainer: React.FC = () => {
     let mappedEvents: CustomEvent[] = [];
 
     if (
-      !loadingTreatment &&
+      !loadingTreatmentStatus &&
       hasTreatmentActive &&
       treatmentSessions.length > 0
     ) {
@@ -182,7 +187,7 @@ const ScheduleContainer: React.FC = () => {
     treatmentSessions,
     availableSchedules,
     hasTreatmentActive,
-    loadingTreatment,
+    loadingTreatmentStatus,
     userId,
   ]);
 
@@ -195,7 +200,6 @@ const ScheduleContainer: React.FC = () => {
       queryKey: ["available-schedules", preloadStart, preloadEnd],
       queryFn: () =>
         getAvailableSchedules({
-          token,
           startDate: preloadStart,
           endDate: preloadEnd,
         }),
@@ -238,8 +242,9 @@ const ScheduleContainer: React.FC = () => {
       calendarKey={calendarKey}
       calendarHeight={calendarHeight}
       loading={
-        (hasTreatmentActive ? loadingTreatment : loadingAvailable) &&
-        !initialLoadComplete
+        loadingTreatmentStatus ||
+        ((hasTreatmentActive ? loadingTreatmentSessions : loadingAvailable) &&
+          !initialLoadComplete)
       }
       showEmptyState={showEmptyState}
       onPressEvent={handlePressEvent}

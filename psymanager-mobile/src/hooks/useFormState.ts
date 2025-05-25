@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { Alert } from "react-native";
 import { completePatientProfile } from "../services/authService";
 import { validateField } from "../utils/validators";
 import { formatDateForServer } from "../utils/validators";
@@ -16,21 +15,27 @@ export interface FormState {
   birthGender: string;
   identityGender: string;
   address: string;
-  career: string;
+  faculty: string;
+  careerId: number | null;
+  phoneNumber: string;
 }
 
 export interface FormErrors {
   ciNumber: string;
   birthDate: string;
   birthGender: string;
-  career: string;
+  faculty: string;
+  careerId: string;
+  phoneNumber: string;
 }
 
 export interface FormTouched {
   ciNumber: boolean;
   birthDate: boolean;
   birthGender: boolean;
-  career: boolean;
+  faculty: boolean;
+  careerId: boolean;
+  phoneNumber: boolean;
 }
 
 export const useFormState = (
@@ -45,7 +50,9 @@ export const useFormState = (
     birthGender: "",
     identityGender: "",
     address: "",
-    career: "",
+    faculty: "",
+    careerId: null,
+    phoneNumber: "",
   });
 
   const toast = useToast();
@@ -57,7 +64,9 @@ export const useFormState = (
     ciNumber: "",
     birthDate: "",
     birthGender: "",
-    career: "",
+    faculty: "",
+    careerId: "",
+    phoneNumber: "",
   });
 
   // Estados para campos tocados (para validación)
@@ -65,7 +74,9 @@ export const useFormState = (
     ciNumber: false,
     birthDate: false,
     birthGender: false,
-    career: false,
+    faculty: false,
+    careerId: false,
+    phoneNumber: false,
   });
 
   // Estado de carga
@@ -112,17 +123,19 @@ export const useFormState = (
       ciNumber: validateField("ciNumber", formState.ciNumber),
       birthDate: validateField("birthDate", formState.birthDate),
       birthGender: validateField("birthGender", formState.birthGender),
-      career: validateField("career", formState.career),
+      faculty: validateField("faculty", formState.faculty),
+      careerId: validateField("careerId", formState.careerId),
+      phoneNumber: validateField("phoneNumber", formState.phoneNumber),
     };
 
     setErrors(newErrors);
-
-    // Marcar todos los campos como tocados
     setTouched({
       ciNumber: true,
       birthDate: true,
       birthGender: true,
-      career: true,
+      faculty: true,
+      careerId: true,
+      phoneNumber: true,
     });
 
     return !Object.values(newErrors).some((error) => error !== "");
@@ -141,10 +154,10 @@ export const useFormState = (
       birthGender: formState.birthGender,
       identityGender: formState.identityGender,
       address: formState.address,
-      careerName: formState.career,
-      faculty: "",
+      faculty: formState.faculty,
+      careerId: formState.careerId!,
       status: "activo",
-      phoneNumber: "",
+      phoneNumber: formState.phoneNumber,
     };
 
     setLoading(true);
@@ -155,7 +168,6 @@ export const useFormState = (
       toast.show("¡Registro completo! Bienvenido/a a la plataforma.", {
         type: "success",
       });
-      navigation.navigate("MainTabs" as never);
     } catch (error: any) {
       const message =
         error?.response?.data?.message || "Ocurrió un error inesperado";

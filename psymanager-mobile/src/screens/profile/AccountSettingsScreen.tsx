@@ -1,91 +1,122 @@
-"use client";
-
-import React, { useState } from "react";
+import React from "react";
 import {
   View,
-  StyleSheet,
-  TouchableOpacity,
   ScrollView,
   Text,
+  ActivityIndicator,
+  StyleSheet,
+  SafeAreaView,
 } from "react-native";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { MotiView } from "moti";
-import DeleteAccountModal from "../../components/modals/DeleteAccountModal";
+import { useUserProfile } from "../../hooks/useUserProfile";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { theme } from "../styles/themeConstants";
+import ProfileEditForm from "../../components/profile/ProfileEditForm";
+
+const { colors, spacing, typography } = theme;
 
 const AccountSettingsScreen: React.FC = () => {
-  const [modalVisible, setModalVisible] = useState(false);
+  const { data: userProfile, isLoading, isError, refetch } = useUserProfile();
+
+  if (isLoading) {
+    return (
+      <SafeAreaView style={styles.centeredContainer}>
+        <ActivityIndicator size="large" color={colors.primary.main} />
+        <Text style={styles.loadingText}>Cargando perfil...</Text>
+      </SafeAreaView>
+    );
+  }
+
+  if (isError || !userProfile) {
+    return (
+      <SafeAreaView style={styles.centeredContainer}>
+        <MaterialCommunityIcons
+          name="alert-circle-outline"
+          size={48}
+          color={colors.error.main}
+        />
+        <Text style={styles.errorText}>No se pudo cargar tu información.</Text>
+        <Text style={styles.retryText} onPress={() => refetch()}>
+          Toca para reintentar
+        </Text>
+      </SafeAreaView>
+    );
+  }
 
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={{ paddingBottom: 48 }}
-    >
-      <MotiView
-        from={{ opacity: 0, translateY: 16 }}
-        animate={{ opacity: 1, translateY: 0 }}
-        transition={{
-          type: "timing",
-          duration: 500,
-        }}
+    <SafeAreaView style={styles.container}>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
       >
-        <TouchableOpacity
-          style={styles.option}
-          onPress={() => setModalVisible(true)}
-          activeOpacity={0.8}
+        {/* Header compacto */}
+        <MotiView
+          from={{ opacity: 0, translateY: -10 }}
+          animate={{ opacity: 1, translateY: 0 }}
+          transition={{ duration: 400 }}
+          style={styles.headerContainer}
         >
-          <View style={styles.iconCircle}>
-            <MaterialCommunityIcons name="close" size={18} color="#8C9EFF" />
-          </View>
-          <Text style={styles.optionLabel}>Eliminar cuenta</Text>
           <MaterialCommunityIcons
-            name="chevron-right"
+            name="account-circle"
             size={20}
-            color="#BDBDBD"
+            color={colors.primary.main}
           />
-        </TouchableOpacity>
-      </MotiView>
-
-      <DeleteAccountModal
-        visible={modalVisible}
-        onCancel={() => setModalVisible(false)}
-        onConfirm={() => {
-          setModalVisible(false);
-          // futura lógica para eliminar cuenta
-        }}
-      />
-    </ScrollView>
+          <Text style={styles.headerTitle}>Mi Información Personal</Text>
+        </MotiView>
+        <ProfileEditForm profile={userProfile} />
+      </ScrollView>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#ffffff",
-    paddingHorizontal: 24,
-    paddingTop: 32,
+    backgroundColor: colors.background.default,
   },
-  option: {
-    backgroundColor: "#F5F7FF",
-    borderRadius: 14,
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    flexDirection: "row",
-    alignItems: "center",
+  scrollContent: {
+    padding: spacing.lg,
   },
-  iconCircle: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: "#E0E7FF",
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 12,
+  headerContainer: {
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    marginBottom: spacing.lg,
+    paddingHorizontal: spacing.sm,
   },
-  optionLabel: {
+  headerTitle: {
+    fontSize: typography.sizes.lg,
+    fontWeight: typography.fontWeights.semibold as any,
+    color: colors.text.primary,
+    marginLeft: spacing.sm,
+  },
+  centeredContainer: {
     flex: 1,
-    fontSize: 15,
-    color: "#333333",
-    fontWeight: "500",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.background.default,
+  },
+  loadingText: {
+    marginTop: spacing.md,
+    color: colors.text.secondary,
+    fontSize: typography.sizes.md,
+  },
+  errorText: {
+    marginTop: spacing.md,
+    color: colors.error.main,
+    fontSize: typography.sizes.md,
+    fontWeight: "600",
+  },
+  retryText: {
+    marginTop: spacing.sm,
+    color: colors.primary.main,
+    fontSize: typography.sizes.sm,
+    textDecorationLine: "underline",
+  },
+  title: {
+    fontSize: typography.sizes["2xl"],
+    fontWeight: "600",
+    color: colors.text.primary,
+    marginBottom: spacing.lg,
   },
 });
 

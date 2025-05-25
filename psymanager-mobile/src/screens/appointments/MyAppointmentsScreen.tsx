@@ -21,6 +21,7 @@ import { theme } from "../../screens/styles/themeConstants";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../../navigation/AppNavigator";
 import dayjs from "dayjs";
+import { getAppointmentVisualState } from "../../utils/appointmentStatus";
 import "dayjs/locale/es";
 
 // TODO: Configurar dayjs para español
@@ -51,7 +52,7 @@ const MyAppointmentsScreen: React.FC = () => {
       if (showLoader) setLoading(true);
 
       try {
-        const result = await getUserAppointments(token);
+        const result = await getUserAppointments();
         setAppointments(result);
         setError(null);
       } catch (err: any) {
@@ -156,40 +157,23 @@ const MyAppointmentsScreen: React.FC = () => {
   };
 
   const renderAppointmentStatus = (appointment: UserAppointmentDto) => {
-    const isPast = isPastAppointment(appointment);
-
-    let statusText = "Confirmada";
-    let statusColor = colors.success.main;
-    let statusBgColor = `${colors.success.light}20`;
-
-    if (appointment.sessionState === "PENDING") {
-      statusText = "Pendiente";
-      statusColor = colors.warning.main;
-      statusBgColor = `${colors.warning.light}20`;
-    } else if (appointment.sessionState === "REJECTED") {
-      statusText = "Rechazada";
-      statusColor = colors.error.main;
-      statusBgColor = `${colors.error.light}20`;
-    } else if (isPast) {
-      statusText = "Completada";
-      statusColor = colors.text.secondary;
-      statusBgColor = `${colors.grey[300]}50`;
-    }
+    const { text, color, bgColor } = getAppointmentVisualState(
+      appointment.sessionState,
+      appointment.date,
+      appointment.endTime
+    );
 
     return (
       <View
         style={[
           appointmentStyles.statusContainer,
-          { backgroundColor: statusBgColor },
+          { backgroundColor: bgColor },
         ]}
       >
-        <Text style={[appointmentStyles.statusText, { color: statusColor }]}>
-          {statusText}
-        </Text>
+        <Text style={[appointmentStyles.statusText, { color }]}>{text}</Text>
       </View>
     );
   };
-
   const navigateToSchedule = () => {
     navigation.navigate("Schedule");
   };

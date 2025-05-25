@@ -21,6 +21,8 @@ import {
 import type { SessionState } from "../../types/sessionTypes";
 import dayjs from "dayjs";
 import "dayjs/locale/es";
+import { getAppointmentVisualState } from "../../utils/appointmentStatus";
+
 import { MotiView } from "moti";
 
 // Configurar dayjs para español
@@ -90,24 +92,14 @@ const ReservedSessionModal: React.FC<ReservedSessionModalProps> = ({
     return `${hour12}:${minutes} ${ampm}`;
   };
 
-  const getStateLabel = (state: SessionState) => {
-    switch (state) {
-      case "PENDING":
-        return "Pendiente";
-      case "ACCEPTED":
-        return "Confirmada";
-      case "REJECTED":
-        return "Rechazada";
-      case "CANCELED":
-        return "Cancelada";
-      case "COMPLETED":
-        return "Completada";
-      default:
-        return "Desconocido";
-    }
+  const getStateLabel = () => {
+    const { text } = getAppointmentVisualState(state, date, endTime);
+    return text;
   };
 
-  const getStatusInfo = (): {
+  const getStatusInfo = (
+    color: string
+  ): {
     icon: React.ComponentProps<typeof MaterialCommunityIcons>["name"];
     color: string;
     title: string;
@@ -117,7 +109,7 @@ const ReservedSessionModal: React.FC<ReservedSessionModalProps> = ({
     if (availabilityStatus === "treatment-assigned") {
       return {
         icon: "calendar-clock",
-        color: colors.primary.main,
+        color,
         title: "Sesión programada",
         message:
           "Esta sesión ha sido programada por tu terapeuta como parte de tu tratamiento psicológico.",
@@ -129,7 +121,7 @@ const ReservedSessionModal: React.FC<ReservedSessionModalProps> = ({
       case "PENDING":
         return {
           icon: "clock-time-four-outline",
-          color: colors.warning.main,
+          color,
           title: "Cita pendiente",
           message:
             "Tu solicitud de cita está pendiente de confirmación por parte del terapeuta.",
@@ -138,7 +130,7 @@ const ReservedSessionModal: React.FC<ReservedSessionModalProps> = ({
       case "ACCEPTED":
         return {
           icon: "check-circle-outline",
-          color: colors.success.main,
+          color,
           title: "Cita confirmada",
           message: "¡Excelente! Tu cita ha sido confirmada por el terapeuta.",
           actionText: "Aceptar",
@@ -146,7 +138,7 @@ const ReservedSessionModal: React.FC<ReservedSessionModalProps> = ({
       case "REJECTED":
         return {
           icon: "close-circle-outline",
-          color: colors.error.main,
+          color,
           title: "Cita rechazada",
           message:
             "Lo sentimos, tu cita fue rechazada. Puedes elegir otro horario disponible.",
@@ -155,7 +147,7 @@ const ReservedSessionModal: React.FC<ReservedSessionModalProps> = ({
       case "CANCELED":
         return {
           icon: "calendar-remove-outline",
-          color: colors.error.main,
+          color,
           title: "Cita cancelada",
           message:
             "Has cancelado esta cita. Puedes reservar otro horario si lo deseas.",
@@ -164,17 +156,16 @@ const ReservedSessionModal: React.FC<ReservedSessionModalProps> = ({
       case "COMPLETED":
         return {
           icon: "check-decagram",
-          color: colors.success.main,
+          color,
           title: "Sesión completada",
           message:
             "Esta sesión fue marcada como completada. Puedes revisar tu progreso con tu terapeuta.",
           actionText: "Entendido",
         };
-
       default:
         return {
           icon: "help-circle-outline",
-          color: colors.secondary.main,
+          color,
           title: "Estado desconocido",
           message: "No podemos determinar el estado actual de tu cita.",
           actionText: "Cerrar",
@@ -182,7 +173,8 @@ const ReservedSessionModal: React.FC<ReservedSessionModalProps> = ({
     }
   };
 
-  const statusInfo = getStatusInfo();
+  const visualInfo = getAppointmentVisualState(state, date, endTime);
+  const statusInfo = getStatusInfo(visualInfo.color);
 
   return (
     <Modal
@@ -224,11 +216,11 @@ const ReservedSessionModal: React.FC<ReservedSessionModalProps> = ({
             transition={{ type: "timing", duration: 400, delay: 100 }}
             style={[
               styles.iconContainer,
-              { backgroundColor: statusInfo.color + "20" },
+              { backgroundColor: visualInfo.bgColor },
             ]}
           >
             <View
-              style={[styles.iconInner, { backgroundColor: statusInfo.color }]}
+              style={[styles.iconInner, { backgroundColor: visualInfo.color }]}
             >
               <MaterialCommunityIcons
                 name={statusInfo.icon}
@@ -248,7 +240,7 @@ const ReservedSessionModal: React.FC<ReservedSessionModalProps> = ({
 
             <View style={styles.statusBadge}>
               <Text style={[styles.statusText, { color: statusInfo.color }]}>
-                {getStateLabel(state)}
+                {getStateLabel()}
               </Text>
             </View>
           </MotiView>

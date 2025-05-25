@@ -1,17 +1,11 @@
-import { API_URL } from "../utils/urlConstant";
+import { fetcher } from "../utils/fetcher";
 import { storage } from "../utils/storage";
-
-const GOOGLE_MOBILE_AUTH_PATH = "/oauth2/authorization/google-mobile";
+import { API_URL } from "../utils/urlConstant";
 
 /**
- * Inicia el flujo de autenticación con Google para la app móvil.
- * Redirige al navegador al endpoint OAuth2 del backend.
+ * Inicia sesión del paciente con email y contraseña.
+ * Guarda los tokens en el storage si es exitoso.
  */
-// export function loginWithGoogle(): void {
-//   const url = `${API_URL}${GOOGLE_MOBILE_AUTH_PATH}`;
-//   window.location.href = url;
-// }
-
 export async function loginWithEmailAndPassword(
   email: string,
   password: string
@@ -43,27 +37,12 @@ export async function getUserProfileInfo(): Promise<{
   roles: string[];
   profileComplete: boolean;
 }> {
-  const token = await storage.getItem("accessToken");
-
-  if (!token) {
-    console.warn("⚠️ Token no disponible. Abortando llamada a /auth/me.");
-    throw new Error("Token de acceso no disponible");
-  }
-
-  const response = await fetch(`${API_URL}/api/auth/me`, {
-    method: "GET",
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-
-  if (!response.ok) {
-    throw new Error("No se pudo obtener la información del usuario");
-  }
-
-  return await response.json();
+  return fetcher(`${API_URL}/api/auth/me`);
 }
 
+/**
+ * Registra a un nuevo paciente con nombre, email y contraseña.
+ */
 export async function registerPatientStep1(
   firstName: string,
   lastName: string,
@@ -82,19 +61,12 @@ export async function registerPatientStep1(
   }
 }
 
+/**
+ * Completa el perfil del paciente autenticado.
+ */
 export async function completePatientProfile(profileDto: any): Promise<void> {
-  const token = await storage.getItem("accessToken");
-
-  const response = await fetch(`${API_URL}/api/auth/complete-profile`, {
+  await fetcher(`${API_URL}/api/auth/complete-profile`, {
     method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
     body: JSON.stringify(profileDto),
   });
-
-  if (!response.ok) {
-    throw new Error("No se pudo completar el perfil.");
-  }
 }

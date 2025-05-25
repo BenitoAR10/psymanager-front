@@ -26,6 +26,7 @@ import {
   useNavigation,
 } from "@react-navigation/native";
 import type { RootStackParamList } from "../../navigation/AppNavigator";
+import { getAppointmentVisualState } from "../../utils/appointmentStatus";
 import { getAppointmentDetail } from "../../services/appointmentService";
 import { useAuth } from "../../auth/useAuth";
 import type { UserAppointmentDetailDto } from "../../types/appointmentTypes";
@@ -93,7 +94,7 @@ const AppointmentDetailScreen: React.FC = () => {
     if (showLoader) setLoading(true);
 
     try {
-      const result = await getAppointmentDetail(sessionId, token);
+      const result = await getAppointmentDetail(sessionId);
       setAppointment(result);
       setError(null);
     } catch (err: any) {
@@ -169,7 +170,7 @@ const AppointmentDetailScreen: React.FC = () => {
 
     try {
       setLoading(true);
-      await cancelAppointment(sessionId, cancelReason.trim(), token!);
+      await cancelAppointment(sessionId, cancelReason.trim());
       toast.show("Cita cancelada exitosamente.", { type: "success" });
       setShowCancelModal(false);
       navigation.goBack();
@@ -289,38 +290,11 @@ const AppointmentDetailScreen: React.FC = () => {
   };
 
   // Obtener estado de la cita
-  const getAppointmentStatus = () => {
-    if (isPastAppointment()) {
-      return {
-        text: "Completada",
-        color: colors.text.secondary,
-        bgColor: colors.grey[300] + "40",
-      };
-    }
-
-    switch (appointment.sessionState) {
-      case "PENDING":
-        return {
-          text: "Pendiente de confirmación",
-          color: colors.warning.main,
-          bgColor: colors.warning.main + "20",
-        };
-      case "REJECTED":
-        return {
-          text: "Rechazada",
-          color: colors.error.main,
-          bgColor: colors.error.main + "20",
-        };
-      default:
-        return {
-          text: "Confirmada",
-          color: colors.success.main,
-          bgColor: colors.success.main + "20",
-        };
-    }
-  };
-
-  const statusInfo = getAppointmentStatus();
+  const statusInfo = getAppointmentVisualState(
+    appointment.sessionState,
+    appointment.date,
+    appointment.endTime
+  );
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background.default }}>
@@ -518,7 +492,7 @@ const AppointmentDetailScreen: React.FC = () => {
       </ScrollView>
 
       {/* Botones fijos en la parte inferior */}
-      {!isPastAppointment() && (
+      {!isPastAppointment() && appointment.sessionState === "ACCEPTED" && (
         <MotiView
           from={{ opacity: 0, translateY: 20 }}
           animate={{ opacity: 1, translateY: 0 }}
@@ -547,6 +521,7 @@ const AppointmentDetailScreen: React.FC = () => {
           </View>
         </MotiView>
       )}
+
       <CancelModal
         visible={showCancelModal}
         reason={cancelReason}

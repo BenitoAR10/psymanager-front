@@ -17,7 +17,9 @@ interface CustomHeaderProps {
     | "CalmNow"
     | "Profile"
     | "ScheduleDetail"
-    | "AccountSettings";
+    | "AccountSettings"
+    | "HelpCenter"
+    | "TermsAndConditions";
   rightComponent?: React.ReactNode;
 }
 
@@ -26,7 +28,11 @@ const CustomHeader: React.FC<CustomHeaderProps> = ({
   rightComponent,
 }) => {
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
-  const isDetail = currentRoute === "ScheduleDetail";
+  const isDetail =
+    currentRoute === "ScheduleDetail" ||
+    currentRoute === "AccountSettings" ||
+    currentRoute === "TermsAndConditions" ||
+    currentRoute === "HelpCenter";
 
   const getTitle = (route: string) => {
     switch (route) {
@@ -42,7 +48,11 @@ const CustomHeader: React.FC<CustomHeaderProps> = ({
       case "ScheduleDetail":
         return "Detalles del Horario";
       case "AccountSettings":
-        return "Configuración de la cuenta";
+        return "Cuenta";
+      case "HelpCenter":
+        return "Centro de Ayuda";
+      case "TermsAndConditions":
+        return "Términos y Condiciones";
       default:
         return "Pantalla";
     }

@@ -4,6 +4,13 @@ import { useIsFocused } from "@react-navigation/native";
 import { useAuth } from "../auth/useAuth";
 import dayjs from "dayjs";
 
+/**
+ * Hook que obtiene los horarios disponibles para la semana dada.
+ * Se activa solo si la pantalla está en foco y hay un token válido.
+ *
+ * @param weekStart Fecha de inicio de semana (tipo Date)
+ * @param enabled Booleano adicional para control externo
+ */
 export const useAvailableSchedules = (weekStart: Date, enabled: boolean) => {
   const { token } = useAuth();
   const isFocused = useIsFocused();
@@ -14,16 +21,15 @@ export const useAvailableSchedules = (weekStart: Date, enabled: boolean) => {
   const finalEnabled = !!token && isFocused && enabled;
 
   return useQuery({
-    queryKey: ["available-schedules", startDate, endDate, finalEnabled],
+    queryKey: ["available-schedules", startDate, endDate],
     queryFn: () =>
       getAvailableSchedules({
-        token: token!,
         startDate,
         endDate,
       }),
     enabled: finalEnabled,
-    staleTime: 1000 * 60 * 1,
-    refetchInterval: finalEnabled ? 1000 * 15 : false,
+    staleTime: 60_000,
+    refetchInterval: finalEnabled ? 15_000 : false,
     refetchOnWindowFocus: true,
   });
 };

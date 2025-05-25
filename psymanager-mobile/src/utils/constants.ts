@@ -3,7 +3,6 @@ export const GENDER_OPTIONS = [
   { label: "Selecciona género biológico", value: "" },
   { label: "Masculino", value: "male" },
   { label: "Femenino", value: "female" },
-  { label: "Otro", value: "other" },
 ];
 
 export const IDENTITY_GENDER_OPTIONS = [

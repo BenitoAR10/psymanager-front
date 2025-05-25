@@ -51,10 +51,8 @@ const ScheduleDetailScreen: React.FC = () => {
     const fetchData = async () => {
       if (!token) return;
       try {
-        const result = await getRelatedSchedulesByScheduleId({
-          token,
-          scheduleId,
-        });
+        const result = await getRelatedSchedulesByScheduleId(scheduleId);
+
         setAvailableTimes(
           result.filter((item) => {
             const now = dayjs();
@@ -124,7 +122,6 @@ const ScheduleDetailScreen: React.FC = () => {
 
     try {
       await createScheduledSession({
-        token,
         scheduleId: selectedHourId,
         reason: sessionReason.trim(),
       });

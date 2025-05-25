@@ -4,9 +4,7 @@ export interface UserAppointmentDto {
   date: string;
   startTime: string;
   endTime: string;
-
-  // Add the missing sessionState property
-  sessionState: "PENDING" | "CONFIRMED" | "REJECTED";
+  sessionState: "PENDING" | "ACCEPTED" | "REJECTED";
 }
 
 export interface UserAppointmentDetailDto {
@@ -16,5 +14,5 @@ export interface UserAppointmentDetailDto {
   date: string;
   startTime: string;
   endTime: string;
-  sessionState: "PENDING" | "REJECTED" | "CONFIRMED";
+  sessionState: "PENDING" | "REJECTED" | "ACCEPTED";
 }

@@ -1,4 +1,4 @@
-import { API_URL } from "../utils/urlConstant";
+import { fetcher } from "../utils/fetcher";
 import {
   UserAppointmentDto,
   UserAppointmentDetailDto,
@@ -6,72 +6,40 @@ import {
 
 /**
  * Obtiene todas las citas del usuario autenticado.
+ * @returns Lista de citas
+ * @throws Error si la solicitud falla
  */
-export async function getUserAppointments(
-  token: string
-): Promise<UserAppointmentDto[]> {
-  const response = await fetch(`${API_URL}/api/sessions/my`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(errorText || "Error al obtener citas agendadas");
-  }
-
-  return await response.json();
+export async function getUserAppointments(): Promise<UserAppointmentDto[]> {
+  return await fetcher("/api/sessions/my");
 }
 
 /**
- * Obtiene el detalle de una cita específica del usuario.
+ * Obtiene el detalle de una cita específica del usuario autenticado.
+ * @param sessionId ID de la sesión
+ * @returns Detalle de la cita
+ * @throws Error si la solicitud falla
  */
 export async function getAppointmentDetail(
-  sessionId: number,
-  token: string
+  sessionId: number
 ): Promise<UserAppointmentDetailDto> {
-  const response = await fetch(`${API_URL}/api/sessions/my/${sessionId}`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(errorText || "Error al obtener detalle de la cita");
-  }
-
-  return await response.json();
+  return await fetcher(`/api/sessions/my/${sessionId}`);
 }
 
 /**
- * Cancela una cita específica del usuario.
- * @param sessionId ID de la sesión a cancelar
- * @param reason Motivo de la cancelación
- * @param token Token JWT del usuario autenticado
+ * Cancela una cita específica del usuario autenticado.
+ * @param sessionId ID de la sesión
+ * @param reason Motivo de cancelación
+ * @throws Error si la solicitud falla
  */
 export async function cancelAppointment(
   sessionId: number,
-  reason: string,
-  token: string
+  reason: string
 ): Promise<void> {
-  const response = await fetch(`${API_URL}/api/sessions/cancel`, {
+  await fetcher(`/api/sessions/cancel`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
     body: JSON.stringify({
       scheduleSessionId: sessionId,
       cancellationReason: reason,
     }),
   });
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(
-      errorText || "No se pudo cancelar la cita. Intenta nuevamente."
-    );
-  }
 }

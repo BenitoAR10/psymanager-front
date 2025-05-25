@@ -1,33 +1,28 @@
+import { fetcher } from "../utils/fetcher";
 import { API_URL } from "../utils/urlConstant";
-import { storage } from "../utils/storage";
 
 /**
- * Obtiene el plan de tratamiento activo del paciente actual.
- * Retorna null si no hay tratamiento activo.
+ * Obtiene el plan de tratamiento activo del paciente autenticado.
+ * Retorna `null` si no hay tratamiento activo (204 o 409).
  */
-export const getActiveTreatmentPlan = async (patientId: number) => {
-  const accessToken = await storage.getItem("accessToken");
-
-  const response = await fetch(
+export const getActiveTreatmentPlan = async (
+  patientId: number
+): Promise<any | null> => {
+  const res = await fetch(
     `${API_URL}/api/treatments/patient/${patientId}/active`,
     {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${accessToken}`,
-      },
+      headers: { Authorization: "omit" },
     }
   );
 
-  if (response.status === 204 || response.status === 409) {
-    // 204: sin contenido, 409: sin tratamiento activo
+  if (res.status === 204 || res.status === 409) {
     return null;
   }
 
-  if (!response.ok) {
-    const errorText = await response.text();
+  if (!res.ok) {
+    const errorText = await res.text();
     throw new Error(errorText || "Error al obtener tratamiento activo");
   }
 
-  return response.json();
+  return res.json();
 };

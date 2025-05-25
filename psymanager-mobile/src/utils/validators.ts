@@ -58,6 +58,16 @@ export const validateField = (name: string, value: any): string => {
         errorMessage = "La carrera es requerida";
       }
       break;
+
+    case "phoneNumber":
+      if (!value?.toString().trim()) {
+        errorMessage = "El número de teléfono es requerido";
+      } else if (!/^\d+$/.test(value.toString())) {
+        errorMessage = "El teléfono debe contener solo números";
+      } else if (value.toString().length < 7) {
+        errorMessage = "El número debe tener al menos 7 dígitos";
+      }
+      break;
   }
 
   return errorMessage;

@@ -1,129 +1,78 @@
-import { API_URL } from "../utils/urlConstant";
-import { ScheduleAvailabilityDto } from "../types/scheduleTypes";
-import type { ScheduleAvailabilityWithContactDto } from "../types/scheduleTypes";
-import { storage } from "../utils/storage";
+import { fetcher } from "../utils/fetcher";
+import type {
+  ScheduleAvailabilityDto,
+  ScheduleAvailabilityWithContactDto,
+} from "../types/scheduleTypes";
 
 /**
- * Obtiene todos los horarios disponibles, opcionalmente filtrados por terapeuta y fecha.
+ * Obtiene los horarios disponibles, opcionalmente filtrados por terapeuta y rango de fechas.
+ * @param therapistId ID del terapeuta a filtrar
+ * @param startDate Fecha inicial del rango (YYYY-MM-DD)
+ * @param endDate Fecha final del rango (YYYY-MM-DD)
+ * @returns Lista de horarios disponibles
  */
 export async function getAvailableSchedules({
-  token,
   therapistId,
   startDate,
   endDate,
 }: {
-  token: string;
   therapistId?: number;
-  startDate?: string;
-  endDate?: string;
+  startDate: string;
+  endDate: string;
 }): Promise<ScheduleAvailabilityDto[]> {
   const params = new URLSearchParams();
+  params.append("startDate", startDate);
+  params.append("endDate", endDate);
   if (therapistId) params.append("therapistId", therapistId.toString());
-  if (startDate) params.append("startDate", startDate);
-  if (endDate) params.append("endDate", endDate);
 
-  const response = await fetch(
-    `${API_URL}/api/schedules/available?${params.toString()}`,
-    {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    }
-  );
+  const queryString = params.toString();
+  const url = queryString
+    ? `/api/schedules/available?${queryString}`
+    : `/api/schedules/available`;
 
-  if (!response.ok) {
-    throw new Error(`Error ${response.status}: ${response.statusText}`);
-  }
-
-  return await response.json();
+  return await fetcher(url);
 }
 
 /**
- * Obtiene los horarios disponibles del mismo terapeuta y fecha usando un horario base,
- * incluyendo email y teléfono del terapeuta.
+ * Obtiene los horarios disponibles del mismo terapeuta y fecha,
+ * relacionados al horario base especificado por su ID.
+ * @param scheduleId ID del horario base
+ * @returns Lista de horarios relacionados con contacto del terapeuta
  */
-export async function getRelatedSchedulesByScheduleId({
-  token,
-  scheduleId,
-}: {
-  token: string;
-  scheduleId: number;
-}): Promise<ScheduleAvailabilityWithContactDto[]> {
-  const response = await fetch(
-    `${API_URL}/api/schedules/available/by-schedule/${scheduleId}`,
-    {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    }
-  );
-
-  if (!response.ok) {
-    throw new Error(`Error ${response.status}: ${response.statusText}`);
-  }
-
-  return await response.json();
+export async function getRelatedSchedulesByScheduleId(
+  scheduleId: number
+): Promise<ScheduleAvailabilityWithContactDto[]> {
+  return await fetcher(`/api/schedules/available/by-schedule/${scheduleId}`);
 }
+
 /**
- * Crea una sesión programada para un horario específico.
+ * Crea una nueva sesión programada para un horario específico.
+ * @param scheduleId ID del horario disponible seleccionado
+ * @param reason Razón de la cita (opcional)
+ * @throws Error si la creación falla, incluyendo mensaje y path del error
  */
 export async function createScheduledSession({
-  token,
   scheduleId,
   reason,
 }: {
-  token: string;
   scheduleId: number;
   reason?: string;
 }): Promise<void> {
-  const response = await fetch(`${API_URL}/api/sessions`, {
+  await fetcher(`/api/sessions`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
     body: JSON.stringify({
       therapistScheduledId: scheduleId,
       reason,
     }),
   });
-
-  if (!response.ok) {
-    const errorBody = await response.json();
-    throw {
-      status: response.status,
-      message: errorBody.message || "Error al crear la cita",
-      path: errorBody.path,
-    };
-  }
 }
 
 /**
  * Obtiene las sesiones del tratamiento activo del paciente autenticado.
+ * @returns Lista de sesiones asignadas al tratamiento activo
  */
 export const getTreatmentScheduleSessions = async (): Promise<
   ScheduleAvailabilityDto[]
 > => {
-  const token = await storage.getItem("accessToken");
-  if (!token) {
-    throw new Error("No se encontró el token de autenticación");
-  }
-
-  const response = await fetch(
-    `${API_URL}/api/sessions/my/treatment-sessions`,
-    {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    }
-  );
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(
-      errorText || "Error al obtener sesiones del tratamiento activo"
-    );
-  }
-
-  return await response.json();
+  return await fetcher("/api/sessions/my/treatment-sessions");
 };

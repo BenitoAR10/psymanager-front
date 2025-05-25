@@ -12,6 +12,7 @@ import ScheduleScreen from "../screens/schedule/ScheduleContainer";
 import MyAppointmentsScreen from "../screens/appointments/MyAppointmentsScreen";
 import CustomHeader from "../components/common/CustomHeader";
 import ProfileScreen from "../screens/profile/ProfileScreen";
+import { useTreatmentStatus } from "../hooks/useTreatmentStatus";
 
 // Colores mejorados y consistentes
 const colors = {
@@ -36,8 +37,11 @@ const PatientTabs: React.FC = () => {
   const { userInfo } = useAuth();
   const patientId = userInfo?.userId;
 
-  const { data: activeTreatment } = useActiveTreatmentPlan(patientId);
-  const hasActiveTreatment = !!activeTreatment;
+  const { data: treatmentStatus, isLoading: loadingTreatmentStatus } =
+    useTreatmentStatus();
+  const hasActiveTreatment = treatmentStatus?.hasTreatment ?? false;
+
+  if (loadingTreatmentStatus) return null;
 
   return (
     <Tab.Navigator

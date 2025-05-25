@@ -10,7 +10,7 @@ import { ExerciseCard } from "../../components/calm/ExerciseCard";
 import { useExercises } from "../../hooks/useExercises";
 
 const CalmNowScreen: React.FC = () => {
-  const { data: exercises, isLoading, error } = useExercises(); // sin categoría por ahora
+  const { data: exercises, isLoading, error } = useExercises();
 
   if (isLoading) {
     return (
