@@ -1,3 +1,5 @@
+// src/screens/calm/CalmNowScreen.tsx
+
 import React from "react";
 import {
   View,
@@ -5,13 +7,30 @@ import {
   StyleSheet,
   ActivityIndicator,
   FlatList,
+  ScrollView,
 } from "react-native";
 import { ExerciseCard } from "../../components/calm/ExerciseCard";
-import { useExercises } from "../../hooks/useExercises";
+import { FeaturedExerciseCard } from "../../components/calm/FeaturedExerciseCard";
+import { CategoryChips } from "../../components/calm/CategoryChips";
+import type { Exercise } from "../../types/exercise";
 
-const CalmNowScreen: React.FC = () => {
-  const { data: exercises, isLoading, error } = useExercises();
+interface CalmNowScreenProps {
+  isLoading: boolean;
+  error: Error | null;
+  exercises: Exercise[];
+  selectedCategory: string;
+  onCategoryChange: (category: string) => void;
+  onExercisePress: (exercise: Exercise) => void;
+}
 
+export const CalmNowScreen: React.FC<CalmNowScreenProps> = ({
+  isLoading,
+  error,
+  exercises,
+  selectedCategory,
+  onCategoryChange,
+  onExercisePress,
+}) => {
   if (isLoading) {
     return (
       <View style={styles.center}>
@@ -30,26 +49,49 @@ const CalmNowScreen: React.FC = () => {
     );
   }
 
+  const [first, ...rest] = exercises;
+
   return (
-    <FlatList
-      data={exercises}
-      keyExtractor={(item) => item.id.toString()}
-      renderItem={({ item }) => (
-        <ExerciseCard
-          title={item.title}
-          category={item.category}
-          pointsReward={item.pointsReward}
-          audioUrl={item.audioUrl}
+    <ScrollView contentContainerStyle={styles.container}>
+      <Text style={styles.title}>Calma Ahora</Text>
+      <Text style={styles.description}>
+        Aquí encontrarás ejercicios y técnicas para calmarte durante momentos de
+        ansiedad y estrés, y mantener tu bienestar emocional.
+      </Text>
+
+      <CategoryChips
+        selected={selectedCategory}
+        onSelectCategory={onCategoryChange}
+      />
+
+      {first && (
+        <FeaturedExerciseCard
+          exercise={first}
+          onPress={() => onExercisePress(first)}
         />
       )}
-      contentContainerStyle={styles.listContent}
-    />
+
+      <View style={styles.gridContainer}>
+        {rest.map((exercise) => (
+          <ExerciseCard
+            key={exercise.id}
+            title={exercise.title}
+            category={exercise.category}
+            pointsReward={exercise.pointsReward}
+            audioUrl={exercise.audioUrl}
+            onPress={() => onExercisePress(exercise)}
+          />
+        ))}
+      </View>
+    </ScrollView>
   );
 };
 
-export default CalmNowScreen;
-
 const styles = StyleSheet.create({
+  container: {
+    paddingHorizontal: 16,
+    paddingBottom: 32,
+  },
   center: {
     flex: 1,
     justifyContent: "center",
@@ -72,7 +114,24 @@ const styles = StyleSheet.create({
     color: "#888",
     textAlign: "center",
   },
-  listContent: {
-    paddingVertical: 16,
+  title: {
+    fontSize: 24,
+    fontWeight: "bold",
+    marginTop: 24,
+    textAlign: "center",
+    color: "#333",
+  },
+  description: {
+    fontSize: 15,
+    textAlign: "center",
+    color: "#666",
+    marginVertical: 16,
+    paddingHorizontal: 8,
+  },
+  gridContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
+    gap: 12,
   },
 });

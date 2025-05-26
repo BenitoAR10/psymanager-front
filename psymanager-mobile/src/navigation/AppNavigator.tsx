@@ -19,6 +19,7 @@ import RegisterStep1Screen from "../screens/auth/RegisterStep1Screen";
 import RegisterStep2Screen from "../screens/auth/RegisterStep2Screen";
 import HelpCenterScreen from "../screens/profile/HelpCenterScreen";
 import TermsAndConditionsScreen from "../screens/profile/TermsAndConditionsScreen";
+import { ExercisePlayerContainer } from "../screens/calm/ExercisePlayerContainer";
 
 export type RootStackParamList = {
   Login: undefined;
@@ -41,6 +42,15 @@ export type RootStackParamList = {
   CompleteProfile: undefined;
   HelpCenter: undefined;
   TermsAndConditions: undefined;
+  ExercisePlayer: {
+    exercise: {
+      id: number;
+      title: string;
+      category: string;
+      audioUrl: string;
+      pointsReward: number;
+    };
+  };
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -98,6 +108,11 @@ const PatientStack = () => (
       options={{
         header: () => <CustomHeader currentRoute="TermsAndConditions" />,
       }}
+    />
+    <Stack.Screen
+      name="ExercisePlayer"
+      component={ExercisePlayerContainer}
+      options={{ headerShown: false }}
     />
   </Stack.Navigator>
 );

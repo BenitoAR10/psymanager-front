@@ -13,6 +13,7 @@ import MyAppointmentsScreen from "../screens/appointments/MyAppointmentsScreen";
 import CustomHeader from "../components/common/CustomHeader";
 import ProfileScreen from "../screens/profile/ProfileScreen";
 import { useTreatmentStatus } from "../hooks/useTreatmentStatus";
+import CalmNowContainer from "../screens/calm/CalmNowContainer";
 
 // Colores mejorados y consistentes
 const colors = {
@@ -27,9 +28,6 @@ const colors = {
   border: "#E3E8EF",
   activeBackground: "#4DB6AC15", // 15% opacity
 };
-
-// Pantallas no implementadas aún
-const CalmNowScreen = () => <Text>Calma Ahora</Text>;
 
 const Tab = createBottomTabNavigator();
 
@@ -143,7 +141,7 @@ const PatientTabs: React.FC = () => {
         }}
       />
       {hasActiveTreatment && (
-        <Tab.Screen name="CalmNow" component={CalmNowScreen} />
+        <Tab.Screen name="CalmNow" component={CalmNowContainer} />
       )}
       <Tab.Screen
         name="Appointments"

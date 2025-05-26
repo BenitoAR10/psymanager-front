@@ -1,15 +1,5 @@
 import { fetcher } from "../utils/fetcher";
-
-/**
- * Tipo de dato que representa un ejercicio de bienestar.
- */
-export interface ExerciseDto {
-  id: number;
-  title: string;
-  category: string;
-  pointsReward: number;
-  audioUrl: string;
-}
+import type { Exercise } from "../types/exercise";
 
 /**
  * Obtiene la lista de ejercicios de bienestar disponibles.
@@ -18,7 +8,7 @@ export interface ExerciseDto {
  * @param category Categoría del ejercicio (opcional)
  * @returns Lista de ejercicios disponibles con sus datos y enlaces de audio
  */
-export async function getExercises(category?: string): Promise<ExerciseDto[]> {
+export async function getExercises(category?: string): Promise<Exercise[]> {
   const query = category ? `?category=${encodeURIComponent(category)}` : "";
   return await fetcher(`/api/wellness-exercises${query}`);
 }
