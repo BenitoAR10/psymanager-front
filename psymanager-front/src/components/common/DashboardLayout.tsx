@@ -98,7 +98,7 @@ const DashboardLayout: React.FC = () => {
     const parts = path.split("/").filter(Boolean);
     const last = parts[parts.length - 1];
 
-    return last.charAt(0).toUpperCase() + last.slice(1).toLowerCase();
+    return toTitleCase(last.replace(/-/g, " "));
   };
 
   return (

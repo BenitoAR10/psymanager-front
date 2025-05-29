@@ -4,8 +4,6 @@ import type React from "react";
 import {
   Typography,
   Box,
-  InputBase,
-  IconButton,
   Skeleton,
   Alert,
   Button,
@@ -14,21 +12,18 @@ import {
   Paper,
   Container,
 } from "@mui/material";
-import SearchIcon from "@mui/icons-material/Search";
-import RefreshIcon from "@mui/icons-material/Refresh";
-import FilterListIcon from "@mui/icons-material/FilterList";
 import { useAuth } from "../../auth/context/AuthContext";
 import { useStudentsQuery } from "../hooks/useStudentsQuery";
 import StudentsList from "../components/StudentsList";
 import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
+import SimpleSearchBar from "../../../components/common/SimpleSearchBar";
 
 const StudentsPage: React.FC = () => {
   const theme = useTheme();
   const { user } = useAuth();
   const therapistId = user?.userId ?? 0;
   const [searchTerm, setSearchTerm] = useState("");
-
   const navigate = useNavigate();
 
   const {
@@ -38,15 +33,27 @@ const StudentsPage: React.FC = () => {
     refetch,
   } = useStudentsQuery(therapistId);
 
+  const [selectedCareer, setSelectedCareer] = useState("");
+
+  const careerOptions = useMemo(() => {
+    const careers = students.map((s) => s.careerName).filter(Boolean);
+    return Array.from(new Set(careers)).sort();
+  }, [students]);
+
   // Filtrar estudiantes según búsqueda
   const filteredStudents = useMemo(() => {
-    if (!searchTerm.trim()) return students;
+    return students.filter((student) => {
+      const matchesName = student.studentName
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase());
 
-    const term = searchTerm.toLowerCase();
-    return students.filter((student) =>
-      student.studentName.toLowerCase().includes(term)
-    );
-  }, [students, searchTerm]);
+      const matchesCareer = selectedCareer
+        ? student.careerName === selectedCareer
+        : true;
+
+      return matchesName && matchesCareer;
+    });
+  }, [students, searchTerm, selectedCareer]);
 
   // Renderizar skeletons durante la carga
   const renderSkeletons = () => {
@@ -97,20 +104,6 @@ const StudentsPage: React.FC = () => {
           <Typography variant="h5" fontWeight={600} color="#2A3548">
             Estudiantes atendidos
           </Typography>
-          <Box
-            sx={{
-              ml: 2,
-              px: 1.5,
-              py: 0.5,
-              borderRadius: "4px",
-              bgcolor: alpha(theme.palette.primary.main, 0.1),
-              color: theme.palette.primary.main,
-              fontSize: "0.75rem",
-              fontWeight: 600,
-            }}
-          >
-            {students.length} estudiantes
-          </Box>
         </Box>
         <Typography
           variant="body1"
@@ -122,72 +115,15 @@ const StudentsPage: React.FC = () => {
         </Typography>
       </Box>
 
-      {/* Barra de búsqueda */}
-      <Paper
-        elevation={0}
-        sx={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          mb: 3,
-          p: 1,
-          borderRadius: 2,
-          border: "1px solid",
-          borderColor: "divider",
-        }}
-      >
-        <Box
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            flex: 1,
-            borderRadius: "8px",
-            pl: 2,
-          }}
-        >
-          <SearchIcon sx={{ color: "text.secondary", mr: 1 }} />
-          <InputBase
-            sx={{
-              flex: 1,
-              fontSize: "0.95rem",
-              color: "text.primary",
-              "::placeholder": {
-                color: "text.secondary",
-                opacity: 0.7,
-              },
-            }}
-            placeholder="Buscar por nombre de estudiante..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </Box>
-
-        <Box sx={{ display: "flex" }}>
-          <IconButton
-            sx={{
-              color: "text.secondary",
-              "&:hover": {
-                color: "primary.main",
-                bgcolor: alpha(theme.palette.primary.main, 0.05),
-              },
-            }}
-          >
-            <FilterListIcon />
-          </IconButton>
-          <IconButton
-            onClick={() => refetch()}
-            sx={{
-              color: "text.secondary",
-              "&:hover": {
-                color: "primary.main",
-                bgcolor: alpha(theme.palette.primary.main, 0.05),
-              },
-            }}
-          >
-            <RefreshIcon />
-          </IconButton>
-        </Box>
-      </Paper>
+      {/* Barra de búsqueda mejorada */}
+      <SimpleSearchBar
+        searchTerm={searchTerm}
+        setSearchTerm={setSearchTerm}
+        selectedCareer={selectedCareer}
+        setSelectedCareer={setSelectedCareer}
+        careerOptions={careerOptions}
+        totalResults={filteredStudents.length}
+      />
 
       {/* Contenido principal */}
       <Paper

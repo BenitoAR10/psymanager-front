@@ -1,20 +1,28 @@
-"use client"
+"use client";
 
-import type React from "react"
-import { Grid, Box, Typography, Button, SvgIcon, useTheme, Paper, useMediaQuery } from "@mui/material"
-import GoogleIcon from "@mui/icons-material/Google"
-import MyLottieAnimation from "../../../components/animations/MyLottieAnimation"
-import logoPSIUCB from "../../../assets/images/logo.jpg"
+import type React from "react";
+import {
+  Grid,
+  Box,
+  Typography,
+  Button,
+  SvgIcon,
+  useTheme,
+  Paper,
+  useMediaQuery,
+} from "@mui/material";
+import GoogleIcon from "@mui/icons-material/Google";
+import MyLottieAnimation from "../../../components/animations/MyLottieAnimation";
+import logoPSIUCB from "../../../assets/images/logo.jpg";
 
 const Login: React.FC = () => {
-  const theme = useTheme()
-  const isMobile = useMediaQuery(theme.breakpoints.down("md"))
-  const isTablet = useMediaQuery(theme.breakpoints.between("sm", "md"))
-  const isLaptop = useMediaQuery(theme.breakpoints.between("md", "lg"))
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
+  const isLaptop = useMediaQuery(theme.breakpoints.between("md", "lg"));
 
   const handleLogin = () => {
-    window.location.href = "http://localhost:8080/oauth2/authorization/google"
-  }
+    window.location.href = "http://localhost:8080/oauth2/authorization/google";
+  };
 
   return (
     <Grid
@@ -172,7 +180,8 @@ const Login: React.FC = () => {
               fontSize: { xs: "0.85rem", sm: "0.9rem", md: "1rem" }, // Tamaño adaptativo
             }}
           >
-            Inicia sesión para acceder a tu cuenta y gestionar tus horarios de consulta
+            Inicia sesión para acceder a tu cuenta y gestionar tus horarios de
+            consulta
           </Typography>
 
           <Box
@@ -190,7 +199,12 @@ const Login: React.FC = () => {
                   lg: "scale(0.9)",
                 },
                 transformOrigin: "center center",
-                maxHeight: { xs: "150px", sm: "180px", md: "200px", lg: "220px" }, // Altura máxima adaptativa
+                maxHeight: {
+                  xs: "150px",
+                  sm: "180px",
+                  md: "200px",
+                  lg: "220px",
+                }, // Altura máxima adaptativa
               },
             }}
           >
@@ -257,7 +271,7 @@ const Login: React.FC = () => {
         </Typography>
       </Box>
     </Grid>
-  )
-}
+  );
+};
 
-export default Login
+export default Login;

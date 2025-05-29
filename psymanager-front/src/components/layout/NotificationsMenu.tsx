@@ -13,10 +13,6 @@ import {
   useTheme,
   CircularProgress,
   Stack,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
 } from "@mui/material";
 
 import NotificationsNoneIcon from "@mui/icons-material/NotificationsNone";
@@ -24,6 +20,7 @@ import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import { useState } from "react";
 import type { UpcomingAppointmentDto } from "../../features/appointments/types";
+import AppointmentRequestModal from "./AppointmentRequestModal";
 
 export interface NotificationsMenuProps {
   anchorEl: HTMLElement | null;
@@ -316,67 +313,13 @@ const NotificationsMenu: React.FC<NotificationsMenuProps> = ({
         )}
       </Menu>
 
-      <Dialog
+      <AppointmentRequestModal
         open={isModalOpen}
+        appointment={selectedAppointment}
         onClose={handleCloseModal}
-        fullWidth
-        maxWidth="sm"
-      >
-        <DialogTitle>Confirmar solicitud</DialogTitle>
-        <DialogContent dividers>
-          <Typography variant="subtitle2" gutterBottom>
-            Estudiante:
-          </Typography>
-          <Typography variant="body1" gutterBottom>
-            {selectedAppointment?.studentName}
-          </Typography>
-
-          <Typography variant="subtitle2" gutterBottom>
-            Fecha y hora:
-          </Typography>
-          <Typography variant="body1" gutterBottom>
-            {formatDateTime(selectedAppointment?.dateTime || "")}
-          </Typography>
-
-          {selectedAppointment?.reason && (
-            <>
-              <Typography variant="subtitle2" gutterBottom>
-                Motivo de la solicitud:
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                “{selectedAppointment.reason}”
-              </Typography>
-            </>
-          )}
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseModal}>Cerrar</Button>
-          <Button
-            onClick={() => {
-              if (selectedAppointment) {
-                onReject(selectedAppointment.appointmentId);
-                handleCloseModal();
-              }
-            }}
-            color="error"
-            variant="outlined"
-          >
-            Rechazar
-          </Button>
-          <Button
-            onClick={() => {
-              if (selectedAppointment) {
-                onAccept(selectedAppointment.appointmentId);
-                handleCloseModal();
-              }
-            }}
-            color="primary"
-            variant="contained"
-          >
-            Aceptar
-          </Button>
-        </DialogActions>
-      </Dialog>
+        onAccept={onAccept}
+        onReject={onReject}
+      />
     </>
   );
 };

@@ -6,4 +6,5 @@ export interface AssignedPatientDto {
   endDate: string;
   totalSessions: number;
   completedSessions: number;
+  careerName: string;
 }
