@@ -407,10 +407,10 @@ const UpcomingAppointments: React.FC<UpcomingAppointmentsProps> = ({
                         }}
                       >
                         {(() => {
-                          const parts = appt.studentName.trim().split(" ");
+                          const parts = appt.studentName?.trim().split(" ").filter(Boolean) ?? [];
                           return parts.length >= 2
-                            ? `${parts[0]} ${parts[1][0]}.`
-                            : appt.studentName;
+                              ? `${parts[0]} ${parts[1][0]}.`
+                              : parts[0] ?? "Sin nombre";
                         })()}
                         {isActive && (
                           <Box
