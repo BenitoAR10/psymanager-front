@@ -10,7 +10,10 @@ import React, {
 } from "react";
 import { jwtDecode } from "jwt-decode";
 import { getTokenExpirationDelay } from "../../../utils/tokenUtils";
-import { refreshTokenService } from "../services/authService";
+import {
+  refreshTokenService,
+  getPermissionsService,
+} from "../services/authService";
 import { getTherapistProfile } from "../../profile/services/profileService";
 
 interface JwtPayload {
@@ -41,6 +44,8 @@ interface AuthState {
   user: User | null;
   login: (accessToken: string, refreshToken: string) => void;
   logout: () => void;
+  permissions: string[];
+  hasPermission: (permission: string) => boolean;
 }
 
 const AuthContext = createContext<AuthState>({
@@ -53,6 +58,8 @@ const AuthContext = createContext<AuthState>({
   user: null,
   login: () => {},
   logout: () => {},
+  permissions: [],
+  hasPermission: () => false,
 });
 
 interface AuthProviderProps {
@@ -68,6 +75,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const refreshTimeoutId = useRef<NodeJS.Timeout | null>(null);
 
   const isAuthenticated = Boolean(accessToken);
+  const [permissions, setPermissions] = useState<string[]>([]);
+
+  /**
+   * Verifica si el usuario tiene un permiso específico.
+   * Ejemplo: hasPermission("ADD_EXERCISE_RESOURCE")
+   */
+  const hasPermission = useCallback(
+    (permission: string) => permissions.includes(permission),
+    [permissions]
+  );
 
   /**
    * Cierra sesión y limpia todo.
@@ -111,7 +128,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
    * Guarda tokens y usuario al hacer login,
    * y verifica si debe completar su perfil.
    */
-  const login = useCallback((access: string, refresh: string) => {
+  const login = useCallback(async (access: string, refresh: string) => {
     setAccessToken(access);
     setRefreshToken(refresh);
     localStorage.setItem("accessToken", access);
@@ -127,11 +144,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         roles: decoded.roles || [],
       });
 
+      // Cargar permisos desde el backend
+      const perms = await getPermissionsService();
+      setPermissions(perms);
+
       // Verifica si debe completar el perfil
       checkIfJustRegistered();
     } catch (error) {
       console.error("Error decodificando el accessToken en login", error);
       setUser(null);
+      setPermissions([]);
     }
   }, []);
 
@@ -178,6 +200,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         console.error("Error decodificando el accessToken", error);
         setUser(null);
       }
+      getPermissionsService()
+        .then((perms) => setPermissions(perms))
+        .catch(() => setPermissions([]));
     }
 
     if (storedRefresh) {
@@ -249,6 +274,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       logout,
       justRegistered,
       setJustRegistered,
+      permissions,
+      hasPermission,
     }),
     [
       accessToken,
@@ -259,6 +286,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       login,
       logout,
       justRegistered,
+      permissions,
+      hasPermission,
     ]
   );
 

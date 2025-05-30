@@ -35,6 +35,14 @@ const ClosedTreatmentDetailPage = lazy(
   () => import("./features/treatments/pages/ClosedTreatmentDetailPage")
 );
 
+const UploadExercisePage = lazy(
+  () => import("./features/exercises/pages/UploadExercisePage")
+);
+
+const ExerciseListPage = lazy(
+  () => import("./features/exercises/pages/ExerciseListPage")
+);
+
 const AppRoutes: React.FC = () => {
   return (
     <Suspense
@@ -64,6 +72,8 @@ const AppRoutes: React.FC = () => {
             <Route path="estudiantes" element={<StudentsPage />} />
             <Route path="perfil" element={<ProfilePage />} />
             <Route path="ayuda" element={<HelpPage />} />
+            <Route path="subir-ejercicio" element={<UploadExercisePage />} />
+            <Route path="ejercicios" element={<ExerciseListPage />} />
             <Route path="tratamientos/:id" element={<TreatmentDetailPage />} />
             <Route path="historiales" element={<ClosedTreatmentsPage />} />
             <Route

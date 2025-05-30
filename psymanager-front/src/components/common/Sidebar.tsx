@@ -25,6 +25,8 @@ import HelpOutlineOutlinedIcon from "@mui/icons-material/HelpOutlineOutlined";
 import LogoutOutlinedIcon from "@mui/icons-material/LogoutOutlined";
 import SchoolOutlinedIcon from "@mui/icons-material/SchoolOutlined";
 import AssignmentOutlinedIcon from "@mui/icons-material/AssignmentOutlined";
+import UploadFileIcon from "@mui/icons-material/UploadFile";
+import LibraryMusicOutlinedIcon from "@mui/icons-material/LibraryMusicOutlined";
 
 interface SidebarProps {
   drawerWidth: number;
@@ -58,12 +60,26 @@ const menuItems = [
     description: "Registros clínicos",
   },
   {
+    text: "Subir ejercicio",
+    path: "/dashboard/subir-ejercicio",
+    icon: <UploadFileIcon />,
+    description: "Ejercicios de bienestar",
+  },
+  {
+    text: "Ejercicios",
+    path: "/dashboard/ejercicios",
+    icon: <LibraryMusicOutlinedIcon />,
+    description: "Recursos de bienestar",
+  },
+  {
     text: "Perfil",
     path: "/dashboard/perfil",
     icon: <PersonOutlineOutlinedIcon />,
     description: "Tu información",
   },
 ];
+
+const ADD_EXERCISE_PERMISSION = "ADD_EXERCISE_RESOURCE";
 
 const secondaryMenuItems = [
   {
@@ -79,7 +95,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   onDrawerToggle,
 }) => {
   const theme = useTheme();
-  const { logout } = useAuth();
+  const { logout, hasPermission } = useAuth();
   const location = useLocation();
 
   // Contenido del Drawer mejorado
@@ -160,72 +176,79 @@ const Sidebar: React.FC<SidebarProps> = ({
         MENÚ PRINCIPAL
       </Typography>
       <List sx={{ px: 2 }}>
-        {menuItems.map((item) => {
-          const isActive = location.pathname === item.path;
-          return (
-            <ListItem key={item.text} disablePadding sx={{ mb: 0.5 }}>
-              <ListItemButton
-                component={Link}
-                to={item.path}
-                onClick={mobileOpen ? onDrawerToggle : undefined}
-                sx={{
-                  borderRadius: 2,
-                  py: 1.2,
-                  px: 2,
-                  backgroundColor: isActive
-                    ? alpha(theme.palette.primary.main, 0.1)
-                    : "transparent",
-                  color: isActive
-                    ? theme.palette.primary.main
-                    : "text.secondary",
-                  "&:hover": {
-                    backgroundColor: isActive
-                      ? alpha(theme.palette.primary.main, 0.15)
-                      : alpha(theme.palette.grey[500], 0.08),
-                  },
-                  transition: "all 0.2s ease",
-                }}
-              >
-                <ListItemIcon
+        {menuItems
+          .filter((item) => {
+            if (item.text === "Subir ejercicio") {
+              return hasPermission(ADD_EXERCISE_PERMISSION);
+            }
+            return true;
+          })
+          .map((item) => {
+            const isActive = location.pathname === item.path;
+            return (
+              <ListItem key={item.text} disablePadding sx={{ mb: 0.5 }}>
+                <ListItemButton
+                  component={Link}
+                  to={item.path}
+                  onClick={mobileOpen ? onDrawerToggle : undefined}
                   sx={{
+                    borderRadius: 2,
+                    py: 1.2,
+                    px: 2,
+                    backgroundColor: isActive
+                      ? alpha(theme.palette.primary.main, 0.1)
+                      : "transparent",
                     color: isActive
                       ? theme.palette.primary.main
                       : "text.secondary",
-                    minWidth: 36,
+                    "&:hover": {
+                      backgroundColor: isActive
+                        ? alpha(theme.palette.primary.main, 0.15)
+                        : alpha(theme.palette.grey[500], 0.08),
+                    },
+                    transition: "all 0.2s ease",
                   }}
                 >
-                  {item.icon}
-                </ListItemIcon>
-                <Box>
-                  <ListItemText
-                    primary={item.text}
-                    primaryTypographyProps={{
-                      fontSize: "0.95rem",
-                      fontWeight: isActive ? 600 : 500,
-                      color: isActive ? "primary.main" : "text.primary",
-                    }}
-                    secondary={item.description}
-                    secondaryTypographyProps={{
-                      fontSize: "0.75rem",
-                      display: { xs: "none", lg: "block" },
-                    }}
-                  />
-                </Box>
-                {isActive && (
-                  <Box
+                  <ListItemIcon
                     sx={{
-                      width: 4,
-                      height: 32,
-                      borderRadius: 1,
-                      backgroundColor: theme.palette.primary.main,
-                      ml: 1,
+                      color: isActive
+                        ? theme.palette.primary.main
+                        : "text.secondary",
+                      minWidth: 36,
                     }}
-                  />
-                )}
-              </ListItemButton>
-            </ListItem>
-          );
-        })}
+                  >
+                    {item.icon}
+                  </ListItemIcon>
+                  <Box>
+                    <ListItemText
+                      primary={item.text}
+                      primaryTypographyProps={{
+                        fontSize: "0.95rem",
+                        fontWeight: isActive ? 600 : 500,
+                        color: isActive ? "primary.main" : "text.primary",
+                      }}
+                      secondary={item.description}
+                      secondaryTypographyProps={{
+                        fontSize: "0.75rem",
+                        display: { xs: "none", lg: "block" },
+                      }}
+                    />
+                  </Box>
+                  {isActive && (
+                    <Box
+                      sx={{
+                        width: 4,
+                        height: 32,
+                        borderRadius: 1,
+                        backgroundColor: theme.palette.primary.main,
+                        ml: 1,
+                      }}
+                    />
+                  )}
+                </ListItemButton>
+              </ListItem>
+            );
+          })}
       </List>
 
       <Divider sx={{ my: 2 }} />

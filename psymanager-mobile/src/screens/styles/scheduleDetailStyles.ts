@@ -15,7 +15,7 @@ const scheduleDetailStyles = StyleSheet.create({
     paddingVertical: spacing.sm,
     borderBottomWidth: 1,
     borderBottomColor: colors.border.light,
-    marginBottom: spacing.md,
+    marginBottom: spacing.lg, // Aumentado para mejor separación
   },
   backButton: {
     padding: spacing.sm,
@@ -29,50 +29,57 @@ const scheduleDetailStyles = StyleSheet.create({
   },
   profileContainer: {
     alignItems: "center",
-    marginVertical: spacing.lg,
+    marginVertical: spacing.lg, // Espaciado uniforme
+    paddingVertical: spacing.md, // Padding interno para mejor separación
   },
   avatar: {
-    backgroundColor: colors.grey[100],
+    backgroundColor: colors.primary.light, // Color más amigable
+    marginBottom: spacing.md, // Espaciado consistente después del avatar
     ...shadows.sm,
   },
   therapistName: {
     fontSize: typography.sizes.lg,
     fontWeight: "bold",
     color: colors.text.primary,
-    marginTop: spacing.sm,
+    marginBottom: spacing.sm, // Espaciado consistente antes de las especialidades
     textAlign: "center",
+    paddingHorizontal: spacing.md, // Padding lateral para mejor lectura
   },
   therapistSpecialty: {
     fontSize: typography.sizes.sm,
     color: colors.text.secondary,
     textAlign: "center",
-    marginTop: spacing.xs,
+    marginBottom: spacing.md, // Espaciado consistente
   },
   section: {
-    marginBottom: spacing.xl,
+    marginBottom: spacing.lg, // Espaciado uniforme entre secciones
     backgroundColor: colors.background.paper,
     borderRadius: borderRadius.md,
+    paddingVertical: spacing.sm, // Padding interno consistente
   },
   sectionTitle: {
     fontSize: typography.sizes.md,
     fontWeight: "bold",
     color: colors.text.primary,
-    marginBottom: spacing.sm,
+    marginBottom: spacing.sm, // Espaciado consistente
   },
   sectionSubtitle: {
     fontSize: typography.sizes.sm,
     color: colors.text.secondary,
-    marginBottom: spacing.md,
+    marginBottom: spacing.md, // Espaciado consistente
+    lineHeight: 20,
   },
   sectionText: {
     fontSize: typography.sizes.sm,
     color: colors.text.secondary,
     lineHeight: 20,
+    paddingHorizontal: spacing.xs, // Padding lateral sutil
   },
   hoursContainer: {
     flexDirection: "row",
     flexWrap: "wrap",
-    marginTop: spacing.sm,
+    marginTop: spacing.md, // Espaciado consistente
+    paddingHorizontal: spacing.xs,
   },
   hourItem: {
     alignItems: "center",
@@ -103,8 +110,9 @@ const scheduleDetailStyles = StyleSheet.create({
     borderRadius: borderRadius.md,
     paddingVertical: spacing.md,
     alignItems: "center",
-    marginTop: spacing.xl,
+    marginTop: spacing.lg, // Espaciado consistente
     marginBottom: spacing.xl,
+    marginHorizontal: spacing.sm, // Margen lateral para mejor apariencia
     ...shadows.md,
   },
   reserveButtonText: {
@@ -112,12 +120,12 @@ const scheduleDetailStyles = StyleSheet.create({
     fontSize: typography.sizes.md,
     fontWeight: "semibold",
   },
-  // Estilos para la sección de motivo
+  // Estilos mejorados para la sección de motivo
   reasonContainer: {
     backgroundColor: colors.background.paper,
     borderRadius: borderRadius.lg,
     padding: spacing.lg,
-    marginBottom: spacing.lg,
+    marginBottom: spacing.lg, // Espaciado consistente
     borderWidth: 1,
     borderColor: colors.border.light,
     ...shadows.sm,
@@ -125,7 +133,7 @@ const scheduleDetailStyles = StyleSheet.create({
   reasonHeader: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: spacing.sm,
+    marginBottom: spacing.md, // Espaciado consistente
   },
   reasonIcon: {
     marginRight: spacing.sm,
@@ -139,7 +147,7 @@ const scheduleDetailStyles = StyleSheet.create({
   reasonSubtitle: {
     fontSize: typography.sizes.sm,
     color: colors.text.secondary,
-    marginBottom: spacing.md,
+    marginBottom: spacing.md, // Espaciado consistente
     lineHeight: 20,
   },
   reasonInput: {
@@ -284,10 +292,34 @@ const scheduleDetailStyles = StyleSheet.create({
     opacity: 0.6,
   },
 
+  // Estilos mejorados para las especialidades
+  specialtiesContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "center",
+    gap: spacing.xs, // Espaciado consistente entre chips
+    marginTop: spacing.sm, // Espaciado consistente desde el nombre
+    marginBottom: spacing.md, // Espaciado consistente hacia el siguiente elemento
+    paddingHorizontal: spacing.md, // Padding lateral
+  },
+
+  specialtyChip: {
+    backgroundColor: colors.primary.light, // Color más amigable
+    marginRight: 0, // Removido para usar gap
+    marginBottom: 0, // Removido para usar gap
+  },
+
+  specialtyChipText: {
+    fontSize: typography.sizes.xs,
+    color: colors.text.primary,
+    fontWeight: "medium",
+  },
+
   // Estilos para los slots de tiempo
   timeSlots: {
     flexDirection: "row",
     flexWrap: "wrap",
+    paddingHorizontal: spacing.xs,
   },
   timeSlot: {
     flexDirection: "row",

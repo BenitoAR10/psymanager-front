@@ -11,28 +11,24 @@ import {
   Chip,
   Stack,
   useTheme,
-  TextField,
-  InputAdornment,
   Avatar,
   Divider,
   Card,
   alpha,
   Button,
-  IconButton,
   Tooltip,
 } from "@mui/material";
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
 import HistoryEduIcon from "@mui/icons-material/HistoryEdu";
-import SearchIcon from "@mui/icons-material/Search";
 import CalendarTodayOutlinedIcon from "@mui/icons-material/CalendarTodayOutlined";
 import EventAvailableIcon from "@mui/icons-material/EventAvailable";
 import PersonOutlineIcon from "@mui/icons-material/PersonOutline";
 import SentimentDissatisfiedIcon from "@mui/icons-material/SentimentDissatisfied";
-import FilterListIcon from "@mui/icons-material/FilterList";
 import { useAuth } from "../../auth/context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { useClosedTreatmentsQuery } from "../hooks/useClosedTreatmentsQuery";
 import dayjs from "dayjs";
+import SimpleSearchBar from "../../../components/common/SimpleSearchBar";
 
 const ClosedTreatmentsPage: React.FC = () => {
   const theme = useTheme();
@@ -92,59 +88,13 @@ const ClosedTreatmentsPage: React.FC = () => {
         </Typography>
       </Box>
 
-      {/* Barra de búsqueda y filtros */}
-      <Box
-        sx={{
-          display: "flex",
-          gap: 2,
-          mb: 3,
-          flexDirection: { xs: "column", sm: "row" },
-          alignItems: { xs: "stretch", sm: "center" },
-        }}
-      >
-        <TextField
-          fullWidth
-          placeholder="Buscar por nombre o razón de cierre..."
-          variant="outlined"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <SearchIcon color="action" />
-              </InputAdornment>
-            ),
-            sx: {
-              borderRadius: 2,
-              bgcolor: "background.paper",
-              "& fieldset": {
-                borderColor: "divider",
-              },
-              "&:hover fieldset": {
-                borderColor: "primary.main",
-              },
-            },
-          }}
-          sx={{ flex: 1 }}
-        />
-        <Tooltip title="Filtros adicionales">
-          <IconButton
-            sx={{
-              bgcolor: "background.paper",
-              border: "1px solid",
-              borderColor: "divider",
-              borderRadius: 2,
-              width: { xs: "100%", sm: "auto" },
-              height: 56,
-              "&:hover": {
-                bgcolor: alpha(theme.palette.primary.main, 0.05),
-              },
-            }}
-          >
-            <FilterListIcon />
-          </IconButton>
-        </Tooltip>
-      </Box>
+      {/* Barra de búsqueda mejorada */}
+      <SimpleSearchBar
+        searchTerm={searchTerm}
+        setSearchTerm={setSearchTerm}
+        placeholder="Buscar por nombre o razón de cierre..."
+        totalResults={filteredTreatments.length}
+      />
 
       {/* Contenido principal */}
       {isLoading ? (

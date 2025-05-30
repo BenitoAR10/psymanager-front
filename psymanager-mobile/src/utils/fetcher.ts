@@ -49,9 +49,11 @@ async function refreshAccessToken(): Promise<void> {
 
 /**
  * Cliente de API centralizado que incluye el token y maneja el refresh automático.
+ * También maneja respuestas vacías (sin body).
+ *
  * @param input URL del endpoint o Request.
  * @param init Configuración del fetch (headers, método, body, etc.)
- * @returns Respuesta de la API como JSON.
+ * @returns Respuesta de la API como JSON o vacío.
  * @throws Error si falla la autenticación incluso tras intentar el refresh.
  */
 export async function fetcher<T>(
@@ -89,6 +91,12 @@ export async function fetcher<T>(
       }
     }
 
+    // ✅ Verificar si la respuesta es vacía
+    const contentLength = response.headers.get("Content-Length");
+    if (response.status === 204 || contentLength === "0") {
+      return {} as T;
+    }
+
     return response.json();
   }
 
@@ -107,6 +115,16 @@ export async function fetcher<T>(
       } catch {
         throw new Error(rawBody || `Error ${response.status}`);
       }
+    }
+
+    const contentLength = response.headers.get("Content-Length");
+    const contentType = response.headers.get("Content-Type") ?? "";
+    if (
+      response.status === 204 ||
+      contentLength === "0" ||
+      contentType === ""
+    ) {
+      return {} as T;
     }
 
     return response.json();

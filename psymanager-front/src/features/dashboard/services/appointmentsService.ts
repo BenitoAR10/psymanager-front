@@ -13,3 +13,13 @@ export async function getUpcomingAppointments(
   );
   return response.data;
 }
+
+/**
+ * Servicio para obtener todas las citas del terapeuta (pasadas y futuras).
+ */
+export async function getAllAppointments(): Promise<UpcomingAppointmentDto[]> {
+  const response = await axiosInstance.get<UpcomingAppointmentDto[]>(
+    "/api/sessions/all"
+  );
+  return response.data;
+}

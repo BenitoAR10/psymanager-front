@@ -19,6 +19,7 @@ import type { NavigationProp } from "@react-navigation/native";
 import type { RootStackParamList } from "../../navigation/AppNavigator";
 import type { SessionState } from "../../types/sessionTypes";
 import ScheduleView from "../../components/schedule/ScheduleView";
+import { calendarUpdateEmitter } from "../../utils/calendarUpdateEmitter";
 
 dayjs.locale("es");
 dayjs.extend(isoWeek);
@@ -109,6 +110,7 @@ const ScheduleContainer: React.FC = () => {
   const { height } = useWindowDimensions();
   const queryClient = useQueryClient();
   const isMounted = useRef(true);
+  const [calendarVersion, setCalendarVersion] = useState(0);
 
   const [weekStart, setWeekStart] = useState(
     dayjs().startOf("isoWeek").toDate()
@@ -127,7 +129,11 @@ const ScheduleContainer: React.FC = () => {
     Boolean(token) && !loadingTreatmentStatus && hasTreatmentActive === false;
 
   const { data: availableSchedules, isLoading: loadingAvailable } =
-    useAvailableSchedules(weekStart, shouldFetchAvailableSchedules);
+    useAvailableSchedules(
+      weekStart,
+      shouldFetchAvailableSchedules,
+      calendarVersion
+    );
 
   const [events, setEvents] = useState<CustomEvent[]>([]);
   const [initialLoadComplete, setInitialLoadComplete] = useState(false);
@@ -233,6 +239,14 @@ const ScheduleContainer: React.FC = () => {
       setModalVisible(true);
     }
   };
+
+  useEffect(() => {
+    const listener = () => {
+      setCalendarVersion((prev) => prev + 1);
+    };
+    const unsubscribe = calendarUpdateEmitter.subscribe(listener);
+    return () => unsubscribe();
+  }, []);
 
   return (
     <ScheduleView
