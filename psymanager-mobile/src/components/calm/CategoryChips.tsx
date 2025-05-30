@@ -1,4 +1,4 @@
-import React from "react";
+import type React from "react";
 import {
   View,
   Text,
@@ -6,8 +6,17 @@ import {
   TouchableOpacity,
   StyleSheet,
 } from "react-native";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { theme } from "../../screens/styles/themeConstants";
 
-const CATEGORIES = ["Todos", "Mis ejercicios", "Ansiedad", "Estrés"];
+const { colors, typography, spacing, borderRadius } = theme;
+
+const CATEGORIES = [
+  { name: "Todos", icon: "plus" },
+  { name: "Mis ejercicios", icon: "heart" },
+  { name: "Ansiedad", icon: "emoticon-sad-outline" },
+  { name: "Estrés", icon: "emoticon-neutral-outline" },
+];
 
 interface CategoryChipsProps {
   selected: string;
@@ -25,18 +34,31 @@ export const CategoryChips: React.FC<CategoryChipsProps> = ({
       contentContainerStyle={styles.scrollContainer}
     >
       {CATEGORIES.map((category) => {
-        const isSelected = selected === category;
+        const isSelected = selected === category.name;
 
         return (
           <TouchableOpacity
-            key={category}
+            key={category.name}
             style={[styles.chip, isSelected && styles.selectedChip]}
-            onPress={() => onSelectCategory(category)}
+            onPress={() => onSelectCategory(category.name)}
+            activeOpacity={0.7}
           >
+            <View
+              style={[
+                styles.iconContainer,
+                isSelected && styles.selectedIconContainer,
+              ]}
+            >
+              <MaterialCommunityIcons
+                name={category.icon as any}
+                size={20}
+                color={isSelected ? "#FFFFFF" : "#718096"}
+              />
+            </View>
             <Text
               style={[styles.chipText, isSelected && styles.selectedChipText]}
             >
-              {category}
+              {category.name}
             </Text>
           </TouchableOpacity>
         );
@@ -47,25 +69,36 @@ export const CategoryChips: React.FC<CategoryChipsProps> = ({
 
 const styles = StyleSheet.create({
   scrollContainer: {
-    paddingVertical: 12,
-    paddingHorizontal: 4,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.xs,
+    marginBottom: spacing.md,
   },
   chip: {
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    backgroundColor: "#eee",
-    borderRadius: 20,
-    marginRight: 8,
+    alignItems: "center",
+    marginRight: spacing.lg,
+    minWidth: 70,
   },
-  selectedChip: {
-    backgroundColor: "#007aff",
+  selectedChip: {},
+  iconContainer: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: "#E2E8F0",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: spacing.xs,
+  },
+  selectedIconContainer: {
+    backgroundColor: colors.primary.main,
   },
   chipText: {
-    fontSize: 14,
-    color: "#333",
+    fontSize: typography.sizes.xs,
+    color: colors.text.secondary,
+    fontWeight: typography.fontWeights.medium as any,
+    textAlign: "center",
   },
   selectedChipText: {
-    color: "#fff",
-    fontWeight: "600",
+    color: colors.text.primary,
+    fontWeight: typography.fontWeights.semibold as any,
   },
 });

@@ -2,7 +2,6 @@ import type React from "react";
 import { View, TouchableOpacity } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { exercisePlayerStyles } from "../styles/exercisePlayerStyles";
-import { theme } from "../styles/themeConstants";
 
 interface PlayerHeaderProps {
   onClose: () => void;
@@ -20,24 +19,20 @@ const PlayerHeader: React.FC<PlayerHeaderProps> = ({
       <TouchableOpacity
         style={exercisePlayerStyles.headerButton}
         onPress={onClose}
+        activeOpacity={0.7}
       >
-        <MaterialCommunityIcons
-          name="close"
-          size={24}
-          color={theme.colors.text.primary}
-        />
+        <MaterialCommunityIcons name="close" size={28} color="#2D3748" />
       </TouchableOpacity>
 
       <TouchableOpacity
         style={exercisePlayerStyles.headerButton}
         onPress={onToggleFavorite}
+        activeOpacity={0.7}
       >
         <MaterialCommunityIcons
           name={isFavorite ? "heart" : "heart-outline"}
-          size={24}
-          color={
-            isFavorite ? theme.colors.error.main : theme.colors.text.primary
-          }
+          size={28}
+          color={isFavorite ? "#F56565" : "#2D3748"}
         />
       </TouchableOpacity>
     </View>

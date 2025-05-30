@@ -7,28 +7,28 @@ const { width, height } = Dimensions.get("window");
 export const exercisePlayerStyles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background.paper,
+    backgroundColor: "#F0F7FA", // Fondo base más cálido
   },
   gradientBackground: {
     flex: 1,
     paddingHorizontal: spacing.lg,
-    paddingTop: spacing.xl,
-    paddingBottom: spacing.lg,
+    paddingTop: spacing.xl * 1.5,
+    paddingBottom: spacing.xl,
   },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: spacing.xl,
+    marginBottom: spacing.xl * 2,
     paddingHorizontal: spacing.sm,
   },
   headerButton: {
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: "rgba(255, 255, 255, 0.2)",
     justifyContent: "center",
     alignItems: "center",
+    backgroundColor: "transparent", // Sin fondo para los botones del header
   },
   contentContainer: {
     flex: 1,
@@ -37,132 +37,87 @@ export const exercisePlayerStyles = StyleSheet.create({
     paddingHorizontal: spacing.md,
   },
   illustrationContainer: {
-    width: width * 0.6,
-    height: width * 0.6,
+    width: 80,
+    height: 80,
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: spacing.xl,
-  },
-  illustration: {
-    width: "100%",
-    height: "100%",
-    borderRadius: width * 0.3,
-    backgroundColor: "rgba(255, 255, 255, 0.1)",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  videoContainer: {
-    width: width * 0.85,
-    height: width * 0.6,
-    borderRadius: borderRadius.lg,
-    overflow: "hidden",
-    marginBottom: spacing.xl,
-    backgroundColor: colors.grey[900],
-  },
-  video: {
-    width: "100%",
-    height: "100%",
+    marginBottom: spacing.xl * 1.5,
   },
   titleContainer: {
     alignItems: "center",
-    marginBottom: spacing.xl,
+    marginBottom: spacing.xl * 2,
+    paddingHorizontal: spacing.lg,
   },
   title: {
-    fontSize: typography.sizes["3xl"],
-    fontWeight: "bold",
-    color: colors.text.primary,
+    fontSize: 32,
+    fontWeight: "700" as any,
+    color: "#2D3748",
     textAlign: "center",
     marginBottom: spacing.sm,
-    lineHeight: typography.sizes["3xl"] * 1.2,
+    lineHeight: 38,
   },
   subtitle: {
     fontSize: typography.sizes.md,
-    color: colors.text.secondary,
+    color: "#718096",
     textAlign: "center",
-    fontWeight: "medium",
+    fontWeight: "400" as any,
+    marginBottom: spacing.lg,
+    lineHeight: 22,
   },
-  categoryChip: {
-    backgroundColor: colors.primary.light,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-    borderRadius: borderRadius.full,
-    marginBottom: spacing.sm,
-  },
-  categoryText: {
-    fontSize: typography.sizes.sm,
-    color: colors.text.primary,
-    fontWeight: "medium",
-  },
-  pointsContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "rgba(77, 182, 172, 0.1)",
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-    borderRadius: borderRadius.full,
-    marginTop: spacing.sm,
-  },
-  pointsText: {
-    fontSize: typography.sizes.sm,
-    color: colors.primary.main,
-    fontWeight: "semibold",
-    marginLeft: spacing.xs,
-  },
-  playerContainer: {
-    backgroundColor: "rgba(255, 255, 255, 0.95)",
-    borderRadius: borderRadius.xl,
-    padding: spacing.lg,
-    marginHorizontal: spacing.md,
+  playerSection: {
+    marginTop: spacing.xl * 2,
     marginBottom: spacing.xl,
-    ...theme.shadows.lg,
+    alignItems: "center",
+    paddingHorizontal: spacing.md, // Más padding horizontal
   },
   controlsContainer: {
-    flexDirection: "row",
-    justifyContent: "center",
     alignItems: "center",
-    marginBottom: spacing.lg,
-  },
-  controlButton: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    justifyContent: "center",
-    alignItems: "center",
-    marginHorizontal: spacing.lg,
+    marginBottom: spacing.xl * 1.5, // Más espacio después del botón
   },
   playButton: {
     width: 72,
     height: 72,
     borderRadius: 36,
-    backgroundColor: colors.grey[800],
+    backgroundColor: "#2D3748",
     justifyContent: "center",
     alignItems: "center",
-    marginHorizontal: spacing.xl,
-    ...theme.shadows.md,
+    shadowColor: "#2D3748",
+    shadowOffset: {
+      width: 0,
+      height: 2, // Sombra más sutil
+    },
+    shadowOpacity: 0.15, // Menos opacidad
+    shadowRadius: 6, // Radio más suave
+    elevation: 4, // Elevación reducida
   },
   progressContainer: {
-    marginTop: spacing.md,
+    width: "100%",
+    paddingHorizontal: spacing.lg, // Más padding horizontal
+    paddingVertical: spacing.md, // Padding vertical agregado
   },
   progressBar: {
-    height: 4,
-    backgroundColor: colors.grey[200],
-    borderRadius: 2,
-    marginBottom: spacing.sm,
+    height: 6, // Más gruesa
+    backgroundColor: "#CBD5E0", // Fondo más oscuro para mejor contraste
+    borderRadius: 3,
+    marginBottom: spacing.lg, // Más espacio antes de los tiempos
+    overflow: "hidden",
   },
   progressFill: {
     height: "100%",
-    backgroundColor: colors.primary.main,
-    borderRadius: 2,
+    backgroundColor: "#4FD1C5",
+    borderRadius: 3,
   },
   timeContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+    paddingHorizontal: spacing.sm, // Más padding horizontal
+    marginTop: spacing.xs, // Pequeño margen superior adicional
   },
   timeText: {
     fontSize: typography.sizes.sm,
-    color: colors.text.secondary,
-    fontWeight: "medium",
+    color: "#718096",
+    fontWeight: "500" as any,
   },
   loadingContainer: {
     flex: 1,
@@ -174,11 +129,13 @@ export const exercisePlayerStyles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     paddingHorizontal: spacing.xl,
+    backgroundColor: "#F0F7FA",
   },
   errorText: {
     fontSize: typography.sizes.md,
     color: colors.error.main,
     textAlign: "center",
     marginTop: spacing.md,
+    lineHeight: 22,
   },
 });

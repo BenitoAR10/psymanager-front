@@ -2,7 +2,6 @@ import type React from "react";
 import { View, TouchableOpacity } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { exercisePlayerStyles } from "../styles/exercisePlayerStyles";
-import { theme } from "../styles/themeConstants";
 
 interface PlayerControlsProps {
   isPlaying: boolean;
@@ -21,11 +20,13 @@ const PlayerControls: React.FC<PlayerControlsProps> = ({
       <TouchableOpacity
         style={exercisePlayerStyles.playButton}
         onPress={onPlayPause}
+        activeOpacity={0.8}
       >
         <MaterialCommunityIcons
           name={isPlaying ? "pause" : "play"}
-          size={36}
-          color={theme.colors.background.paper}
+          size={32}
+          color="#FFFFFF"
+          style={isPlaying ? {} : { marginLeft: 2 }}
         />
       </TouchableOpacity>
     </View>

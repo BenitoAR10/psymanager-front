@@ -1,13 +1,14 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import type React from "react";
+import { useState, useEffect } from "react";
 import { View, ActivityIndicator, Text } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useAudioPlayer, useAudioPlayerStatus } from "expo-audio";
-import { useEvent } from "expo";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useToast } from "react-native-toast-notifications";
+import CelebrationModal from "../../components/modals/CelebrationModal";
 
 import PlayerHeader from "./PlayerHeader";
 import ExerciseInfo from "./ExerciseInfo";
@@ -62,14 +63,19 @@ const ExercisePlayerScreen: React.FC<ExercisePlayerScreenProps> = ({
       setHasBeenCompleted(true);
       completeExercise({ exerciseId: id })
         .then(() => {
-          toast.show("🎉 ¡Ejercicio completado!", { type: "success" });
+          setShowCelebration(true);
         })
         .catch((error) => {
           console.error("❌ Error al registrar ejercicio:", error);
           toast.show("No se pudo registrar el ejercicio.", { type: "danger" });
         });
     }
-  }, [audioStatus]);
+  }, [audioStatus, hasBeenCompleted, id, toast]);
+
+  const handleCelebrationClose = () => {
+    setShowCelebration(false);
+    navigation.goBack();
+  };
 
   const handlePlayPause = async () => {
     try {
@@ -117,12 +123,14 @@ const ExercisePlayerScreen: React.FC<ExercisePlayerScreenProps> = ({
     );
   }
 
+  const [showCelebration, setShowCelebration] = useState(false);
+
   return (
     <View style={exercisePlayerStyles.container}>
       <LinearGradient
-        colors={["#F8FAFC", "#EEF2F6", "#E3E8EF"]}
+        colors={["#F0F7FA", "#E6F0F5", "#DCE9F0"]} // Gradiente suave
         start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
+        end={{ x: 0, y: 1 }}
         style={exercisePlayerStyles.gradientBackground}
       >
         <PlayerHeader
@@ -134,22 +142,16 @@ const ExercisePlayerScreen: React.FC<ExercisePlayerScreenProps> = ({
         <View style={exercisePlayerStyles.contentContainer}>
           {isLoading ? (
             <View style={exercisePlayerStyles.loadingContainer}>
-              <ActivityIndicator
-                size="large"
-                color={theme.colors.primary.main}
-              />
+              <ActivityIndicator size="large" color="#4FD1C5" />
             </View>
           ) : (
             <>
               <View style={exercisePlayerStyles.illustrationContainer}>
-                <View style={exercisePlayerStyles.illustration}>
-                  <MaterialCommunityIcons
-                    name="music-note"
-                    size={80}
-                    color={theme.colors.primary.main}
-                    style={{ opacity: 0.6 }}
-                  />
-                </View>
+                <MaterialCommunityIcons
+                  name="music-note"
+                  size={60}
+                  color="#4FD1C5"
+                />
               </View>
 
               <ExerciseInfo
@@ -163,7 +165,7 @@ const ExercisePlayerScreen: React.FC<ExercisePlayerScreenProps> = ({
         </View>
 
         {!isLoading && (
-          <View style={exercisePlayerStyles.playerContainer}>
+          <View style={exercisePlayerStyles.playerSection}>
             <PlayerControls
               isPlaying={isPlaying}
               onPlayPause={handlePlayPause}
@@ -179,6 +181,11 @@ const ExercisePlayerScreen: React.FC<ExercisePlayerScreenProps> = ({
             />
           </View>
         )}
+        <CelebrationModal
+          visible={showCelebration}
+          points={pointsReward}
+          onClose={handleCelebrationClose}
+        />
       </LinearGradient>
     </View>
   );

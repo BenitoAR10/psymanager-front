@@ -1,18 +1,18 @@
-// src/screens/calm/CalmNowScreen.tsx
-
-import React from "react";
+import type React from "react";
 import {
   View,
   Text,
   StyleSheet,
   ActivityIndicator,
-  FlatList,
   ScrollView,
 } from "react-native";
 import { ExerciseCard } from "../../components/calm/ExerciseCard";
 import { FeaturedExerciseCard } from "../../components/calm/FeaturedExerciseCard";
 import { CategoryChips } from "../../components/calm/CategoryChips";
 import type { Exercise } from "../../types/exercise";
+import { theme } from "../../screens/styles/themeConstants";
+
+const { colors, typography, spacing, borderRadius } = theme;
 
 interface CalmNowScreenProps {
   isLoading: boolean;
@@ -34,7 +34,7 @@ export const CalmNowScreen: React.FC<CalmNowScreenProps> = ({
   if (isLoading) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color="#007aff" />
+        <ActivityIndicator size="large" color={colors.primary.main} />
         <Text style={styles.loadingText}>Cargando ejercicios...</Text>
       </View>
     );
@@ -52,7 +52,11 @@ export const CalmNowScreen: React.FC<CalmNowScreenProps> = ({
   const [first, ...rest] = exercises;
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <ScrollView
+      style={styles.scrollView}
+      contentContainerStyle={styles.container}
+      showsVerticalScrollIndicator={false}
+    >
       <Text style={styles.title}>Calma Ahora</Text>
       <Text style={styles.description}>
         Aquí encontrarás ejercicios y técnicas para calmarte durante momentos de
@@ -72,7 +76,7 @@ export const CalmNowScreen: React.FC<CalmNowScreenProps> = ({
       )}
 
       <View style={styles.gridContainer}>
-        {rest.map((exercise) => (
+        {rest.map((exercise, index) => (
           <ExerciseCard
             key={exercise.id}
             title={exercise.title}
@@ -80,6 +84,7 @@ export const CalmNowScreen: React.FC<CalmNowScreenProps> = ({
             pointsReward={exercise.pointsReward}
             audioUrl={exercise.audioUrl}
             onPress={() => onExercisePress(exercise)}
+            index={index}
           />
         ))}
       </View>
@@ -88,50 +93,59 @@ export const CalmNowScreen: React.FC<CalmNowScreenProps> = ({
 };
 
 const styles = StyleSheet.create({
+  scrollView: {
+    flex: 1,
+    backgroundColor: colors.background.paper,
+  },
   container: {
-    paddingHorizontal: 16,
-    paddingBottom: 32,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.lg,
+    paddingBottom: spacing.xl * 2,
+  },
+  title: {
+    fontSize: typography.sizes["2xl"],
+    fontWeight: typography.fontWeights.bold as any,
+    color: colors.text.primary,
+    marginBottom: spacing.sm,
+    textAlign: "center",
+  },
+  description: {
+    fontSize: typography.sizes.sm,
+    textAlign: "center",
+    color: colors.text.secondary,
+    marginBottom: spacing.lg,
+    paddingHorizontal: spacing.md,
+    lineHeight: 22,
   },
   center: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    paddingHorizontal: 24,
+    paddingHorizontal: spacing.xl,
+    backgroundColor: colors.background.paper,
   },
   loadingText: {
-    marginTop: 12,
-    fontSize: 16,
-    color: "#555",
+    marginTop: spacing.md,
+    fontSize: typography.sizes.md,
+    color: colors.text.secondary,
+    fontWeight: typography.fontWeights.medium as any,
   },
   errorText: {
-    fontSize: 18,
-    color: "#c00",
+    fontSize: typography.sizes.lg,
+    color: colors.error.main,
     textAlign: "center",
-    marginBottom: 8,
+    marginBottom: spacing.sm,
+    fontWeight: typography.fontWeights.semibold as any,
   },
   errorTextSmall: {
-    fontSize: 14,
-    color: "#888",
+    fontSize: typography.sizes.sm,
+    color: colors.grey[400],
     textAlign: "center",
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: "bold",
-    marginTop: 24,
-    textAlign: "center",
-    color: "#333",
-  },
-  description: {
-    fontSize: 15,
-    textAlign: "center",
-    color: "#666",
-    marginVertical: 16,
-    paddingHorizontal: 8,
   },
   gridContainer: {
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "space-between",
-    gap: 12,
+    marginTop: spacing.md,
   },
 });
