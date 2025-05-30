@@ -153,9 +153,9 @@ const UploadExercisePage: React.FC = () => {
                       {...field}
                       sx={{ borderRadius: 2 }}
                     >
-                      <MenuItem value="ansiedad">Ansiedad</MenuItem>
-                      <MenuItem value="estrés">Estrés</MenuItem>
-                      <MenuItem value="relajación">Relajación</MenuItem>
+                      <MenuItem value="Ansiedad">Ansiedad</MenuItem>
+                      <MenuItem value="Estrés">Estrés</MenuItem>
+                      <MenuItem value="Relajación">Relajación</MenuItem>
                     </Select>
                     {fieldState.error && (
                       <Typography variant="caption" color="error">
