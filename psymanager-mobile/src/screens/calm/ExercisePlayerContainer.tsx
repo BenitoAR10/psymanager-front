@@ -27,6 +27,7 @@ export const ExercisePlayerContainer: React.FC = () => {
 
   return (
     <ExercisePlayerScreen
+      id={exercise.id}
       title={exercise.title}
       category={exercise.category}
       pointsReward={exercise.pointsReward}

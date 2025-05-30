@@ -4,8 +4,10 @@ import React, { useState, useEffect } from "react";
 import { View, ActivityIndicator, Text } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useAudioPlayer, useAudioPlayerStatus } from "expo-audio";
+import { useEvent } from "expo";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
+import { useToast } from "react-native-toast-notifications";
 
 import PlayerHeader from "./PlayerHeader";
 import ExerciseInfo from "./ExerciseInfo";
@@ -13,8 +15,10 @@ import PlayerControls from "./PlayerControls";
 import ProgressBar from "./ProgressBar";
 import { exercisePlayerStyles } from "../styles/exercisePlayerStyles";
 import { theme } from "../styles/themeConstants";
+import { completeExercise } from "../../services/exerciseService";
 
 interface ExercisePlayerScreenProps {
+  id: number;
   title: string;
   category: string;
   pointsReward: number;
@@ -23,6 +27,7 @@ interface ExercisePlayerScreenProps {
 }
 
 const ExercisePlayerScreen: React.FC<ExercisePlayerScreenProps> = ({
+  id,
   title,
   category,
   pointsReward,
@@ -30,23 +35,41 @@ const ExercisePlayerScreen: React.FC<ExercisePlayerScreenProps> = ({
   description = "Ejercicio de relajación y bienestar",
 }) => {
   const navigation = useNavigation();
+  const toast = useToast();
+
   const [isFavorite, setIsFavorite] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
+  const [hasBeenCompleted, setHasBeenCompleted] = useState(false);
 
   const audioPlayer = useAudioPlayer(mediaUrl);
   const audioStatus = useAudioPlayerStatus(audioPlayer);
 
   const isPlaying = audioStatus?.playing ?? false;
   const isLoaded = audioStatus?.isLoaded ?? false;
-  const currentTime = (audioStatus?.currentTime ?? 0) / 1000;
-  const duration = (audioStatus?.duration ?? 0) / 1000;
+  const currentTime = audioStatus?.currentTime ?? 0;
+  const duration = audioStatus?.duration ?? 0;
 
   useEffect(() => {
     if (isLoaded) {
       setIsLoading(false);
     }
   }, [isLoaded]);
+
+  // Detectar cuando termina el audio
+  useEffect(() => {
+    if (audioStatus?.didJustFinish && !hasBeenCompleted) {
+      setHasBeenCompleted(true);
+      completeExercise({ exerciseId: id })
+        .then(() => {
+          toast.show("🎉 ¡Ejercicio completado!", { type: "success" });
+        })
+        .catch((error) => {
+          console.error("❌ Error al registrar ejercicio:", error);
+          toast.show("No se pudo registrar el ejercicio.", { type: "danger" });
+        });
+    }
+  }, [audioStatus]);
 
   const handlePlayPause = async () => {
     try {
