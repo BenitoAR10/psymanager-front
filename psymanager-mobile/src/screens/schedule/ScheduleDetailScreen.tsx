@@ -15,11 +15,17 @@ import scheduleDetailStyles from "../styles/scheduleDetailStyles";
 import type { RootStackParamList } from "../../navigation/AppNavigator";
 import { useAuth } from "../../auth/useAuth";
 import { Linking, Alert } from "react-native";
+import { Chip } from "react-native-paper";
+
 import {
   getRelatedSchedulesByScheduleId,
   createScheduledSession,
 } from "../../services/scheduleService";
-import type { ScheduleAvailabilityWithContactDto } from "../../types/scheduleTypes";
+import type {
+  ScheduleAvailabilityWithContactDto,
+  ScheduleAvailabilityDto,
+} from "../../types/scheduleTypes";
+import { useQueryClient } from "@tanstack/react-query";
 
 import { useToast } from "react-native-toast-notifications";
 import ConfirmReservationModal from "../../components/modals/ConfirmReservationModal";
@@ -27,15 +33,19 @@ import LoadingOverlay from "../../components/common/LoadingOverlay";
 import { TextInput } from "react-native-paper";
 import { MotiView } from "moti";
 import dayjs from "dayjs";
+import { calendarUpdateEmitter } from "../../utils/calendarUpdateEmitter";
 
 type ScheduleDetailRouteProp = RouteProp<RootStackParamList, "ScheduleDetail">;
 
 const ScheduleDetailScreen: React.FC = () => {
   const route = useRoute<ScheduleDetailRouteProp>();
   const { scheduleId, therapistName, startTime, endTime, date } = route.params;
-  const { token } = useAuth();
+  const { token, userInfo } = useAuth();
+  const userId = userInfo?.userId;
   const navigation = useNavigation();
   const toast = useToast();
+
+  const queryClient = useQueryClient();
 
   const [availableTimes, setAvailableTimes] = useState<
     ScheduleAvailabilityWithContactDto[]
@@ -60,12 +70,10 @@ const ScheduleDetailScreen: React.FC = () => {
             const isToday = slotDateTime.isSame(now, "day");
             const isInFuture = slotDateTime.isAfter(now);
 
-            // Si es hoy, solo mostrar horarios futuros
             if (isToday) {
               return item.availabilityStatus === "available" && isInFuture;
             }
 
-            // Si es otro día, mostrar todos los disponibles
             return item.availabilityStatus === "available";
           })
         );
@@ -115,34 +123,79 @@ const ScheduleDetailScreen: React.FC = () => {
     }
   };
 
+  useEffect(() => {
+    const unsubscribe = navigation.addListener("focus", () => {
+      const startDate = dayjs(date).startOf("week").format("YYYY-MM-DD");
+      const endDate = dayjs(date).endOf("week").format("YYYY-MM-DD");
+      queryClient.refetchQueries({
+        queryKey: ["available-schedules", startDate, endDate],
+      });
+    });
+
+    return unsubscribe;
+  }, [navigation, date, queryClient]);
+
+  const formatName = (name: string) =>
+    name
+      .toLowerCase()
+      .split(" ")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ");
+
   const handleConfirmReservation = async () => {
-    if (!token || !selectedHourId) return;
+    if (!token || !selectedHourId || !userId) {
+      toast.show("Error de autenticación", { type: "danger" });
+      return;
+    }
 
     setLoading(true);
+    const startDate = dayjs(date).startOf("week").format("YYYY-MM-DD");
+    const endDate = dayjs(date).endOf("week").format("YYYY-MM-DD");
 
     try {
+      queryClient.setQueryData(
+        ["available-schedules", startDate, endDate],
+        (oldData: ScheduleAvailabilityDto[] | undefined) => {
+          if (!oldData) return oldData;
+          return oldData.map((item) => ({
+            ...item,
+            ...(item.scheduleId === selectedHourId && {
+              availabilityStatus: "taken",
+              reservedByUserId: userId,
+              sessionState: "PENDING",
+              color: "#8C9EFF",
+            }),
+          }));
+        }
+      );
+
       await createScheduledSession({
         scheduleId: selectedHourId,
         reason: sessionReason.trim(),
       });
 
+      await queryClient.refetchQueries({
+        queryKey: ["available-schedules", startDate, endDate],
+        exact: true,
+      });
+
+      calendarUpdateEmitter.emit();
+
       toast.show("Cita agendada correctamente", { type: "success" });
+
       setTimeout(() => {
         setModalVisible(false);
         setLoading(false);
         navigation.goBack();
       }, 800);
-    } catch (error: any) {
+    } catch (error) {
+      queryClient.invalidateQueries({
+        queryKey: ["available-schedules", startDate, endDate],
+      });
+
       setLoading(false);
       setModalVisible(false);
-      try {
-        const parsed = JSON.parse(error.message);
-        toast.show(parsed.message || "Error desconocido", { type: "danger" });
-      } catch {
-        toast.show(error.message || "No se pudo agendar la cita.", {
-          type: "danger",
-        });
-      }
+      toast.show("Error al agendar la cita", { type: "danger" });
     }
   };
 
@@ -180,30 +233,56 @@ const ScheduleDetailScreen: React.FC = () => {
     );
   };
 
+  const therapistSpecialties = availableTimes[0]?.therapistSpecialties || [];
+
+  const getInitials = (name: string): string => {
+    const words = name.trim().split(" ");
+    if (words.length === 1) return words[0][0].toUpperCase();
+    return (words[0][0] + words[1][0]).toUpperCase();
+  };
+
   return (
     <>
       <ScrollView style={scheduleDetailStyles.container}>
-        {/* Perfil del terapeuta */}
+        {/* Perfil del terapeuta con espaciado mejorado */}
         <View style={scheduleDetailStyles.profileContainer}>
-          <Avatar.Image
-            size={80}
-            source={{ uri: "https://via.placeholder.com/80" }}
+          <Avatar.Text
+            size={90} // Ligeramente más grande para mejor presencia
+            label={getInitials(therapistName)}
             style={scheduleDetailStyles.avatar}
           />
+
           <Text style={scheduleDetailStyles.therapistName}>
-            Psicól. {therapistName}
+            Psicól. {formatName(therapistName)}
           </Text>
-          <Text style={scheduleDetailStyles.therapistSpecialty}>
-            Psicóloga Especialista
-          </Text>
+
+          {therapistSpecialties.length > 0 ? (
+            <View style={scheduleDetailStyles.specialtiesContainer}>
+              {therapistSpecialties.map((specialty, index) => (
+                <Chip
+                  key={index}
+                  style={scheduleDetailStyles.specialtyChip}
+                  textStyle={scheduleDetailStyles.specialtyChipText}
+                >
+                  {specialty}
+                </Chip>
+              ))}
+            </View>
+          ) : (
+            <Text style={scheduleDetailStyles.therapistSpecialty}>
+              Psicóloga Especialista
+            </Text>
+          )}
         </View>
 
-        {/* Contacto */}
-        <TherapistContact
-          onCall={handleCall}
-          onEmail={handleEmail}
-          onWhatsApp={handleWhatsApp}
-        />
+        {/* Contacto con espaciado consistente */}
+        <View style={{ marginBottom: 24 }}>
+          <TherapistContact
+            onCall={handleCall}
+            onEmail={handleEmail}
+            onWhatsApp={handleWhatsApp}
+          />
+        </View>
 
         {/* Sobre la terapeuta */}
         <View style={scheduleDetailStyles.section}>
@@ -226,7 +305,7 @@ const ScheduleDetailScreen: React.FC = () => {
             <MaterialCommunityIcons
               name="message-text-outline"
               size={20}
-              color={"#8C9EFF"}
+              color={"#4DB6AC"} // Color más consistente con el tema
               style={scheduleDetailStyles.reasonIcon}
             />
             <Text style={scheduleDetailStyles.reasonTitle}>
@@ -250,7 +329,7 @@ const ScheduleDetailScreen: React.FC = () => {
             outlineStyle={scheduleDetailStyles.reasonInputOutline}
             theme={{
               colors: {
-                primary: "#8C9EFF",
+                primary: "#4DB6AC", // Color consistente con el tema
                 outline: "#E9EEF6",
                 onSurfaceVariant: "#666666",
               },

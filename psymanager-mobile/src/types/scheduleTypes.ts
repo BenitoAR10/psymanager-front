@@ -22,4 +22,5 @@ export interface ScheduleAvailabilityWithContactDto {
   sessionState?: "PENDING" | "ACCEPTED" | "REJECTED" | "CANCELED" | "COMPLETED";
   therapistPhoneNumber: string;
   therapistEmail: string;
+  therapistSpecialties: string[];
 }
