@@ -20,13 +20,11 @@ const PlayerControls: React.FC<PlayerControlsProps> = ({
       <TouchableOpacity
         style={exercisePlayerStyles.playButton}
         onPress={onPlayPause}
-        activeOpacity={0.8}
       >
         <MaterialCommunityIcons
           name={isPlaying ? "pause" : "play"}
-          size={32}
-          color="#FFFFFF"
-          style={isPlaying ? {} : { marginLeft: 2 }}
+          size={40}
+          color="rgba(255, 255, 255, 0.95)"
         />
       </TouchableOpacity>
     </View>

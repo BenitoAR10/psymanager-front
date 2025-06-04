@@ -17,6 +17,7 @@ import ProgressBar from "./ProgressBar";
 import { exercisePlayerStyles } from "../styles/exercisePlayerStyles";
 import { theme } from "../styles/themeConstants";
 import { completeExercise } from "../../services/exerciseService";
+import { getExerciseGradient } from "../../config/exerciseGradients";
 
 interface ExercisePlayerScreenProps {
   id: number;
@@ -42,6 +43,7 @@ const ExercisePlayerScreen: React.FC<ExercisePlayerScreenProps> = ({
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
   const [hasBeenCompleted, setHasBeenCompleted] = useState(false);
+  const [showCelebration, setShowCelebration] = useState(false);
 
   const audioPlayer = useAudioPlayer(mediaUrl);
   const audioStatus = useAudioPlayerStatus(audioPlayer);
@@ -50,6 +52,9 @@ const ExercisePlayerScreen: React.FC<ExercisePlayerScreenProps> = ({
   const isLoaded = audioStatus?.isLoaded ?? false;
   const currentTime = audioStatus?.currentTime ?? 0;
   const duration = audioStatus?.duration ?? 0;
+
+  // Obtener el gradiente según la categoría
+  const gradient = getExerciseGradient(category);
 
   useEffect(() => {
     if (isLoaded) {
@@ -123,14 +128,12 @@ const ExercisePlayerScreen: React.FC<ExercisePlayerScreenProps> = ({
     );
   }
 
-  const [showCelebration, setShowCelebration] = useState(false);
-
   return (
     <View style={exercisePlayerStyles.container}>
       <LinearGradient
-        colors={["#F0F7FA", "#E6F0F5", "#DCE9F0"]} // Gradiente suave
-        start={{ x: 0, y: 0 }}
-        end={{ x: 0, y: 1 }}
+        colors={gradient.colors}
+        start={gradient.start}
+        end={gradient.end}
         style={exercisePlayerStyles.gradientBackground}
       >
         <PlayerHeader
@@ -142,7 +145,10 @@ const ExercisePlayerScreen: React.FC<ExercisePlayerScreenProps> = ({
         <View style={exercisePlayerStyles.contentContainer}>
           {isLoading ? (
             <View style={exercisePlayerStyles.loadingContainer}>
-              <ActivityIndicator size="large" color="#4FD1C5" />
+              <ActivityIndicator
+                size="large"
+                color="rgba(255, 255, 255, 0.8)"
+              />
             </View>
           ) : (
             <>
@@ -150,7 +156,7 @@ const ExercisePlayerScreen: React.FC<ExercisePlayerScreenProps> = ({
                 <MaterialCommunityIcons
                   name="music-note"
                   size={60}
-                  color="#4FD1C5"
+                  color="rgba(255, 255, 255, 0.9)"
                 />
               </View>
 
@@ -181,9 +187,10 @@ const ExercisePlayerScreen: React.FC<ExercisePlayerScreenProps> = ({
             />
           </View>
         )}
+
         <CelebrationModal
           visible={showCelebration}
-          points={pointsReward}
+          category={category}
           onClose={handleCelebrationClose}
         />
       </LinearGradient>

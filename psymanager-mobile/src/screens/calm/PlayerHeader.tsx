@@ -19,20 +19,22 @@ const PlayerHeader: React.FC<PlayerHeaderProps> = ({
       <TouchableOpacity
         style={exercisePlayerStyles.headerButton}
         onPress={onClose}
-        activeOpacity={0.7}
       >
-        <MaterialCommunityIcons name="close" size={28} color="#2D3748" />
+        <MaterialCommunityIcons
+          name="close"
+          size={28}
+          color="rgba(255, 255, 255, 0.9)"
+        />
       </TouchableOpacity>
 
       <TouchableOpacity
         style={exercisePlayerStyles.headerButton}
         onPress={onToggleFavorite}
-        activeOpacity={0.7}
       >
         <MaterialCommunityIcons
           name={isFavorite ? "heart" : "heart-outline"}
           size={28}
-          color={isFavorite ? "#F56565" : "#2D3748"}
+          color={isFavorite ? "#FF6B6B" : "rgba(255, 255, 255, 0.9)"}
         />
       </TouchableOpacity>
     </View>

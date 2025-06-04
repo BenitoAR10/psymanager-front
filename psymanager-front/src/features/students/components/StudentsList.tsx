@@ -121,17 +121,6 @@ const StudentsList: React.FC<StudentsListProps> = ({ students, onSelect }) => {
               >
                 {student.studentName}
               </Typography>
-              <Typography
-                variant="caption"
-                sx={{
-                  color: "#6B7A99",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 0.5,
-                }}
-              >
-                ID: {student.patientId}
-              </Typography>
             </Box>
 
             {/* Fecha de inicio */}
