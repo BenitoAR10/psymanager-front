@@ -15,7 +15,7 @@ import { queryClient } from "../utils/queryClient";
 interface JwtPayload {
   sub: string;
   roles?: string[];
-  exp: number;
+  exp: number; // Timestamp (en segundos)
   userId?: number;
   firstName?: string;
   lastName?: string;
@@ -26,7 +26,7 @@ export interface AuthContextType {
   token: string | null;
   refreshToken: string | null;
   userInfo?: JwtPayload | null;
-  isAuthenticated: boolean;
+  isAuthenticatedLocal: boolean;
   login: (
     accessToken: string,
     refreshToken: string,
@@ -49,7 +49,7 @@ export const AuthContext = createContext<AuthContextType>({
   token: null,
   refreshToken: null,
   userInfo: null,
-  isAuthenticated: false,
+  isAuthenticatedLocal: false,
   login: async () => {},
   logout: async () => {},
   forceLogout: async () => {},
@@ -64,9 +64,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [token, setToken] = useState<string | null>(null);
   const [refreshToken, setRefreshToken] = useState<string | null>(null);
   const [userInfo, setUserInfo] = useState<JwtPayload | null>(null);
+
+  // Nuevo estado para “autenticación local” (basada solo en fecha de expiración)
+  const [isAuthenticatedLocal, setIsAuthenticatedLocal] = useState(false);
+
   const [isInitializing, setIsInitializing] = useState(true);
   const [justRegistered, setJustRegistered] = useState(false);
 
+  // **login**: al recibir un nuevo accessToken, lo decodificamos y marcamos localmente como logueado
   const login = useCallback(
     async (accessToken: string, rt: string, isNewUser = false) => {
       try {
@@ -77,6 +82,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setJustRegistered(isNewUser);
         await storage.setItem("accessToken", accessToken);
         await storage.setItem("refreshToken", rt);
+
+        // Como acaba de recibir token, asume que localmente está autenticado
+        setIsAuthenticatedLocal(true);
       } catch (error) {
         console.error("❌ Error en login:", error);
       }
@@ -90,13 +98,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setUserInfo(null);
     setJustRegistered(false);
 
+    // Limpiar queryClient y Storage
     await queryClient.cancelQueries();
     await queryClient.clear();
 
     await storage.removeItem("accessToken");
     await storage.removeItem("refreshToken");
+
+    // Ya no está autenticado localmente
+    setIsAuthenticatedLocal(false);
   }, []);
 
+  // useEffect de inicialización
   useEffect(() => {
     const initialize = async () => {
       try {
@@ -104,10 +117,23 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         const storedRefresh = await storage.getItem("refreshToken");
 
         if (storedToken && storedRefresh) {
+          // Decodificamos para extraer `exp`
           const decoded = jwtDecode<JwtPayload>(storedToken);
-          setToken(storedToken);
-          setRefreshToken(storedRefresh);
-          setUserInfo(decoded);
+          const now = Date.now();
+          const expMs = decoded.exp * 1000;
+
+          if (now < expMs) {
+            // Token aún válido
+            setToken(storedToken);
+            setRefreshToken(storedRefresh);
+            setUserInfo(decoded);
+            setIsAuthenticatedLocal(true);
+          } else {
+            // Token expirado → limpiar todo
+            await storage.removeItem("accessToken");
+            await storage.removeItem("refreshToken");
+            setIsAuthenticatedLocal(false);
+          }
         }
       } catch (e) {
         console.warn("⚠️ Token inválido o expirado durante la inicialización.");
@@ -120,22 +146,38 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     initialize();
   }, [logout]);
 
+  // **forceLogout**: cuando salta expiración tardía (por ejemplo, al refrescar falla)
   const forceLogout = async () => {
     console.warn("Token inválido o expirado. Forzando cierre de sesión...");
     await logout();
   };
 
-  // Refrescar datos sensibles o revalidar info si vuelve del background (no tokens)
+  // useEffect para escuchar AppState y revalidar expiración al volver a primer plano
   useEffect(() => {
-    const sub = AppState.addEventListener("change", (state) => {
+    const handleAppStateChange = async (state: string) => {
       if (state === "active") {
-        console.log("📱 App activa nuevamente");
-        // Podrías revalidar perfil aquí si es necesario
+        // Revisar si el token local ya expiró
+        const storedToken = await storage.getItem("accessToken");
+        if (storedToken) {
+          try {
+            const decoded = jwtDecode<JwtPayload>(storedToken);
+            const now = Date.now();
+            const expMs = decoded.exp * 1000;
+            if (now >= expMs) {
+              // Expiró mientras estuvo en background
+              await forceLogout();
+            }
+          } catch {
+            // Si no se puede decodificar, forzar logout
+            await forceLogout();
+          }
+        }
       }
-    });
+    };
 
+    const sub = AppState.addEventListener("change", handleAppStateChange);
     return () => sub.remove();
-  }, []);
+  }, [forceLogout]);
 
   return (
     <AuthContext.Provider
@@ -143,7 +185,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         token,
         refreshToken,
         userInfo,
-        isAuthenticated: token !== null,
+        isAuthenticatedLocal,
         login,
         logout,
         forceLogout,

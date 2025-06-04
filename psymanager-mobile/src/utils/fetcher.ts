@@ -1,6 +1,6 @@
 import { storage } from "./storage";
 import { API_URL } from "./urlConstant";
-import { CommonActions } from "@react-navigation/native";
+import { useAuth } from "../auth/useAuth";
 
 /**
  * Promesa compartida para evitar múltiples refresh simultáneos.
@@ -132,7 +132,7 @@ export async function fetcher<T>(
     console.warn("Token inválido o expirado. Forzando cierre de sesión...");
 
     try {
-      const { forceLogout } = require("../auth/AuthContext").useAuth();
+      const { forceLogout } = useAuth();
       if (forceLogout) await forceLogout();
     } catch (err) {
       console.error("Error forzando cierre de sesión:", err);

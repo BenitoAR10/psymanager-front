@@ -1,3 +1,5 @@
+// src/screens/calm/CalmNowScreen.tsx
+
 import type React from "react";
 import {
   View,
@@ -5,6 +7,7 @@ import {
   StyleSheet,
   ActivityIndicator,
   ScrollView,
+  Alert,
 } from "react-native";
 import { ExerciseCard } from "../../components/calm/ExerciseCard";
 import { FeaturedExerciseCard } from "../../components/calm/FeaturedExerciseCard";
@@ -21,6 +24,13 @@ interface CalmNowScreenProps {
   selectedCategory: string;
   onCategoryChange: (category: string) => void;
   onExercisePress: (exercise: Exercise) => void;
+
+  // Nuevas props para manejo de descargas
+  downloadedMap: Record<number, string>;
+  onDownload: (exercise: Exercise) => void;
+  onRemoveDownload: (exerciseId: number) => void;
+  isConnected: boolean;
+  downloadingIds: number[];
 }
 
 export const CalmNowScreen: React.FC<CalmNowScreenProps> = ({
@@ -30,6 +40,11 @@ export const CalmNowScreen: React.FC<CalmNowScreenProps> = ({
   selectedCategory,
   onCategoryChange,
   onExercisePress,
+  downloadedMap,
+  onDownload,
+  onRemoveDownload,
+  isConnected,
+  downloadingIds,
 }) => {
   if (isLoading) {
     return (
@@ -72,6 +87,12 @@ export const CalmNowScreen: React.FC<CalmNowScreenProps> = ({
         <FeaturedExerciseCard
           exercise={first}
           onPress={() => onExercisePress(first)}
+          // Props de descarga
+          isDownloaded={!!downloadedMap[first.id]}
+          onDownload={() => onDownload(first)}
+          onRemoveDownload={() => onRemoveDownload(first.id)}
+          isConnected={isConnected}
+          isDownloading={downloadingIds.includes(first.id)}
         />
       )}
 
@@ -85,6 +106,12 @@ export const CalmNowScreen: React.FC<CalmNowScreenProps> = ({
             audioUrl={exercise.audioUrl}
             onPress={() => onExercisePress(exercise)}
             index={index}
+            // Props de descarga
+            isDownloaded={!!downloadedMap[exercise.id]}
+            onDownload={() => onDownload(exercise)}
+            onRemoveDownload={() => onRemoveDownload(exercise.id)}
+            isConnected={isConnected}
+            isDownloading={downloadingIds.includes(exercise.id)}
           />
         ))}
       </View>
@@ -149,3 +176,5 @@ const styles = StyleSheet.create({
     marginTop: spacing.md,
   },
 });
+
+export default CalmNowScreen;

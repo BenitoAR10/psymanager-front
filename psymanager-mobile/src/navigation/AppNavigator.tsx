@@ -1,33 +1,34 @@
+// src/navigation/AppNavigator.tsx
+
 import React from "react";
 import { View, Text } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
-import {
-  createNativeStackNavigator,
-  NativeStackNavigationProp,
-} from "@react-navigation/native-stack";
+import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { useAuth } from "../auth/useAuth";
 import { navigationRef } from "./navigationRef";
+import { useConnectivity } from "../hooks/useConnectivity";
 
 import LoginScreen from "../screens/auth/LoginScreen";
 import AuthSuccessScreen from "../screens/auth/AuthSuccessScreen";
-import ScheduleDetailScreen from "../screens/schedule/ScheduleDetailScreen";
-import CustomHeader from "../components/common/CustomHeader";
-import PatientTabs from "./PatientTabs";
-import AppointmentDetailScreen from "../screens/appointments/AppointmentDetailScreen";
-import AccountSettingsScreen from "../screens/profile/AccountSettingsScreen";
 import RegisterStep1Screen from "../screens/auth/RegisterStep1Screen";
 import RegisterStep2Screen from "../screens/auth/RegisterStep2Screen";
+import CustomHeader from "../components/common/CustomHeader";
+
+import ScheduleDetailScreen from "../screens/schedule/ScheduleDetailScreen";
+import AppointmentDetailScreen from "../screens/appointments/AppointmentDetailScreen";
+import AccountSettingsScreen from "../screens/profile/AccountSettingsScreen";
 import HelpCenterScreen from "../screens/profile/HelpCenterScreen";
 import TermsAndConditionsScreen from "../screens/profile/TermsAndConditionsScreen";
 import { ExercisePlayerContainer } from "../screens/calm/ExercisePlayerContainer";
+
+import PatientTabs from "./PatientTabs";
 
 export type RootStackParamList = {
   Login: undefined;
   AuthSuccess: undefined;
   RegisterStep1: undefined;
-  MainTabs: { screen: keyof RootStackParamList } | undefined;
-  Schedule: undefined;
-  ScheduleWeekly: undefined;
+  CompleteProfile: undefined;
+  MainTabs: undefined;
   ScheduleDetail: {
     scheduleId: number;
     therapistName: string;
@@ -39,7 +40,6 @@ export type RootStackParamList = {
     sessionId: number;
   };
   AccountSettings: undefined;
-  CompleteProfile: undefined;
   HelpCenter: undefined;
   TermsAndConditions: undefined;
   ExercisePlayer: {
@@ -55,101 +55,10 @@ export type RootStackParamList = {
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
-const linking = {
-  prefixes: ["http://localhost:8081", "exp://localhost:19000"],
-  config: {
-    screens: {
-      Login: "login",
-      AuthSuccess: "auth/success",
-      MainTabs: "home",
-      ScheduleDetail: "schedule/detail",
-    },
-  },
-};
-
-const PatientStack = () => (
-  <Stack.Navigator>
-    <Stack.Screen
-      name="MainTabs"
-      component={PatientTabs}
-      options={{ headerShown: false }}
-    />
-    <Stack.Screen
-      name="ScheduleDetail"
-      component={ScheduleDetailScreen}
-      options={{
-        header: () => <CustomHeader currentRoute="ScheduleDetail" />,
-      }}
-    />
-    <Stack.Screen
-      name="AppointmentDetail"
-      component={AppointmentDetailScreen}
-      options={{
-        header: () => <CustomHeader currentRoute="ScheduleDetail" />,
-      }}
-    />
-    <Stack.Screen
-      name="AccountSettings"
-      component={AccountSettingsScreen}
-      options={{
-        header: () => <CustomHeader currentRoute="AccountSettings" />,
-      }}
-    />
-    <Stack.Screen
-      name="HelpCenter"
-      component={HelpCenterScreen}
-      options={{
-        header: () => <CustomHeader currentRoute="HelpCenter" />,
-      }}
-    />
-    <Stack.Screen
-      name="TermsAndConditions"
-      component={TermsAndConditionsScreen}
-      options={{
-        header: () => <CustomHeader currentRoute="TermsAndConditions" />,
-      }}
-    />
-    <Stack.Screen
-      name="ExercisePlayer"
-      component={ExercisePlayerContainer}
-      options={{ headerShown: false }}
-    />
-  </Stack.Navigator>
-);
-
-const RegistrationStack = () => (
-  <Stack.Navigator>
-    <Stack.Screen
-      name="CompleteProfile"
-      component={RegisterStep2Screen}
-      options={{ headerShown: false }}
-    />
-  </Stack.Navigator>
-);
-
-const PublicStack = () => (
-  <Stack.Navigator initialRouteName="Login">
-    <Stack.Screen
-      name="Login"
-      component={LoginScreen}
-      options={{ headerShown: false }}
-    />
-    <Stack.Screen
-      name="AuthSuccess"
-      component={AuthSuccessScreen}
-      options={{ headerShown: false }}
-    />
-    <Stack.Screen
-      name="RegisterStep1"
-      component={RegisterStep1Screen}
-      options={{ headerShown: false }}
-    />
-  </Stack.Navigator>
-);
-
 const AppNavigator: React.FC = () => {
-  const { isAuthenticated, userInfo, isInitializing, justRegistered } =
+  const { isAuthenticatedLocal, userInfo, isInitializing, justRegistered } =
     useAuth();
+  const { isConnected } = useConnectivity();
   const isPatient = userInfo?.roles?.includes("PATIENT");
 
   if (isInitializing) {
@@ -161,15 +70,89 @@ const AppNavigator: React.FC = () => {
   }
 
   return (
-    <NavigationContainer linking={linking} ref={navigationRef}>
-      {isAuthenticated && isPatient ? (
+    <NavigationContainer ref={navigationRef}>
+      {isAuthenticatedLocal && isPatient ? (
         justRegistered ? (
-          <RegistrationStack />
+          // Si acaba de registrarse, solo mostrar CompleteProfile
+          <Stack.Navigator screenOptions={{ headerShown: false }}>
+            <Stack.Screen
+              name="CompleteProfile"
+              component={RegisterStep2Screen}
+            />
+          </Stack.Navigator>
         ) : (
-          <PatientStack />
+          // Usuario autenticado: tabs + pantallas secundarias con header
+          <Stack.Navigator>
+            {/* -- Tab principal sin header -- */}
+            <Stack.Screen name="MainTabs" options={{ headerShown: false }}>
+              {() => <PatientTabs isConnected={isConnected} />}
+            </Stack.Screen>
+
+            {/* -- Detalle de agenda, con encabezado y flecha atrás -- */}
+            <Stack.Screen
+              name="ScheduleDetail"
+              component={ScheduleDetailScreen}
+              options={{
+                header: () => <CustomHeader currentRoute="ScheduleDetail" />,
+              }}
+            />
+
+            {/* -- Detalle de cita -- */}
+            <Stack.Screen
+              name="AppointmentDetail"
+              component={AppointmentDetailScreen}
+              options={{
+                header: () => <CustomHeader currentRoute="ScheduleDetail" />,
+              }}
+            />
+
+            {/* -- Configuración de cuenta -- */}
+            <Stack.Screen
+              name="AccountSettings"
+              component={AccountSettingsScreen}
+              options={{
+                header: () => <CustomHeader currentRoute="AccountSettings" />,
+              }}
+            />
+
+            {/* -- Centro de ayuda -- */}
+            <Stack.Screen
+              name="HelpCenter"
+              component={HelpCenterScreen}
+              options={{
+                header: () => <CustomHeader currentRoute="HelpCenter" />,
+              }}
+            />
+
+            {/* -- Términos y condiciones -- */}
+            <Stack.Screen
+              name="TermsAndConditions"
+              component={TermsAndConditionsScreen}
+              options={{
+                header: () => (
+                  <CustomHeader currentRoute="TermsAndConditions" />
+                ),
+              }}
+            />
+
+            {/* -- Reproductor de ejercicio (sin header) -- */}
+            <Stack.Screen
+              name="ExercisePlayer"
+              component={ExercisePlayerContainer}
+              options={{ headerShown: false }}
+            />
+          </Stack.Navigator>
         )
       ) : (
-        <PublicStack />
+        // Flujo público: Login, AuthSuccess, RegisterStep1
+        <Stack.Navigator
+          screenOptions={{ headerShown: false }}
+          initialRouteName="Login"
+        >
+          <Stack.Screen name="Login" component={LoginScreen} />
+          <Stack.Screen name="AuthSuccess" component={AuthSuccessScreen} />
+          <Stack.Screen name="RegisterStep1" component={RegisterStep1Screen} />
+        </Stack.Navigator>
       )}
     </NavigationContainer>
   );

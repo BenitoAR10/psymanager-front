@@ -1,29 +1,29 @@
+// src/navigation/PatientTabs.tsx
+
 "use client";
 
-import type React from "react";
-import { View, StyleSheet, Platform } from "react-native";
+import React from "react";
+import { View, StyleSheet, Platform, Alert } from "react-native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Text } from "react-native-paper";
 import { useAuth } from "../auth/useAuth";
 import { useActiveTreatmentPlan } from "../hooks/useActiveTreatmentPlan";
+import { useTreatmentStatus } from "../hooks/useTreatmentStatus";
 
 import ScheduleScreen from "../screens/schedule/ScheduleContainer";
 import MyAppointmentsScreen from "../screens/appointments/MyAppointmentsScreen";
 import CustomHeader from "../components/common/CustomHeader";
 import ProfileScreen from "../screens/profile/ProfileScreen";
-import { useTreatmentStatus } from "../hooks/useTreatmentStatus";
 import CalmNowContainer from "../screens/calm/CalmNowContainer";
 
-// Colores mejorados y consistentes
+interface PatientTabsProps {
+  isConnected: boolean;
+}
+
 const colors = {
   primary: "#4DB6AC",
-  primaryLight: "#80CBC4",
-  primaryDark: "#00897B",
-  secondary: "#64B5F6",
-  textPrimary: "#2A3548",
   textSecondary: "#6B7A99",
-  background: "#F5F7FA",
   surface: "#FFFFFF",
   border: "#E3E8EF",
   activeBackground: "#4DB6AC15", // 15% opacity
@@ -31,7 +31,7 @@ const colors = {
 
 const Tab = createBottomTabNavigator();
 
-const PatientTabs: React.FC = () => {
+const PatientTabs: React.FC<PatientTabsProps> = ({ isConnected }) => {
   const { userInfo } = useAuth();
   const patientId = userInfo?.userId;
 
@@ -40,6 +40,10 @@ const PatientTabs: React.FC = () => {
   const hasActiveTreatment = treatmentStatus?.hasTreatment ?? false;
 
   if (loadingTreatmentStatus) return null;
+
+  const handleNoConnection = () => {
+    Alert.alert("Sin conexión", "Esta sección requiere conexión a Internet.");
+  };
 
   return (
     <Tab.Navigator
@@ -52,10 +56,10 @@ const PatientTabs: React.FC = () => {
           switch (route.name) {
             case "Schedule":
               return <CustomHeader currentRoute="Schedule" />;
-            case "Appointments":
-              return <CustomHeader currentRoute="Appointments" />;
             case "CalmNow":
               return <CustomHeader currentRoute="CalmNow" />;
+            case "Appointments":
+              return <CustomHeader currentRoute="Appointments" />;
             case "Profile":
               return <CustomHeader currentRoute="Profile" />;
             default:
@@ -78,7 +82,7 @@ const PatientTabs: React.FC = () => {
               label = "Mi Perfil";
               break;
           }
-          return label ? (
+          return (
             <Text
               style={[
                 styles.tabLabel,
@@ -91,11 +95,11 @@ const PatientTabs: React.FC = () => {
             >
               {label}
             </Text>
-          ) : null;
+          );
         },
         tabBarIcon: ({ color, focused }) => {
-          let iconName: keyof typeof MaterialCommunityIcons.glyphMap;
-
+          let iconName: keyof typeof MaterialCommunityIcons.glyphMap =
+            "calendar";
           switch (route.name) {
             case "Schedule":
               iconName = "calendar";
@@ -109,10 +113,7 @@ const PatientTabs: React.FC = () => {
             case "Profile":
               iconName = "account";
               break;
-            default:
-              iconName = "calendar";
           }
-
           return (
             <View style={styles.iconContainer}>
               {focused && <View style={styles.activeIndicator} />}
@@ -133,23 +134,45 @@ const PatientTabs: React.FC = () => {
         },
       })}
     >
-      <Tab.Screen
-        name="Schedule"
-        component={ScheduleScreen}
-        options={{
-          tabBarBadge: undefined,
-        }}
-      />
+      {isConnected ? (
+        <Tab.Screen name="Schedule" component={ScheduleScreen} />
+      ) : (
+        <Tab.Screen
+          name="Schedule"
+          component={View}
+          listeners={{
+            tabPress: (e) => {
+              e.preventDefault();
+              handleNoConnection();
+            },
+          }}
+        />
+      )}
+
       {hasActiveTreatment && (
         <Tab.Screen name="CalmNow" component={CalmNowContainer} />
       )}
-      <Tab.Screen
-        name="Appointments"
-        component={MyAppointmentsScreen}
-        options={{
-          tabBarBadgeStyle: styles.badge,
-        }}
-      />
+
+      {isConnected ? (
+        <Tab.Screen
+          name="Appointments"
+          component={MyAppointmentsScreen}
+          options={{ tabBarBadgeStyle: styles.badge }}
+        />
+      ) : (
+        <Tab.Screen
+          name="Appointments"
+          component={View}
+          listeners={{
+            tabPress: (e) => {
+              e.preventDefault();
+              handleNoConnection();
+            },
+          }}
+          options={{ tabBarBadgeStyle: styles.badge }}
+        />
+      )}
+
       <Tab.Screen name="Profile" component={ProfileScreen} />
     </Tab.Navigator>
   );
