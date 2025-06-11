@@ -145,6 +145,31 @@ const appointmentStyles = StyleSheet.create({
     marginBottom: spacing.md,
     paddingLeft: spacing.xs,
   },
+  // Nuevos estilos para el header de sección de citas pasadas
+  pastSectionHeader: {
+    marginTop: spacing.xl,
+    marginBottom: spacing.md,
+    paddingLeft: spacing.xs,
+  },
+  pastSectionHeaderContent: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingRight: spacing.sm,
+  },
+  pastSectionInfo: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  pastCount: {
+    fontSize: typography.sizes.sm,
+    color: colors.text.secondary,
+    fontWeight: "medium",
+  },
+  chevronIcon: {
+    marginLeft: spacing.xs,
+  },
   dateHeader: {
     flexDirection: "row",
     alignItems: "center",
@@ -174,6 +199,7 @@ const appointmentStyles = StyleSheet.create({
     ...shadows.md,
     borderWidth: 1,
     borderColor: colors.border.main,
+    overflow: "hidden",
   },
   pastCard: {
     opacity: 0.8,

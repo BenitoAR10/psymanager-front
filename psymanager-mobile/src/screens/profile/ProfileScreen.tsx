@@ -297,48 +297,38 @@ const ProfileScreen: React.FC = () => {
             </View>
           </MotiView>
 
-          {/* Botón de cerrar sesión */}
-          <MotiView
-            from={{ opacity: 0, translateY: 10 }}
-            animate={{ opacity: 1, translateY: 0 }}
-            transition={{ delay: 500, duration: 500 }}
-            style={profileStyles.menuList}
+          {/* Botón de cerrar sesión*/}
+          <TouchableOpacity
+            style={[profileStyles.menuItem, profileStyles.menuItemDanger]}
+            onPress={() => setLogoutVisible(true)}
+            activeOpacity={0.7}
           >
-            <TouchableOpacity
-              style={[profileStyles.menuItem, profileStyles.menuItemDanger]}
-              onPress={() => setLogoutVisible(true)}
-              activeOpacity={0.7}
-            >
-              <View style={[profileStyles.menuIcon, profileStyles.dangerIcon]}>
-                <MaterialCommunityIcons
-                  name="logout"
-                  size={22}
-                  color={colors.error.main}
-                />
-              </View>
-
-              <View style={profileStyles.menuTextContainer}>
-                <Text
-                  style={[
-                    profileStyles.menuLabel,
-                    profileStyles.menuLabelDanger,
-                  ]}
-                >
-                  Cerrar sesión
-                </Text>
-                <Text style={profileStyles.menuDescriptionDanger}>
-                  Salir de tu cuenta
-                </Text>
-              </View>
-
+            <View style={[profileStyles.menuIcon, profileStyles.dangerIcon]}>
               <MaterialCommunityIcons
-                name="chevron-right"
+                name="logout"
                 size={22}
-                color={`${colors.error.main}99`}
-                style={profileStyles.chevron}
+                color={colors.error.main}
               />
-            </TouchableOpacity>
-          </MotiView>
+            </View>
+
+            <View style={profileStyles.menuTextContainer}>
+              <Text
+                style={[profileStyles.menuLabel, profileStyles.menuLabelDanger]}
+              >
+                Cerrar sesión
+              </Text>
+              <Text style={profileStyles.menuDescriptionDanger}>
+                Salir de tu cuenta
+              </Text>
+            </View>
+
+            <MaterialCommunityIcons
+              name="chevron-right"
+              size={22}
+              color={`${colors.error.main}99`}
+              style={profileStyles.chevron}
+            />
+          </TouchableOpacity>
 
           {/* Información de versión y derechos */}
           <MotiView

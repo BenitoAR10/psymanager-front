@@ -24,7 +24,7 @@ import dayjs from "dayjs";
 import { getAppointmentVisualState } from "../../utils/appointmentStatus";
 import "dayjs/locale/es";
 
-// TODO: Configurar dayjs para español
+// Configurar dayjs para español
 dayjs.locale("es");
 
 const { colors, animations } = theme;
@@ -35,6 +35,7 @@ const MyAppointmentsScreen: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isPastSectionExpanded, setIsPastSectionExpanded] = useState(false); // Estado para acordeón de sección
   const scrollY = useRef(new Animated.Value(0)).current;
 
   const navigation =
@@ -43,6 +44,11 @@ const MyAppointmentsScreen: React.FC = () => {
   const isPastAppointment = (appointment: UserAppointmentDto) => {
     const appointmentEnd = dayjs(`${appointment.date}T${appointment.endTime}`);
     return appointmentEnd.isBefore(dayjs());
+  };
+
+  // Función para alternar la expansión de la sección de citas pasadas
+  const togglePastSection = () => {
+    setIsPastSectionExpanded(!isPastSectionExpanded);
   };
 
   const fetchAppointments = useCallback(
@@ -127,8 +133,11 @@ const MyAppointmentsScreen: React.FC = () => {
         title: "Próximas citas",
         data: [],
         isHeader: true,
+        isPastSection: false,
       });
-      result.push(...upcoming);
+      result.push(
+        ...upcoming.map((section) => ({ ...section, isPastSection: false }))
+      );
     }
 
     if (past.length > 0) {
@@ -136,8 +145,19 @@ const MyAppointmentsScreen: React.FC = () => {
         title: "Citas pasadas",
         data: [],
         isHeader: true,
+        isPastSection: true,
+        pastCount: past.reduce(
+          (total, section) => total + section.data.length,
+          0
+        ), // Contar total de citas pasadas
       });
-      result.push(...past);
+
+      // Solo incluir las secciones de citas pasadas si están expandidas
+      if (isPastSectionExpanded) {
+        result.push(
+          ...past.map((section) => ({ ...section, isPastSection: true }))
+        );
+      }
     }
 
     return result;
@@ -174,6 +194,7 @@ const MyAppointmentsScreen: React.FC = () => {
       </View>
     );
   };
+
   const navigateToSchedule = () => {
     navigation.navigate("Schedule");
   };
@@ -323,15 +344,47 @@ const MyAppointmentsScreen: React.FC = () => {
           }
           renderSectionHeader={({ section }) => {
             if ("isHeader" in section && section.isHeader) {
+              const isPastHeader = section.isPastSection;
+              const pastCount = section.pastCount || 0;
+
               return (
                 <MotiView
                   from={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ type: "timing", duration: 500 }}
                 >
-                  <Text style={appointmentStyles.sectionHeader}>
-                    {section.title}
-                  </Text>
+                  {isPastHeader ? (
+                    <TouchableOpacity
+                      style={appointmentStyles.pastSectionHeader}
+                      onPress={togglePastSection}
+                      activeOpacity={0.7}
+                    >
+                      <View style={appointmentStyles.pastSectionHeaderContent}>
+                        <Text style={appointmentStyles.sectionHeader}>
+                          {section.title}
+                        </Text>
+                        <View style={appointmentStyles.pastSectionInfo}>
+                          <Text style={appointmentStyles.pastCount}>
+                            {pastCount} {pastCount === 1 ? "cita" : "citas"}
+                          </Text>
+                          <MaterialCommunityIcons
+                            name={
+                              isPastSectionExpanded
+                                ? "chevron-up"
+                                : "chevron-down"
+                            }
+                            size={24}
+                            color={colors.text.secondary}
+                            style={appointmentStyles.chevronIcon}
+                          />
+                        </View>
+                      </View>
+                    </TouchableOpacity>
+                  ) : (
+                    <Text style={appointmentStyles.sectionHeader}>
+                      {section.title}
+                    </Text>
+                  )}
                 </MotiView>
               );
             }
@@ -354,17 +407,8 @@ const MyAppointmentsScreen: React.FC = () => {
               </MotiView>
             );
           }}
-          renderItem={({ item, index, section }) => {
+          renderItem={({ item, index }) => {
             const isPast = isPastAppointment(item);
-            const pastInSection = section.data.filter(isPastAppointment);
-            const futureInSection = section.data.filter(
-              (a) => !isPastAppointment(a)
-            );
-
-            const showPastSubtitle =
-              isPast && pastInSection[0]?.sessionId === item.sessionId;
-            const showFutureSubtitle =
-              !isPast && futureInSection[0]?.sessionId === item.sessionId;
 
             return (
               <MotiView
@@ -378,11 +422,14 @@ const MyAppointmentsScreen: React.FC = () => {
               >
                 <TouchableOpacity
                   activeOpacity={0.8}
-                  onPress={() =>
-                    navigation.navigate("AppointmentDetail", {
-                      sessionId: item.sessionId,
-                    })
-                  }
+                  onPress={() => {
+                    // Solo navegar para citas futuras
+                    if (!isPast) {
+                      navigation.navigate("AppointmentDetail", {
+                        sessionId: item.sessionId,
+                      });
+                    }
+                  }}
                 >
                   <View
                     style={[
@@ -443,70 +490,74 @@ const MyAppointmentsScreen: React.FC = () => {
                         </View>
                       </View>
 
-                      <View style={appointmentStyles.divider} />
+                      {/* Solo mostrar acciones para citas futuras */}
+                      {!isPast && (
+                        <>
+                          <View style={appointmentStyles.divider} />
+                          <View style={appointmentStyles.appointmentActions}>
+                            <TouchableOpacity
+                              style={[
+                                appointmentStyles.sessionButton,
+                                {
+                                  backgroundColor: colors.background.paper,
+                                  borderWidth: 1,
+                                  borderColor: colors.secondary.main,
+                                  borderRadius: 12,
+                                  paddingHorizontal: 16,
+                                  paddingVertical: 8,
+                                  flexDirection: "row",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                },
+                              ]}
+                              onPress={() =>
+                                navigation.navigate("AppointmentDetail", {
+                                  sessionId: item.sessionId,
+                                })
+                              }
+                            >
+                              <MaterialCommunityIcons
+                                name="calendar-clock"
+                                size={16}
+                                color={colors.secondary.main}
+                                style={{ marginRight: 6 }}
+                              />
+                              <Text
+                                style={{
+                                  color: colors.secondary.main,
+                                  fontSize: 13,
+                                  fontWeight: "600",
+                                }}
+                              >
+                                Ver detalles
+                              </Text>
+                            </TouchableOpacity>
 
-                      <View style={appointmentStyles.appointmentActions}>
-                        <TouchableOpacity
-                          style={[
-                            appointmentStyles.sessionButton,
-                            {
-                              backgroundColor: colors.background.paper,
-                              borderWidth: 1,
-                              borderColor: colors.secondary.main,
-                              borderRadius: 12,
-                              paddingHorizontal: 16,
-                              paddingVertical: 8,
-                              flexDirection: "row",
-                              alignItems: "center",
-                              justifyContent: "center",
-                            },
-                          ]}
-                          onPress={() =>
-                            navigation.navigate("AppointmentDetail", {
-                              sessionId: item.sessionId,
-                            })
-                          }
-                        >
-                          <MaterialCommunityIcons
-                            name="calendar-clock"
-                            size={16}
-                            color={colors.secondary.main}
-                            style={{ marginRight: 6 }}
-                          />
-                          <Text
-                            style={{
-                              color: colors.secondary.main,
-                              fontSize: 13,
-                              fontWeight: "600",
-                            }}
-                          >
-                            Ver detalles
-                          </Text>
-                        </TouchableOpacity>
-
-                        <View style={appointmentStyles.contactButtons}>
-                          <TouchableOpacity
-                            style={appointmentStyles.iconButton}
-                            activeOpacity={0.7}
-                          >
-                            <MaterialCommunityIcons
-                              name="phone"
-                              size={18}
-                              color={colors.secondary.main}
-                            />
-                          </TouchableOpacity>
-                          <TouchableOpacity
-                            style={appointmentStyles.iconButton}
-                            activeOpacity={0.7}
-                          >
-                            <MaterialCommunityIcons
-                              name="message-text-outline"
-                              size={18}
-                              color={colors.secondary.main}
-                            />
-                          </TouchableOpacity>
-                        </View>
-                      </View>
+                            <View style={appointmentStyles.contactButtons}>
+                              <TouchableOpacity
+                                style={appointmentStyles.iconButton}
+                                activeOpacity={0.7}
+                              >
+                                <MaterialCommunityIcons
+                                  name="phone"
+                                  size={18}
+                                  color={colors.secondary.main}
+                                />
+                              </TouchableOpacity>
+                              <TouchableOpacity
+                                style={appointmentStyles.iconButton}
+                                activeOpacity={0.7}
+                              >
+                                <MaterialCommunityIcons
+                                  name="message-text-outline"
+                                  size={18}
+                                  color={colors.secondary.main}
+                                />
+                              </TouchableOpacity>
+                            </View>
+                          </View>
+                        </>
+                      )}
                     </View>
                   </View>
                 </TouchableOpacity>

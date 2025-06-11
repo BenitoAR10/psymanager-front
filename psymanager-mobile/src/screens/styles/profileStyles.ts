@@ -114,8 +114,13 @@ const profileStyles = StyleSheet.create({
     ...shadows.sm,
   },
   menuItemDanger: {
-    backgroundColor: `${colors.error.lightBg}20`,
+    // mantenemos sólo la eliminación de margen si la necesitas,
+    // o restaura el valor original si quieres conservar separación:
+    marginBottom: spacing.md,
+    // si quieres un borde rojo:
     borderColor: colors.error.lightBg,
+    // fondo: blanco puro (misma que menuItem)
+    backgroundColor: colors.background.paper,
   },
   menuIcon: {
     marginRight: spacing.md,
