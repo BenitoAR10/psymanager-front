@@ -1,3 +1,4 @@
+// src/components/UpcomingAppointments.tsx
 "use client";
 
 import React, { useState } from "react";
@@ -21,24 +22,18 @@ import EventNoteIcon from "@mui/icons-material/EventNote";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
 import CancelOutlinedIcon from "@mui/icons-material/CancelOutlined";
-import { markSessionAsCompleted } from "../services/sessionsService";
 import ScheduleIcon from "@mui/icons-material/Schedule";
 import TodayIcon from "@mui/icons-material/Today";
-import type { UpcomingAppointmentDto } from "../types";
 import CalendarTodayOutlinedIcon from "@mui/icons-material/CalendarTodayOutlined";
-import UpcomingAppointmentsModal from "./UpcomingAppointmentsModal";
-import { toast } from "sonner";
 import PlayArrowIcon from "@mui/icons-material/PlayArrow";
 import CheckIcon from "@mui/icons-material/Check";
+import { toast } from "sonner";
+import type { UpcomingAppointmentDto } from "../types";
+import { markSessionAsCompleted } from "../services/sessionsService";
+import UpcomingAppointmentsModal from "./UpcomingAppointmentsModal";
 
-/**
- * Interfaz que representa una cita programada.
- */
 export type Appointment = UpcomingAppointmentDto;
 
-/**
- * Props del componente UpcomingAppointments.
- */
 interface UpcomingAppointmentsProps {
   appointments: Appointment[];
   onViewAll?: () => void;
@@ -47,6 +42,7 @@ interface UpcomingAppointmentsProps {
     therapistId: number,
     patientName: string
   ) => void;
+  onListChanged?: () => void; // <— para refetch
 }
 
 const isInProgress = (dateTimeStr: string) => {
@@ -66,6 +62,7 @@ const UpcomingAppointments: React.FC<UpcomingAppointmentsProps> = ({
   appointments,
   onViewAll,
   onStartTreatment,
+  onListChanged,
 }) => {
   const theme = useTheme();
   const [modalOpen, setModalOpen] = useState(false);
@@ -77,6 +74,9 @@ const UpcomingAppointments: React.FC<UpcomingAppointmentsProps> = ({
     try {
       await markSessionAsCompleted(sessionId);
       toast.success("Sesión marcada como completada");
+      // 1) Refrescamos la lista en el padre:
+      onListChanged?.();
+      // 2) Luego abrimos el modal de “Ver todas” si quieres:
       onViewAll?.();
     } catch (error: unknown) {
       const message =
@@ -91,13 +91,13 @@ const UpcomingAppointments: React.FC<UpcomingAppointmentsProps> = ({
 
   const shouldKeepVisible = (appt: Appointment) => {
     const start = new Date(appt.dateTime);
-    const end = new Date(start.getTime() + 60 * 60 * 1000); // duración 1h
+    const end = new Date(start.getTime() + 60 * 60 * 1000);
     const now = new Date();
 
-    // Mostrar si la sesión está en curso
+    // 1) Si estamos en curso, lo mostramos
     if (now >= start && now <= end) return true;
 
-    // Mostrar si la sesión fue completada y estamos dentro de 10 minutos después
+    // 2) Si el estado es COMPLETED y entro en los primeros 10 min de "gracia"
     if (
       appt.state === "COMPLETED" &&
       now <= new Date(end.getTime() + 10 * 60 * 1000)
@@ -105,7 +105,7 @@ const UpcomingAppointments: React.FC<UpcomingAppointmentsProps> = ({
       return true;
     }
 
-    // Mostrar si todavía no terminó
+    // 3) Si la cita aún no ha empezado, también la mostramos (PENDING o ACCEPTED)
     return now <= end;
   };
 
@@ -156,7 +156,6 @@ const UpcomingAppointments: React.FC<UpcomingAppointmentsProps> = ({
     if (isInProgress(dateTime)) {
       return <TodayIcon fontSize="small" />;
     }
-
     switch (state) {
       case "ACCEPTED":
         return <CheckCircleOutlineIcon fontSize="small" />;
@@ -167,16 +166,13 @@ const UpcomingAppointments: React.FC<UpcomingAppointmentsProps> = ({
     }
   };
 
-  // Función para obtener el texto de estado apropiado
   const getStatusText = (state: Appointment["state"], dateTime: string) => {
     if (isInProgress(dateTime)) {
       return "En curso";
     }
-
     if (state === "ACCEPTED" && isFuture(dateTime)) {
       return "Programada";
     }
-
     switch (state) {
       case "ACCEPTED":
         return "Confirmada";
@@ -187,7 +183,7 @@ const UpcomingAppointments: React.FC<UpcomingAppointmentsProps> = ({
     }
   };
 
-  // Reordenar: primero en curso, luego las demás por fecha
+  // Ordenamos en curso primero, luego por fecha (manteniendo PENDING, ACCEPTED, etc.)
   const sortedAppointments = appointments
     .filter(shouldKeepVisible)
     .sort((a, b) => {
@@ -306,7 +302,6 @@ const UpcomingAppointments: React.FC<UpcomingAppointmentsProps> = ({
               const canStartTreatment =
                 appt.state === "COMPLETED" && !appt.isPartOfTreatment;
 
-              const status = getStatusText(appt.state, appt.dateTime);
               const isActive = isInProgress(appt.dateTime);
               const isHovered = hoveredItem === appt.appointmentId;
 
@@ -407,10 +402,14 @@ const UpcomingAppointments: React.FC<UpcomingAppointmentsProps> = ({
                         }}
                       >
                         {(() => {
-                          const parts = appt.studentName?.trim().split(" ").filter(Boolean) ?? [];
+                          const parts =
+                            appt.studentName
+                              ?.trim()
+                              .split(" ")
+                              .filter(Boolean) ?? [];
                           return parts.length >= 2
-                              ? `${parts[0]} ${parts[1][0]}.`
-                              : parts[0] ?? "Sin nombre";
+                            ? `${parts[0]} ${parts[1][0]}.`
+                            : parts[0] ?? "Sin nombre";
                         })()}
                         {isActive && (
                           <Box
@@ -508,7 +507,7 @@ const UpcomingAppointments: React.FC<UpcomingAppointmentsProps> = ({
 
                     <Chip
                       icon={getStatusIcon(appt.state, appt.dateTime)}
-                      label={status}
+                      label={getStatusText(appt.state, appt.dateTime)}
                       size="small"
                       sx={{
                         mr: 1,
@@ -543,7 +542,7 @@ const UpcomingAppointments: React.FC<UpcomingAppointmentsProps> = ({
                       }}
                     />
 
-                    {/* Acciones si no está en tratamiento */}
+                    {/* Acciones: Completar / Iniciar tratamiento */}
                     {!appt.isPartOfTreatment && (
                       <Box
                         sx={{

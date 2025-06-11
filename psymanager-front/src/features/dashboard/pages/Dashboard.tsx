@@ -7,18 +7,16 @@ import CalendarWidget from "../components/CalendarWidget";
 import { useUpcomingAppointmentsQuery } from "../hooks/useUpcomingAppointmentsQuery";
 
 import TreatmentModal from "../../treatments/components/TreatmentModal";
-import { useAuth } from "../../auth/context/AuthContext";
+
 import UpcomingAppointmentsModal from "../components/UpcomingAppointmentsModal";
 
 import UpcomingAppointments from "../components/UpcomingAppointments";
 
 const Dashboard: React.FC = () => {
-  const { user } = useAuth();
-  const therapistId = user?.userId;
+  const LIMIT = 5;
 
-  const { data: upcomingAppointments = [] } = useUpcomingAppointmentsQuery(
-    therapistId ?? 0
-  );
+  const { data: upcomingAppointments = [], refetch: refetchUpcoming } =
+    useUpcomingAppointmentsQuery(LIMIT);
 
   const [isTreatmentModalOpen, setIsTreatmentModalOpen] = useState(false);
   const [isAppointmentsModalOpen, setIsAppointmentsModalOpen] = useState(false);
@@ -139,6 +137,7 @@ const Dashboard: React.FC = () => {
             appointments={upcomingAppointments}
             onViewAll={handleViewAllAppointments}
             onStartTreatment={handleStartTreatment}
+            onListChanged={refetchUpcoming}
           />
 
           <UpcomingAppointmentsModal

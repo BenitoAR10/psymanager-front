@@ -1,6 +1,6 @@
 "use client";
 
-import type React from "react";
+import React from "react";
 import {
   Dialog,
   DialogContent,
@@ -23,12 +23,14 @@ import MessageIcon from "@mui/icons-material/Message";
 import CloseIcon from "@mui/icons-material/Close";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import CancelIcon from "@mui/icons-material/Cancel";
+import { useQueryClient } from "@tanstack/react-query";
 import type { UpcomingAppointmentDto } from "../../features/appointments/types";
 
 interface AppointmentRequestModalProps {
   open: boolean;
   appointment: UpcomingAppointmentDto | null;
   onClose: () => void;
+  /** Ahora acepta funciones que devuelvan void en lugar de Promise<void> */
   onAccept: (id: number) => void;
   onReject: (id: number) => void;
 }
@@ -41,6 +43,7 @@ const AppointmentRequestModal: React.FC<AppointmentRequestModalProps> = ({
   onReject,
 }) => {
   const theme = useTheme();
+  const queryClient = useQueryClient();
 
   const formatDateTime = (dateTimeStr: string) => {
     const date = new Date(dateTimeStr);
@@ -74,6 +77,19 @@ const AppointmentRequestModal: React.FC<AppointmentRequestModalProps> = ({
   if (!appointment) return null;
 
   const { date, time } = formatDateTime(appointment.dateTime);
+
+  const handleAcceptClick = async () => {
+    onAccept(appointment.appointmentId);
+
+    await queryClient.invalidateQueries({ queryKey: ["pending"] });
+    onClose();
+  };
+
+  const handleRejectClick = async () => {
+    onReject(appointment.appointmentId);
+    await queryClient.invalidateQueries({ queryKey: ["pending"] });
+    onClose();
+  };
 
   return (
     <Dialog
@@ -291,10 +307,7 @@ const AppointmentRequestModal: React.FC<AppointmentRequestModalProps> = ({
 
         <Box sx={{ display: "flex", gap: 1 }}>
           <Button
-            onClick={() => {
-              onReject(appointment.appointmentId);
-              onClose();
-            }}
+            onClick={handleRejectClick}
             color="error"
             variant="outlined"
             startIcon={<CancelIcon />}
@@ -311,10 +324,7 @@ const AppointmentRequestModal: React.FC<AppointmentRequestModalProps> = ({
             Rechazar
           </Button>
           <Button
-            onClick={() => {
-              onAccept(appointment.appointmentId);
-              onClose();
-            }}
+            onClick={handleAcceptClick}
             color="primary"
             variant="contained"
             startIcon={<CheckCircleIcon />}

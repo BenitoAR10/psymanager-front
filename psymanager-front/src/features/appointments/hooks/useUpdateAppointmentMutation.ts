@@ -17,7 +17,7 @@ export function useUpdateAppointmentMutation() {
       updateAppointmentState(appointmentId, newState),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["pending"] });
-      queryClient.invalidateQueries({ queryKey: ["upcoming"] });
+      queryClient.invalidateQueries({ queryKey: ["upcomingAppointments"] });
     },
   });
 }

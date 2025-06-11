@@ -11,6 +11,10 @@ import ScheduleSessionsModal from "../components/ScheduleSessionsModal";
 import CloseTreatmentModal from "../components/CloseTreatmentModal";
 import CaseFileModal from "../../casefile/components/CaseFileModal";
 import SessionNoteModal from "../components/SessionNoteModal";
+import { DatePicker } from "@mui/x-date-pickers/DatePicker";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import dayjs, { type Dayjs } from "dayjs";
 import {
   Box,
   Card,
@@ -22,6 +26,8 @@ import {
   TableRow,
   TableBody,
   Chip,
+  Tabs,
+  Tab,
   Divider,
   Button,
   IconButton,
@@ -43,7 +49,10 @@ import SchoolIcon from "@mui/icons-material/School";
 import SubjectIcon from "@mui/icons-material/Subject";
 import EventAvailableIcon from "@mui/icons-material/EventAvailable";
 import EventBusyIcon from "@mui/icons-material/EventBusy";
-import dayjs from "dayjs";
+
+import StatisticsTab from "../components/statistics/StatisticsTab";
+import { useFetchHourlyStatistics } from "../hooks/useFetchHourlyStatistics";
+import { useFetchCategoryStatistics } from "../hooks/useFetchCategoryStatistics";
 import { toast } from "sonner";
 import {
   StyledTableCell,
@@ -59,6 +68,7 @@ const TreatmentDetailPage: React.FC = () => {
   const therapistId = user?.userId ?? 0;
   const location = useLocation();
   const studentName = (location.state as { studentName?: string })?.studentName;
+
   const [noteModalSessionId, setNoteModalSessionId] = useState<number | null>(
     null
   );
@@ -67,6 +77,34 @@ const TreatmentDetailPage: React.FC = () => {
 
   const { data, isLoading, isError, error, refetch } =
     useTreatmentDetail(treatmentId);
+
+  const [range, setRange] = useState<[Dayjs | null, Dayjs | null]>([
+    dayjs().startOf("week"),
+    dayjs().endOf("week"),
+  ]);
+  const [fromDate, toDate] = range;
+
+  // Estado de la pestaña activa
+  const [tabIndex, setTabIndex] = useState(0);
+  const from = fromDate ? fromDate.startOf("day").toISOString() : "";
+  const to = toDate ? toDate.endOf("day").toISOString() : "";
+
+  const {
+    data: hourlyStats,
+    isLoading: hourlyLoading,
+    error: hourlyError,
+  } = useFetchHourlyStatistics(
+    data
+      ? { patientId: data.patientId, from, to }
+      : { patientId: 0, from: "", to: "" }
+  );
+
+  const { data: categoryStats, isLoading: categoryLoading } =
+    useFetchCategoryStatistics(
+      data
+        ? { patientId: data.patientId, from, to }
+        : { patientId: 0, from: "", to: "" }
+    );
 
   const cancelMutation = useCancelTreatmentSession();
   const completeMutation = useCompleteSessionMutation();
@@ -217,360 +255,468 @@ const TreatmentDetailPage: React.FC = () => {
         </Box>
       </Box>
 
-      {/* Tarjeta de detalles */}
-      <Card elevation={0} sx={styles.detailsCard(theme)}>
-        <Box sx={styles.cardHeader(theme)}>
-          <Typography variant="h6" fontWeight={600} color="text.primary">
-            Información del tratamiento
-          </Typography>
-        </Box>
-        <CardContent sx={styles.cardContent}>
-          <Box
-            sx={{
-              display: "flex",
-              flexDirection: { xs: "column", md: "row" },
-              gap: 3,
-            }}
-          >
-            <Box sx={{ width: { xs: "100%", md: "50%" } }}>
-              <Stack spacing={2}>
-                <Box
-                  sx={{ display: "flex", alignItems: "flex-start", gap: 1.5 }}
-                >
-                  <SubjectIcon sx={styles.infoIcon(theme)} />
-                  <Box>
-                    <Typography
-                      variant="caption"
-                      color="text.secondary"
-                      fontWeight={500}
-                    >
-                      Motivo
-                    </Typography>
-                    <Typography
-                      variant="body1"
-                      fontWeight={500}
-                      color="text.primary"
-                    >
-                      {data.reason || "No especificado"}
-                    </Typography>
-                  </Box>
-                </Box>
+      {/* Pestañas */}
+      <Tabs
+        value={tabIndex}
+        onChange={(_, idx) => setTabIndex(idx)}
+        sx={{ mb: 2 }}
+      >
+        <Tab label="Información" />
+        <Tab label="Sesiones" />
+        <Tab label="Estadísticas" />
+      </Tabs>
 
-                <Box
-                  sx={{ display: "flex", alignItems: "flex-start", gap: 1.5 }}
-                >
-                  <SchoolIcon sx={styles.infoIcon(theme)} />
-                  <Box>
-                    <Typography
-                      variant="caption"
-                      color="text.secondary"
-                      fontWeight={500}
-                    >
-                      Semestre
-                    </Typography>
-                    <Typography
-                      variant="body1"
-                      fontWeight={500}
-                      color="text.primary"
-                    >
-                      {data.semester}
-                    </Typography>
-                  </Box>
-                </Box>
-              </Stack>
+      {/* Contenido pestañas */}
+      {tabIndex === 0 && (
+        <>
+          {/* Tarjeta de detalles */}
+          <Card elevation={0} sx={styles.detailsCard(theme)}>
+            <Box sx={styles.cardHeader(theme)}>
+              <Typography variant="h6" fontWeight={600} color="text.primary">
+                Información del tratamiento
+              </Typography>
             </Box>
-
-            <Box sx={{ width: { xs: "100%", md: "50%" } }}>
-              <Stack spacing={2}>
-                <Box
-                  sx={{ display: "flex", alignItems: "flex-start", gap: 1.5 }}
-                >
-                  <CalendarMonthIcon sx={styles.infoIcon(theme)} />
-                  <Box>
-                    <Typography
-                      variant="caption"
-                      color="text.secondary"
-                      fontWeight={500}
+            <CardContent sx={styles.cardContent}>
+              <Box
+                sx={{
+                  display: "flex",
+                  flexDirection: { xs: "column", md: "row" },
+                  gap: 3,
+                }}
+              >
+                <Box sx={{ width: { xs: "100%", md: "50%" } }}>
+                  <Stack spacing={2}>
+                    <Box
+                      sx={{
+                        display: "flex",
+                        alignItems: "flex-start",
+                        gap: 1.5,
+                      }}
                     >
-                      Fecha de inicio
-                    </Typography>
-                    <Typography
-                      variant="body1"
-                      fontWeight={500}
-                      color="text.primary"
-                    >
-                      {dayjs(data.startDate).format("DD/MM/YYYY")}
-                    </Typography>
-                  </Box>
-                </Box>
-
-                <Box
-                  sx={{ display: "flex", alignItems: "flex-start", gap: 1.5 }}
-                >
-                  <CalendarMonthIcon sx={styles.infoIcon(theme)} />
-                  <Box>
-                    <Typography
-                      variant="caption"
-                      color="text.secondary"
-                      fontWeight={500}
-                    >
-                      Fecha de finalización
-                    </Typography>
-                    <Typography
-                      variant="body1"
-                      fontWeight={500}
-                      color="text.primary"
-                    >
-                      {dayjs(data.endDate).format("DD/MM/YYYY")}
-                    </Typography>
-                  </Box>
-                </Box>
-              </Stack>
-            </Box>
-          </Box>
-        </CardContent>
-        <Box sx={{ display: "flex", justifyContent: "flex-end", p: 2, pt: 0 }}>
-          <Button
-            variant="outlined"
-            color="primary"
-            onClick={() => setIsCaseFileModalOpen(true)}
-            startIcon={<SubjectIcon />}
-            sx={{
-              fontWeight: 600,
-              borderRadius: 2,
-              textTransform: "none",
-              borderWidth: "1.5px",
-              px: 2.5,
-              py: 0.75,
-              transition: "all 0.2s ease",
-              "&:hover": {
-                borderWidth: "1.5px",
-                backgroundColor: alpha(theme.palette.primary.main, 0.05),
-                transform: "translateY(-2px)",
-                boxShadow: `0 4px 8px ${alpha(
-                  theme.palette.primary.main,
-                  0.15
-                )}`,
-              },
-            }}
-          >
-            Ver ficha del tratamiento
-          </Button>
-        </Box>
-      </Card>
-
-      {/* Sección de sesiones */}
-      <Box sx={styles.sessionsHeader}>
-        <Typography
-          variant="h5"
-          fontWeight={600}
-          color="text.primary"
-          sx={styles.sessionsTitle}
-        >
-          <AccessTimeIcon sx={{ color: theme.palette.primary.main }} />
-          Sesiones asignadas
-        </Typography>
-      </Box>
-
-      <Divider sx={{ mb: 3 }} />
-
-      {data.sessions.length === 0 ? (
-        <Paper elevation={0} sx={styles.noSessionsContainer(theme)}>
-          <Typography variant="h6" color="text.secondary" gutterBottom>
-            No hay sesiones asignadas
-          </Typography>
-          <Typography
-            variant="body2"
-            color="text.secondary"
-            sx={styles.noSessionsText}
-          >
-            Este tratamiento aún no tiene sesiones programadas. Puedes agregar
-            nuevas sesiones utilizando el botón "Agregar sesiones".
-          </Typography>
-          <Button
-            variant="outlined"
-            color="primary"
-            onClick={handleOpenModal}
-            startIcon={<EventAvailableIcon />}
-            sx={{
-              borderRadius: 2,
-              fontWeight: 600,
-            }}
-          >
-            Agregar sesiones
-          </Button>
-        </Paper>
-      ) : (
-        <Paper elevation={0} sx={styles.sessionsTableContainer}>
-          <Box sx={styles.tableScrollContainer(theme)}>
-            <Table sx={styles.table}>
-              <TableHead>
-                <TableRow>
-                  <StyledTableCell width="5%">#</StyledTableCell>
-                  <StyledTableCell width="15%">Fecha</StyledTableCell>
-                  <StyledTableCell width="15%">Hora</StyledTableCell>
-                  <StyledTableCell width="15%">Estado</StyledTableCell>
-                  <StyledTableCell width="15%">Completada</StyledTableCell>
-                  <StyledTableCell width="20%">Notas</StyledTableCell>
-                  <StyledTableCell width="15%" align="right">
-                    Acciones
-                  </StyledTableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {data.sessions.map((session) => {
-                  const isFuture = dayjs(session.sessionDate).isAfter(dayjs());
-                  const isCancellable = isFuture && !session.completed;
-                  const sessionStart = dayjs(
-                    `${session.sessionDate}T${session.startTime}`
-                  );
-                  const isCompletable =
-                    !session.completed && sessionStart.isBefore(dayjs());
-
-                  return (
-                    <StyledTableRow
-                      key={session.sessionId}
-                      className={session.completed ? "completed" : ""}
-                    >
-                      <StyledTableCell>
+                      <SubjectIcon sx={styles.infoIcon(theme)} />
+                      <Box>
                         <Typography
-                          variant="body2"
-                          sx={styles.sessionOrderCell}
+                          variant="caption"
+                          color="text.secondary"
+                          fontWeight={500}
                         >
-                          {session.sessionOrder}
+                          Motivo
                         </Typography>
-                      </StyledTableCell>
-                      <StyledTableCell>
-                        <Box sx={styles.dateTimeCell}>
-                          <CalendarMonthIcon
-                            fontSize="small"
-                            sx={styles.dateTimeIcon(theme)}
-                          />
-                          <Typography variant="body2">
-                            {dayjs(session.sessionDate).format("DD/MM/YYYY")}
-                          </Typography>
-                        </Box>
-                      </StyledTableCell>
-                      <StyledTableCell>
-                        <Box sx={styles.dateTimeCell}>
-                          <AccessTimeIcon
-                            fontSize="small"
-                            sx={styles.dateTimeIcon(theme)}
-                          />
-                          <Typography variant="body2">
-                            {dayjs(`1970-01-01T${session.startTime}`).format(
-                              "HH:mm"
-                            )}{" "}
-                            -{" "}
-                            {dayjs(`1970-01-01T${session.endTime}`).format(
-                              "HH:mm"
-                            )}
-                          </Typography>
-                        </Box>
-                      </StyledTableCell>
-                      <StyledTableCell>
-                        <Chip
-                          label={
-                            session.state === "ACCEPTED"
-                              ? "Aceptada"
-                              : session.state === "PENDING"
-                              ? "Pendiente"
-                              : "Rechazada"
-                          }
-                          color={
-                            session.state === "ACCEPTED"
-                              ? "success"
-                              : session.state === "PENDING"
-                              ? "warning"
-                              : "default"
-                          }
-                          size="small"
-                          sx={styles.statusChip}
-                        />
-                      </StyledTableCell>
-                      <StyledTableCell>
-                        <Chip
-                          label={session.completed ? "Completada" : "Pendiente"}
-                          color={session.completed ? "success" : "default"}
-                          size="small"
-                          variant={session.completed ? "filled" : "outlined"}
-                          sx={styles.statusChip}
-                        />
-                      </StyledTableCell>
-                      <StyledTableCell>
-                        <Button
-                          variant="outlined"
-                          size="small"
-                          startIcon={<NoteAltIcon />}
-                          onClick={() =>
-                            setNoteModalSessionId(session.sessionId)
-                          }
-                          sx={styles.noteButton}
+                        <Typography
+                          variant="body1"
+                          fontWeight={500}
+                          color="text.primary"
                         >
-                          Ver nota
-                        </Button>
-                      </StyledTableCell>
+                          {data.reason || "No especificado"}
+                        </Typography>
+                      </Box>
+                    </Box>
 
-                      <StyledTableCell align="right">
-                        {isCancellable ? (
-                          cancellingId === session.sessionId ? (
-                            <CircularProgress size={20} />
-                          ) : (
-                            <Tooltip title="Cancelar sesión" arrow>
-                              <IconButton
-                                color="error"
-                                onClick={() =>
-                                  openConfirmDialog(session.sessionId)
-                                }
-                                size="small"
-                                sx={styles.actionButton(theme, "error")}
-                              >
-                                <DeleteOutlineIcon fontSize="small" />
-                              </IconButton>
-                            </Tooltip>
-                          )
-                        ) : isCompletable ? (
-                          completingId === session.sessionId ? (
-                            <CircularProgress size={20} />
-                          ) : (
-                            <Tooltip title="Marcar como completada" arrow>
-                              <IconButton
-                                color="success"
-                                onClick={() =>
-                                  handleCompleteSession(session.sessionId)
-                                }
-                                size="small"
-                                sx={styles.actionButton(theme, "success")}
-                              >
-                                <DoneIcon fontSize="small" />
-                              </IconButton>
-                            </Tooltip>
-                          )
-                        ) : null}
-                      </StyledTableCell>
-                    </StyledTableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          </Box>
-        </Paper>
+                    <Box
+                      sx={{
+                        display: "flex",
+                        alignItems: "flex-start",
+                        gap: 1.5,
+                      }}
+                    >
+                      <SchoolIcon sx={styles.infoIcon(theme)} />
+                      <Box>
+                        <Typography
+                          variant="caption"
+                          color="text.secondary"
+                          fontWeight={500}
+                        >
+                          Semestre
+                        </Typography>
+                        <Typography
+                          variant="body1"
+                          fontWeight={500}
+                          color="text.primary"
+                        >
+                          {data.semester}
+                        </Typography>
+                      </Box>
+                    </Box>
+                  </Stack>
+                </Box>
+
+                <Box sx={{ width: { xs: "100%", md: "50%" } }}>
+                  <Stack spacing={2}>
+                    <Box
+                      sx={{
+                        display: "flex",
+                        alignItems: "flex-start",
+                        gap: 1.5,
+                      }}
+                    >
+                      <CalendarMonthIcon sx={styles.infoIcon(theme)} />
+                      <Box>
+                        <Typography
+                          variant="caption"
+                          color="text.secondary"
+                          fontWeight={500}
+                        >
+                          Fecha de inicio
+                        </Typography>
+                        <Typography
+                          variant="body1"
+                          fontWeight={500}
+                          color="text.primary"
+                        >
+                          {dayjs(data.startDate).format("DD/MM/YYYY")}
+                        </Typography>
+                      </Box>
+                    </Box>
+
+                    <Box
+                      sx={{
+                        display: "flex",
+                        alignItems: "flex-start",
+                        gap: 1.5,
+                      }}
+                    >
+                      <CalendarMonthIcon sx={styles.infoIcon(theme)} />
+                      <Box>
+                        <Typography
+                          variant="caption"
+                          color="text.secondary"
+                          fontWeight={500}
+                        >
+                          Fecha de finalización
+                        </Typography>
+                        <Typography
+                          variant="body1"
+                          fontWeight={500}
+                          color="text.primary"
+                        >
+                          {dayjs(data.endDate).format("DD/MM/YYYY")}
+                        </Typography>
+                      </Box>
+                    </Box>
+                  </Stack>
+                </Box>
+              </Box>
+            </CardContent>
+            <Box
+              sx={{ display: "flex", justifyContent: "flex-end", p: 2, pt: 0 }}
+            >
+              <Button
+                variant="outlined"
+                color="primary"
+                onClick={() => setIsCaseFileModalOpen(true)}
+                startIcon={<SubjectIcon />}
+                sx={{
+                  fontWeight: 600,
+                  borderRadius: 2,
+                  textTransform: "none",
+                  borderWidth: "1.5px",
+                  px: 2.5,
+                  py: 0.75,
+                  transition: "all 0.2s ease",
+                  "&:hover": {
+                    backgroundColor: alpha(theme.palette.primary.main, 0.05),
+                    transform: "translateY(-2px)",
+                    boxShadow: `0 4px 8px ${alpha(
+                      theme.palette.primary.main,
+                      0.15
+                    )}`,
+                  },
+                }}
+              >
+                Ver ficha del tratamiento
+              </Button>
+            </Box>
+          </Card>
+        </>
       )}
 
-      {/* Modales */}
+      {tabIndex === 1 && (
+        <>
+          {/* Sección de sesiones */}
+          <Box sx={styles.sessionsHeader}>
+            <Typography
+              variant="h5"
+              fontWeight={600}
+              color="text.primary"
+              sx={styles.sessionsTitle}
+            >
+              <AccessTimeIcon sx={{ color: theme.palette.primary.main }} />
+              Sesiones asignadas
+            </Typography>
+          </Box>
+
+          <Divider sx={{ mb: 3 }} />
+
+          {data.sessions.length === 0 ? (
+            <Paper elevation={0} sx={styles.noSessionsContainer(theme)}>
+              <Typography variant="h6" color="text.secondary" gutterBottom>
+                No hay sesiones asignadas
+              </Typography>
+              <Typography
+                variant="body2"
+                color="text.secondary"
+                sx={styles.noSessionsText}
+              >
+                Este tratamiento aún no tiene sesiones programadas. Puedes
+                agregar nuevas sesiones utilizando el botón "Agregar sesiones".
+              </Typography>
+              <Button
+                variant="outlined"
+                color="primary"
+                onClick={handleOpenModal}
+                startIcon={<EventAvailableIcon />}
+                sx={{ borderRadius: 2, fontWeight: 600 }}
+              >
+                Agregar sesiones
+              </Button>
+            </Paper>
+          ) : (
+            <Paper elevation={0} sx={styles.sessionsTableContainer}>
+              <Box sx={styles.tableScrollContainer(theme)}>
+                <Table sx={styles.table}>
+                  <TableHead>
+                    <TableRow>
+                      <StyledTableCell width="5%">#</StyledTableCell>
+                      <StyledTableCell width="15%">Fecha</StyledTableCell>
+                      <StyledTableCell width="15%">Hora</StyledTableCell>
+                      <StyledTableCell width="15%">Estado</StyledTableCell>
+                      <StyledTableCell width="15%">Completada</StyledTableCell>
+                      <StyledTableCell width="20%">Notas</StyledTableCell>
+                      <StyledTableCell width="15%" align="right">
+                        Acciones
+                      </StyledTableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {data.sessions.map((session) => {
+                      const isFuture = dayjs(session.sessionDate).isAfter(
+                        dayjs()
+                      );
+                      const sessionStart = dayjs(
+                        `${session.sessionDate}T${session.startTime}`
+                      );
+                      const isCancellable = isFuture && !session.completed;
+                      const isCompletable =
+                        !session.completed && sessionStart.isBefore(dayjs());
+
+                      return (
+                        <StyledTableRow
+                          key={session.sessionId}
+                          className={session.completed ? "completed" : ""}
+                        >
+                          <StyledTableCell>
+                            <Typography
+                              variant="body2"
+                              sx={styles.sessionOrderCell}
+                            >
+                              {session.sessionOrder}
+                            </Typography>
+                          </StyledTableCell>
+                          <StyledTableCell>
+                            <Box sx={styles.dateTimeCell}>
+                              <CalendarMonthIcon
+                                fontSize="small"
+                                sx={styles.dateTimeIcon(theme)}
+                              />
+                              <Typography variant="body2">
+                                {dayjs(session.sessionDate).format(
+                                  "DD/MM/YYYY"
+                                )}
+                              </Typography>
+                            </Box>
+                          </StyledTableCell>
+                          <StyledTableCell>
+                            <Box sx={styles.dateTimeCell}>
+                              <AccessTimeIcon
+                                fontSize="small"
+                                sx={styles.dateTimeIcon(theme)}
+                              />
+                              <Typography variant="body2">
+                                {dayjs(
+                                  `1970-01-01T${session.startTime}`
+                                ).format("HH:mm")}{" "}
+                                -{" "}
+                                {dayjs(`1970-01-01T${session.endTime}`).format(
+                                  "HH:mm"
+                                )}
+                              </Typography>
+                            </Box>
+                          </StyledTableCell>
+                          <StyledTableCell>
+                            <Chip
+                              label={
+                                session.state === "ACCEPTED"
+                                  ? "Aceptada"
+                                  : session.state === "PENDING"
+                                  ? "Pendiente"
+                                  : "Rechazada"
+                              }
+                              color={
+                                session.state === "ACCEPTED"
+                                  ? "success"
+                                  : session.state === "PENDING"
+                                  ? "warning"
+                                  : "default"
+                              }
+                              size="small"
+                              sx={styles.statusChip}
+                            />
+                          </StyledTableCell>
+                          <StyledTableCell>
+                            <Chip
+                              label={
+                                session.completed ? "Completada" : "Pendiente"
+                              }
+                              color={session.completed ? "success" : "default"}
+                              size="small"
+                              variant={
+                                session.completed ? "filled" : "outlined"
+                              }
+                              sx={styles.statusChip}
+                            />
+                          </StyledTableCell>
+                          <StyledTableCell>
+                            <Button
+                              variant="outlined"
+                              size="small"
+                              startIcon={<NoteAltIcon />}
+                              onClick={() =>
+                                setNoteModalSessionId(session.sessionId)
+                              }
+                              sx={styles.noteButton}
+                            >
+                              Ver nota
+                            </Button>
+                          </StyledTableCell>
+                          <StyledTableCell align="right">
+                            {isCancellable ? (
+                              cancellingId === session.sessionId ? (
+                                <CircularProgress size={20} />
+                              ) : (
+                                <Tooltip title="Cancelar sesión" arrow>
+                                  <IconButton
+                                    color="error"
+                                    onClick={() =>
+                                      openConfirmDialog(session.sessionId)
+                                    }
+                                    size="small"
+                                    sx={styles.actionButton(theme, "error")}
+                                  >
+                                    <DeleteOutlineIcon fontSize="small" />
+                                  </IconButton>
+                                </Tooltip>
+                              )
+                            ) : isCompletable ? (
+                              completingId === session.sessionId ? (
+                                <CircularProgress size={20} />
+                              ) : (
+                                <Tooltip title="Marcar como completada" arrow>
+                                  <IconButton
+                                    color="success"
+                                    onClick={() =>
+                                      handleCompleteSession(session.sessionId)
+                                    }
+                                    size="small"
+                                    sx={styles.actionButton(theme, "success")}
+                                  >
+                                    <DoneIcon fontSize="small" />
+                                  </IconButton>
+                                </Tooltip>
+                              )
+                            ) : null}
+                          </StyledTableCell>
+                        </StyledTableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </Box>
+            </Paper>
+          )}
+        </>
+      )}
+
+      {tabIndex === 2 && (
+        <>
+          <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="es">
+            <Paper
+              elevation={0}
+              sx={{
+                p: 2,
+                mb: 3,
+                borderRadius: 2,
+                border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+                display: "flex",
+                flexDirection: { xs: "column", sm: "row" },
+                alignItems: { xs: "flex-start", sm: "center" },
+                justifyContent: "space-between",
+                gap: 2,
+              }}
+            >
+              <Box>
+                <Typography
+                  variant="subtitle1"
+                  fontWeight={600}
+                  color="text.primary"
+                  gutterBottom
+                >
+                  Período de análisis
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Selecciona el rango de fechas para visualizar las estadísticas
+                </Typography>
+              </Box>
+              <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
+                <DatePicker
+                  label="Desde"
+                  value={fromDate}
+                  onChange={(newValue) => setRange([newValue, toDate])}
+                  slotProps={{
+                    textField: {
+                      size: "small",
+                      sx: {
+                        width: "18ch",
+                        minWidth: "11ch",
+                      },
+                    },
+                  }}
+                />
+                <DatePicker
+                  label="Hasta"
+                  value={toDate}
+                  onChange={(newValue) => setRange([fromDate, newValue])}
+                  slotProps={{
+                    textField: {
+                      size: "small",
+                      sx: { width: "18ch", minWidth: "11ch" },
+                    },
+                  }}
+                />
+              </Box>
+            </Paper>
+          </LocalizationProvider>
+          <StatisticsTab
+            data={hourlyStats}
+            loading={hourlyLoading}
+            error={hourlyError?.message}
+            categoryData={categoryStats}
+            categoryLoading={categoryLoading}
+          />
+        </>
+      )}
+
+      {/* Modales comunes */}
       <ScheduleSessionsModal
         open={isModalOpen}
         onClose={handleCloseModal}
         therapistId={therapistId}
-        treatmentId={data.treatmentId}
+        treatmentId={treatmentId}
       />
-
       <CloseTreatmentModal
         open={isCloseModalOpen}
         onClose={closeCloseModal}
-        treatmentId={data.treatmentId}
+        treatmentId={treatmentId}
       />
-
       <Dialog
         open={confirmDialog.open}
         onClose={closeConfirmDialog}
@@ -594,10 +740,9 @@ const TreatmentDetailPage: React.FC = () => {
           </Button>
         </DialogActions>
       </Dialog>
-
       {noteModalSessionId !== null && (
         <SessionNoteModal
-          open={true}
+          open
           onClose={() => setNoteModalSessionId(null)}
           sessionId={noteModalSessionId}
         />

@@ -10,7 +10,9 @@ export function usePendingAppointmentsQuery() {
   return useQuery<UpcomingAppointmentDto[], Error>({
     queryKey: ["pending"],
     queryFn: getPendingAppointments,
-    staleTime: 1000 * 30, // 30 segundos
-    placeholderData: [], // array vacío mientras carga
+    staleTime: 5 * 1000,
+    refetchInterval: 5 * 1000,
+    refetchOnWindowFocus: true,
+    placeholderData: [],
   });
 }
