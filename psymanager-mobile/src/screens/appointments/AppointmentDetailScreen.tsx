@@ -115,29 +115,6 @@ const AppointmentDetailScreen: React.FC = () => {
     loadDetails(false);
   };
 
-  const handleReprogramAppointment = () => {
-    Alert.alert(
-      "Reprogramar cita",
-      "¿Estás seguro que deseas reprogramar esta cita?",
-      [
-        {
-          text: "Cancelar",
-          style: "cancel",
-        },
-        {
-          text: "Reprogramar",
-          onPress: () => {
-            // Implementar funcionalidad de reprogramación
-            Alert.alert(
-              "Información",
-              "Funcionalidad de reprogramación pendiente"
-            );
-          },
-        },
-      ]
-    );
-  };
-
   const handleCancelAppointment = () => {
     if (!appointment) return;
 
@@ -452,41 +429,6 @@ const AppointmentDetailScreen: React.FC = () => {
                 </View>
               </View>
             </View>
-
-            {/* Notas para la sesión */}
-            <View style={appointmentDetailStyles.sectionContainer}>
-              <View style={appointmentDetailStyles.sectionHeader}>
-                <View style={appointmentDetailStyles.sectionIcon}>
-                  <MaterialCommunityIcons
-                    name="note-text-outline"
-                    size={18}
-                    color={colors.primary.main}
-                  />
-                </View>
-                <Text style={appointmentDetailStyles.sectionLabel}>
-                  Notas para la sesión
-                </Text>
-              </View>
-
-              <View style={appointmentDetailStyles.sessionInfoBlock}>
-                <View style={appointmentDetailStyles.sessionHeader}>
-                  <Text style={appointmentDetailStyles.sessionTitle}>
-                    Agrega cualquier información que quieras compartir con tu
-                    terapeuta
-                  </Text>
-                </View>
-                <View style={appointmentDetailStyles.sessionContent}>
-                  <TextInput
-                    style={appointmentDetailStyles.notesInput}
-                    multiline
-                    placeholder="Escribe aquí tus notas o preguntas para el terapeuta..."
-                    placeholderTextColor={colors.text.secondary + "80"}
-                    value={notes}
-                    onChangeText={setNotes}
-                  />
-                </View>
-              </View>
-            </View>
           </MotiView>
         </View>
       </ScrollView>
@@ -500,15 +442,6 @@ const AppointmentDetailScreen: React.FC = () => {
           style={appointmentDetailStyles.buttonContainer}
         >
           <View style={appointmentDetailStyles.buttonRow}>
-            <Button
-              mode="contained"
-              onPress={handleReprogramAppointment}
-              style={appointmentDetailStyles.reprogramButton}
-              labelStyle={appointmentDetailStyles.reprogramButtonLabel}
-              icon="calendar-edit"
-            >
-              Reprogramar
-            </Button>
             <Button
               mode="outlined"
               onPress={handleCancelAppointment}
