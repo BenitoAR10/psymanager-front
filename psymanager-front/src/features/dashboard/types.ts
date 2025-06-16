@@ -34,6 +34,10 @@ export interface TreatmentPlanDto {
   recurrent: boolean;
   numberOfSessions?: number;
   intervalWeeks?: number;
+
+  previousTreatmentId?: number;
+  previousEndDate?: string;
+  previousClosureReason?: string;
 }
 
 export interface ActiveTreatmentStudentDto {

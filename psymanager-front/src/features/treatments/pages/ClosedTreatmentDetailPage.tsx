@@ -1,6 +1,6 @@
 "use client";
 
-import type React from "react";
+import React, { useState } from "react";
 import {
   Box,
   Typography,
@@ -32,12 +32,15 @@ import NoteAltOutlinedIcon from "@mui/icons-material/NoteAltOutlined";
 import TopicOutlinedIcon from "@mui/icons-material/TopicOutlined";
 import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
 import NextPlanOutlinedIcon from "@mui/icons-material/NextPlanOutlined";
+import ReopenTreatmentModal from "../components/ReopenTreatmentModal";
 
 const ClosedTreatmentDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const treatmentId = Number(id);
   const navigate = useNavigate();
   const theme = useTheme();
+
+  const [openModal, setOpenModal] = useState(false);
 
   const { data, isLoading, isError, error } =
     useClosedTreatmentDetailQuery(treatmentId);
@@ -155,18 +158,50 @@ const ClosedTreatmentDetailPage: React.FC = () => {
           Volver a tratamientos
         </Button>
 
-        <Chip
-          icon={<CheckCircleOutlineIcon />}
-          label="Tratamiento finalizado"
-          color="success"
-          sx={{
-            fontWeight: 600,
-            px: 1,
-            "& .MuiChip-icon": {
-              color: "inherit",
-            },
-          }}
-        />
+        <Stack direction="row" spacing={1} alignItems="center">
+          <Chip
+            icon={<CheckCircleOutlineIcon />}
+            label="Tratamiento finalizado"
+            sx={{
+              fontWeight: 600,
+              px: 1,
+              bgcolor: (theme) => alpha(theme.palette.success.main, 0.1),
+              color: (theme) => theme.palette.success.main,
+              "& .MuiChip-icon": {
+                color: (theme) => theme.palette.success.main,
+              },
+            }}
+          />
+
+          {data.wasReopened && data.reopeningDate && (
+            <Chip
+              icon={<NextPlanOutlinedIcon />}
+              label={`Reabierto el ${dayjs(data.reopeningDate).format(
+                "DD MMM, YYYY"
+              )}`}
+              sx={{
+                fontWeight: 600,
+                px: 1,
+                bgcolor: (theme) => alpha(theme.palette.info.main, 0.1),
+                color: (theme) => theme.palette.info.main,
+                "& .MuiChip-icon": {
+                  color: (theme) => theme.palette.info.main,
+                },
+              }}
+            />
+          )}
+
+          {!data.wasReopened && (
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={() => setOpenModal(true)}
+              sx={{ borderRadius: 2, px: 2, py: 1, fontWeight: 600 }}
+            >
+              Reabrir tratamiento
+            </Button>
+          )}
+        </Stack>
       </Box>
 
       <Box
@@ -707,6 +742,12 @@ const ClosedTreatmentDetailPage: React.FC = () => {
           </Card>
         </Box>
       </Box>
+      <ReopenTreatmentModal
+        open={openModal}
+        onClose={() => setOpenModal(false)}
+        treatmentId={treatmentId}
+        therapistId={data.therapistId}
+      />
     </Box>
   );
 };

@@ -23,6 +23,9 @@ export interface TreatmentDetailDto {
   reason: string;
   semester: string;
   sessions: TreatmentSessionDetailDto[];
+
+  /** Indica si este tratamiento es una reapertura */
+  reopened: boolean;
 }
 
 /**
@@ -88,6 +91,7 @@ export interface CaseFileDto {
  */
 export interface ClosedTreatmentDetailDto {
   treatmentId: number;
+  therapistId: number;
   studentName: string;
   semester: string;
   reason: string;
@@ -97,6 +101,9 @@ export interface ClosedTreatmentDetailDto {
   closureReason: string;
   sessionNotes: SessionNoteSummaryDto[];
   caseFile?: CaseFileDto;
+  wasReopened: boolean;
+  reopeningDate?: string;
+  reopenedTreatmentId?: number;
 }
 
 // Estadísticas de ejercicios de bienestar
@@ -182,4 +189,16 @@ export interface HourlySeriesResponseDto {
   total: number;
   /** Serie de conteos por cada hora */
   series: HourlyCountResponseDto[];
+}
+
+/**
+ * DTO para solicitar la reapertura de un tratamiento.
+ */
+export interface ReopenTreatmentRequestDto {
+  previousTreatmentId: number;
+  therapistId: number;
+  newStartDate: string;
+  newEndDate: string;
+  reason: string;
+  semester: string;
 }

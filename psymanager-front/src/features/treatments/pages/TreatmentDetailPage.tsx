@@ -215,16 +215,37 @@ const TreatmentDetailPage: React.FC = () => {
       {/* Encabezado */}
       <Box sx={styles.header}>
         <Box>
-          <Typography
-            variant="h4"
-            fontWeight={700}
-            color="text.primary"
-            gutterBottom
-            sx={styles.headerTitle(theme)}
+          <Stack
+            direction="row"
+            spacing={1}
+            alignItems="center"
+            flexWrap="wrap"
           >
-            Tratamiento de{" "}
-            {studentName ? toPascalCase(studentName) : "Estudiante"}
-          </Typography>
+            <Typography
+              variant="h4"
+              fontWeight={700}
+              color="text.primary"
+              gutterBottom
+              sx={styles.headerTitle(theme)}
+            >
+              Tratamiento de{" "}
+              {studentName ? toPascalCase(studentName) : "Estudiante"}
+            </Typography>
+
+            {data.reopened && (
+              <Chip
+                label="Tratamiento reabierto"
+                color="info"
+                sx={{
+                  fontWeight: 600,
+                  borderRadius: 2,
+                  height: 28,
+                  bgcolor: alpha(theme.palette.info.main, 0.1),
+                  color: theme.palette.info.main,
+                }}
+              />
+            )}
+          </Stack>
           <Typography
             variant="subtitle1"
             color="text.secondary"
