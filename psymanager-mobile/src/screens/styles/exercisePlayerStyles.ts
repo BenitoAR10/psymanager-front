@@ -9,6 +9,20 @@ export const exercisePlayerStyles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#F0F7FA",
   },
+
+  controlsContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-around",
+    marginVertical: 16,
+  },
+  controlButton: {
+    padding: 8,
+  },
+  slider: {
+    width: "100%",
+    height: 40,
+  },
   gradientBackground: {
     flex: 1,
     paddingHorizontal: spacing.lg,
@@ -109,10 +123,7 @@ export const exercisePlayerStyles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     // Sin backgroundColor, sin borderRadius, sin shadow
   },
-  controlsContainer: {
-    alignItems: "center",
-    marginBottom: spacing.xl * 1.5,
-  },
+
   playButton: {
     width: 72,
     height: 72,

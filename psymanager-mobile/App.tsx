@@ -4,6 +4,7 @@ import { Provider as PaperProvider } from "react-native-paper";
 import { ToastProvider } from "react-native-toast-notifications";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "./src/utils/queryClient";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import AppNavigator from "./src/navigation/AppNavigator";
 import { AuthProvider } from "./src/auth/AuthContext";
@@ -21,8 +22,9 @@ export default function App() {
       <PaperProvider>
         <QueryClientProvider client={queryClient}>
           <AuthProvider>
-            <AppNavigator />
-            <StatusBar style="auto" />
+            <SafeAreaProvider>
+              <AppNavigator />
+            </SafeAreaProvider>
           </AuthProvider>
         </QueryClientProvider>
       </PaperProvider>

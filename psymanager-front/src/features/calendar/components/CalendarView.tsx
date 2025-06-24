@@ -48,7 +48,19 @@ const EventComponent: React.FC<EventProps<CalendarEvent>> = ({ event }) => {
   const isOwnEvent = event.userTherapistId === user?.userId;
 
   // Truncar el título si es demasiado largo
-  const displayTitle = event.title || "Horario disponible";
+  const getFormattedName = (fullName: string): string => {
+    if (!fullName) return "Horario disponible";
+
+    const parts = fullName.trim().split(" ");
+    if (parts.length === 1) return capitalize(parts[0]);
+
+    const firstName = capitalize(parts[0]);
+    const lastNames = parts.slice(-2).map(capitalize).join(" ");
+
+    return `${firstName} ${lastNames}`;
+  };
+
+  const displayTitle = getFormattedName(event.title || "");
 
   return (
     <Tooltip title={displayTitle} arrow placement="top">
