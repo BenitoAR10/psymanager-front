@@ -18,27 +18,21 @@ const CalendarPage = lazy(
 );
 const ProfilePage = lazy(() => import("./features/profile/pages/ProfilePage"));
 const HelpPage = lazy(() => import("./features/help/pages/HelpPage"));
-
 const StudentsPage = lazy(
   () => import("./features/students/pages/StudentsPage")
 );
-
 const TreatmentDetailPage = lazy(
   () => import("./features/treatments/pages/TreatmentDetailPage")
 );
-
 const ClosedTreatmentsPage = lazy(
   () => import("./features/treatments/pages/ClosedTreatmentsPage")
 );
-
 const ClosedTreatmentDetailPage = lazy(
   () => import("./features/treatments/pages/ClosedTreatmentDetailPage")
 );
-
 const UploadExercisePage = lazy(
   () => import("./features/exercises/pages/UploadExercisePage")
 );
-
 const ExerciseListPage = lazy(
   () => import("./features/exercises/pages/ExerciseListPage")
 );
@@ -64,15 +58,23 @@ const AppRoutes: React.FC = () => {
         <Route path="/login" element={<Login />} />
         <Route path="/auth/success" element={<AuthSuccess />} />
 
-        {/* Rutas protegidas: solo para THERAPIST */}
-        <Route element={<RoleProtectedRoute requiredRole="THERAPIST" />}>
+        {/*
+          Rutas protegidas para THERAPIST + INTERN-THERAPIST
+          Todas las pantallas de Dashboard salvo subir-ejercicio
+        */}
+        <Route
+          element={
+            <RoleProtectedRoute
+              requiredRole={["THERAPIST", "INTERN-THERAPIST"]}
+            />
+          }
+        >
           <Route path="/dashboard" element={<DashboardLayout />}>
             <Route index element={<DashboardHome />} />
             <Route path="calendario" element={<CalendarPage />} />
             <Route path="estudiantes" element={<StudentsPage />} />
             <Route path="perfil" element={<ProfilePage />} />
             <Route path="ayuda" element={<HelpPage />} />
-            <Route path="subir-ejercicio" element={<UploadExercisePage />} />
             <Route path="ejercicios" element={<ExerciseListPage />} />
             <Route path="tratamientos/:id" element={<TreatmentDetailPage />} />
             <Route path="historiales" element={<ClosedTreatmentsPage />} />
@@ -81,6 +83,16 @@ const AppRoutes: React.FC = () => {
               element={<ClosedTreatmentDetailPage />}
             />
           </Route>
+        </Route>
+
+        {/*
+          Ruta subir-ejercicio EXCLUSIVA para THERAPIST
+        */}
+        <Route element={<RoleProtectedRoute requiredRole="THERAPIST" />}>
+          <Route
+            path="/dashboard/subir-ejercicio"
+            element={<UploadExercisePage />}
+          />
         </Route>
 
         {/* Ruta no encontrada */}

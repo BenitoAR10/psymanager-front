@@ -3,7 +3,8 @@ import { useAuth } from "../../features/auth/context/AuthContext";
 import { Navigate, Outlet } from "react-router-dom";
 
 interface RoleProtectedRouteProps {
-  requiredRole: string;
+  // Ahora puede ser un string o un array de strings
+  requiredRole: string | string[];
 }
 
 const RoleProtectedRoute: React.FC<RoleProtectedRouteProps> = ({
@@ -20,11 +21,16 @@ const RoleProtectedRoute: React.FC<RoleProtectedRouteProps> = ({
 
   // Si no está autenticado, redirige al login.
   if (!isAuthenticated) {
-    return <Navigate to="/login" />;
+    return <Navigate to="/login" replace />;
   }
 
-  // Si el usuario autenticado no tiene el rol requerido, mostramos 403.
-  if (!user || !user.roles.includes(requiredRole)) {
+  // Normalizamos a arreglo
+  const allowedRoles = Array.isArray(requiredRole)
+    ? requiredRole
+    : [requiredRole];
+
+  // Si el usuario autenticado no tiene ninguno de los roles permitidos, mostramos 403.
+  if (!user || !allowedRoles.some((role) => user.roles.includes(role))) {
     return (
       <div style={{ padding: "2rem", textAlign: "center" }}>
         <h1>403 Forbidden</h1>
@@ -33,6 +39,7 @@ const RoleProtectedRoute: React.FC<RoleProtectedRouteProps> = ({
     );
   }
 
+  // Si pasa todas las comprobaciones, renderiza las rutas hijas
   return <Outlet />;
 };
 
