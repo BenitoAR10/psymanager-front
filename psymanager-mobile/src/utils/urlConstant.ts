@@ -1,3 +1,3 @@
 export const API_URL =
   process.env.EXPO_PUBLIC_API_URL ||
-  "https://f4cb-200-105-158-247.ngrok-free.app";
+  "https://77e9-200-105-158-247.ngrok-free.app";

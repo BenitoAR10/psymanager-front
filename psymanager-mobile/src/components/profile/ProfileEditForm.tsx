@@ -27,6 +27,7 @@ const ProfileEditForm: React.FC<Props> = ({ profile }) => {
   const [isModified, setIsModified] = useState(false);
   const [focusedField, setFocusedField] = useState<string | null>(null);
 
+  const [phoneError, setPhoneError] = useState<string>("");
   const { mutateAsync: updateProfile } = useUpdateUserProfile();
   const toast = useToast();
 
@@ -45,6 +46,12 @@ const ProfileEditForm: React.FC<Props> = ({ profile }) => {
   };
 
   const handleSave = async () => {
+    // Si el teléfono no tiene exactamente 8 dígitos, mostramos error y no seguimos
+    if (form.phoneNumber.length < 8) {
+      setPhoneError("El teléfono debe tener exactamente 8 dígitos");
+      return;
+    }
+
     try {
       await updateProfile(form);
       toast.show("Perfil actualizado correctamente.", { type: "success" });
@@ -110,6 +117,21 @@ const ProfileEditForm: React.FC<Props> = ({ profile }) => {
             </View>
           </View>
         </View>
+        {/* Fila 5: Género */}
+        <View style={styles.fullField}>
+          <Text style={styles.label}>Género</Text>
+          <View style={styles.readOnlyContainer}>
+            <MaterialCommunityIcons
+              name="gender-male-female"
+              size={16}
+              color={colors.text.secondary}
+              style={styles.fieldIcon}
+            />
+            <Text style={styles.readOnlyText}>
+              {profile.identityGender || "No especificado"}
+            </Text>
+          </View>
+        </View>
 
         {/* Separador */}
         <View style={styles.separator}>
@@ -118,12 +140,11 @@ const ProfileEditForm: React.FC<Props> = ({ profile }) => {
           <View style={styles.separatorLine} />
         </View>
 
-        {/* Fila 4: Teléfono */}
         <View style={styles.fullField}>
           <View style={styles.editableLabelContainer}>
             <Text style={styles.editableLabel}>Teléfono</Text>
             <MaterialCommunityIcons
-              name="pencil"
+              name="phone"
               size={14}
               color={colors.primary.main}
             />
@@ -132,6 +153,7 @@ const ProfileEditForm: React.FC<Props> = ({ profile }) => {
             style={[
               styles.inputContainer,
               focusedField === "phoneNumber" && styles.inputContainerFocused,
+              phoneError && styles.inputError, // cambiar borde si hay error
             ]}
           >
             <MaterialCommunityIcons
@@ -143,48 +165,33 @@ const ProfileEditForm: React.FC<Props> = ({ profile }) => {
             <TextInput
               style={styles.input}
               value={form.phoneNumber}
-              onChangeText={(text) => handleChange("phoneNumber", text)}
-              placeholder="Ej: +591 70123456"
+              keyboardType="number-pad"
+              maxLength={8}
+              placeholder="Ej: 70123456"
               placeholderTextColor={colors.grey[400]}
-              keyboardType="phone-pad"
+              onChangeText={(text) => {
+                const digits = text.replace(/\D/g, "").slice(0, 8);
+                handleChange("phoneNumber", digits);
+                // limpiar error si alcanza 8 dígitos
+                if (digits.length === 8) {
+                  setPhoneError("");
+                }
+              }}
               onFocus={() => setFocusedField("phoneNumber")}
-              onBlur={() => setFocusedField(null)}
+              onBlur={() => {
+                setFocusedField(null);
+                // validar longitud mínima
+                if (form.phoneNumber.length < 8) {
+                  setPhoneError("El teléfono debe tener exactamente 8 dígitos");
+                } else {
+                  setPhoneError("");
+                }
+              }}
             />
           </View>
-        </View>
-
-        {/* Fila 5: Género */}
-        <View style={styles.fullField}>
-          <View style={styles.editableLabelContainer}>
-            <Text style={styles.editableLabel}>Género</Text>
-            <MaterialCommunityIcons
-              name="pencil"
-              size={14}
-              color={colors.primary.main}
-            />
-          </View>
-          <View
-            style={[
-              styles.inputContainer,
-              focusedField === "identityGender" && styles.inputContainerFocused,
-            ]}
-          >
-            <MaterialCommunityIcons
-              name="gender-male-female"
-              size={16}
-              color={colors.text.secondary}
-              style={styles.fieldIcon}
-            />
-            <TextInput
-              style={styles.input}
-              value={form.identityGender}
-              onChangeText={(text) => handleChange("identityGender", text)}
-              placeholder="Ej: Masculino, Femenino, No binario"
-              placeholderTextColor={colors.grey[400]}
-              onFocus={() => setFocusedField("identityGender")}
-              onBlur={() => setFocusedField(null)}
-            />
-          </View>
+          {phoneError ? (
+            <Text style={styles.errorText}>{phoneError}</Text>
+          ) : null}
         </View>
 
         {/* Fila 6: Dirección */}
@@ -232,7 +239,7 @@ const ProfileEditForm: React.FC<Props> = ({ profile }) => {
         <Button
           mode="contained"
           onPress={handleSave}
-          disabled={!isModified}
+          disabled={!isModified || !!phoneError}
           style={[styles.saveButton, !isModified && styles.saveButtonDisabled]}
           labelStyle={styles.saveButtonLabel}
           icon="content-save-outline"
@@ -403,6 +410,17 @@ const styles = StyleSheet.create({
     color: colors.warning.main,
     marginLeft: spacing.xs,
     fontWeight: typography.fontWeights.medium as any,
+  },
+  errorText: {
+    color: colors.error.main,
+    fontSize: typography.sizes.xs,
+    marginTop: spacing.xs,
+    marginLeft: spacing.sm,
+    fontWeight: typography.fontWeights.medium as any,
+  },
+  inputError: {
+    borderColor: colors.error.main,
+    borderWidth: 2,
   },
 });
 
