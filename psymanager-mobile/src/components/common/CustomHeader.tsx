@@ -1,11 +1,13 @@
-import type React from "react";
+import React from "react";
 import { View, TouchableOpacity, StyleSheet, StatusBar } from "react-native";
 import { Text } from "react-native-paper";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import type { NavigationProp } from "@react-navigation/native";
 import type { RootStackParamList } from "../../navigation/AppNavigator";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { theme } from "../../screens/styles/themeConstants";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 const { colors, typography, spacing, shadows } = theme;
 
@@ -28,6 +30,8 @@ const CustomHeader: React.FC<CustomHeaderProps> = ({
   rightComponent,
 }) => {
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
+  const insets = useSafeAreaInsets();
+
   const isDetail =
     currentRoute === "ScheduleDetail" ||
     currentRoute === "AccountSettings" ||
@@ -60,42 +64,53 @@ const CustomHeader: React.FC<CustomHeaderProps> = ({
 
   return (
     <>
+      {/* StatusBar traslucida para que el fondo se pinte detrás */}
       <StatusBar
         barStyle="dark-content"
-        backgroundColor={colors.background.paper}
-        translucent={false}
+        translucent
+        backgroundColor="transparent"
       />
-      <View style={styles.container} accessibilityRole="header">
-        <View style={styles.leftContainer}>
-          {isDetail && (
-            <TouchableOpacity
-              onPress={() => navigation.goBack()}
-              style={styles.iconButton}
-              accessibilityLabel="Volver"
-              activeOpacity={0.7}
-            >
-              <MaterialCommunityIcons
-                name="arrow-left"
-                size={22}
-                color={colors.primary.main}
-              />
-            </TouchableOpacity>
-          )}
-        </View>
 
-        <View style={styles.titleContainer}>
-          <Text style={styles.title} numberOfLines={1} ellipsizeMode="tail">
-            {getTitle(currentRoute)}
-          </Text>
-        </View>
+      {/* Safe area superior */}
+      <SafeAreaView
+        edges={["top"]}
+        style={{ backgroundColor: colors.background.paper }}
+      >
+        <View style={styles.container} accessibilityRole="header">
+          <View style={styles.leftContainer}>
+            {isDetail && (
+              <TouchableOpacity
+                onPress={() => navigation.goBack()}
+                style={styles.iconButton}
+                accessibilityLabel="Volver"
+                activeOpacity={0.7}
+              >
+                <MaterialCommunityIcons
+                  name="arrow-left"
+                  size={22}
+                  color={colors.primary.main}
+                />
+              </TouchableOpacity>
+            )}
+          </View>
 
-        <View style={styles.rightContainer}>{rightComponent}</View>
-      </View>
+          <View style={styles.titleContainer}>
+            <Text style={styles.title} numberOfLines={1} ellipsizeMode="tail">
+              {getTitle(currentRoute)}
+            </Text>
+          </View>
+
+          <View style={styles.rightContainer}>{rightComponent}</View>
+        </View>
+      </SafeAreaView>
     </>
   );
 };
 
 const styles = StyleSheet.create({
+  safeArea: {
+    width: "100%",
+  },
   container: {
     height: 56,
     flexDirection: "row",
@@ -104,11 +119,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     borderBottomWidth: 0.5,
     borderBottomColor: colors.border.main + "40",
-    elevation: 2,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
+    ...shadows.md,
   },
   iconButton: {
     padding: spacing.sm,
@@ -119,11 +130,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     width: 40,
     height: 40,
-    elevation: 1,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
+    ...shadows.sm,
   },
   leftContainer: {
     width: 44,

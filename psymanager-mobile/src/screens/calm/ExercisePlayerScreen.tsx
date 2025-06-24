@@ -9,6 +9,7 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useToast } from "react-native-toast-notifications";
 import CelebrationModal from "../../components/modals/CelebrationModal";
+import Slider from "@react-native-community/slider";
 
 import PlayerHeader from "./PlayerHeader";
 import ExerciseInfo from "./ExerciseInfo";
@@ -52,6 +53,24 @@ const ExercisePlayerScreen: React.FC<ExercisePlayerScreenProps> = ({
   const isLoaded = audioStatus?.isLoaded ?? false;
   const currentTime = audioStatus?.currentTime ?? 0;
   const duration = audioStatus?.duration ?? 0;
+
+  // Funciones de salto
+  const seekBackward = async () => {
+    const t = Math.max(0, currentTime - 15);
+    try {
+      await audioPlayer.seekTo(t);
+    } catch (e) {
+      console.error("Error retrocediendo:", e);
+    }
+  };
+  const seekForward = async () => {
+    const t = Math.min(duration, currentTime + 15);
+    try {
+      await audioPlayer.seekTo(t);
+    } catch (e) {
+      console.error("Error avanzando:", e);
+    }
+  };
 
   // Obtener el gradiente según la categoría
   const gradient = getExerciseGradient(category);
@@ -175,15 +194,23 @@ const ExercisePlayerScreen: React.FC<ExercisePlayerScreenProps> = ({
             <PlayerControls
               isPlaying={isPlaying}
               onPlayPause={handlePlayPause}
-              onSeekBackward={() => {}}
-              onSeekForward={() => {}}
-              canSeek={false}
+              onSeekBackward={seekBackward}
+              onSeekForward={seekForward}
+              canSeek={isLoaded}
             />
 
             <ProgressBar
               currentTime={currentTime}
               duration={duration}
               formatTime={formatTime}
+              onSeek={async (pos) => {
+                try {
+                  await audioPlayer.seekTo(pos);
+                } catch (e) {
+                  console.error("Error seek:", e);
+                }
+              }}
+              canSeek={isLoaded}
             />
           </View>
         )}

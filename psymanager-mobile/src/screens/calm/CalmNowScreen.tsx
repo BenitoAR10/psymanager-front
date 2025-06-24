@@ -1,5 +1,3 @@
-// src/screens/calm/CalmNowScreen.tsx
-
 import type React from "react";
 import {
   View,
