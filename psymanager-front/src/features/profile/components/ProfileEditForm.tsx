@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { toast } from "sonner";
 import {
   Box,
   TextField,
@@ -63,19 +64,44 @@ const ProfileEditForm: React.FC<ProfileEditFormProps> = ({
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const [submitting, setSubmitting] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  // Validez locales para longitud/formato
+  const validCi = /^\d{7,8}$/.test(form.ciNumber);
+  const validPhone = /^\d{8}$/.test(form.phoneNumber);
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+
+    // marcar como "touched" para disparar errores
+    onBlur("ciNumber");
+    onBlur("phoneNumber");
+
+    // validar longitudes/formato
+    const ciOk = /^\d{7,8}$/.test(form.ciNumber);
+    const phoneOk = /^\d{8}$/.test(form.phoneNumber);
+    if (!ciOk || !phoneOk) {
+      return; // no envía si hay inválidos
+    }
+
     setSubmitting(true);
     try {
       await onSubmit();
+      // aviso al usuario
+      toast.success("Cambios guardados correctamente");
+    } catch (_err: unknown) {
+      // aquí no hacemos nada; el formulario sigue abierto y el padre
+      // ya setea `errors` para mostrar los mensajes de campo
     } finally {
       setSubmitting(false);
     }
   };
 
   const isFormValid = () => {
-    return !Object.keys(errors).some(
-      (key) => errors[key as keyof TherapistProfileUpdateDto]
+    return (
+      !Object.keys(errors).some((key) =>
+        Boolean(errors[key as keyof TherapistProfileUpdateDto])
+      ) &&
+      validCi &&
+      validPhone
     );
   };
 
@@ -111,7 +137,6 @@ const ProfileEditForm: React.FC<ProfileEditFormProps> = ({
             position: "relative",
           }}
         >
-          {/* Elementos decorativos */}
           <Box
             sx={{
               position: "absolute",
@@ -123,7 +148,6 @@ const ProfileEditForm: React.FC<ProfileEditFormProps> = ({
               backgroundColor: "rgba(255, 255, 255, 0.1)",
             }}
           />
-
           <IconButton
             onClick={onCancel}
             sx={{
@@ -140,7 +164,7 @@ const ProfileEditForm: React.FC<ProfileEditFormProps> = ({
           </Typography>
         </Box>
 
-        {/* Contenido del formulario */}
+        {/* Form content */}
         <Box
           component="form"
           onSubmit={handleSubmit}
@@ -152,29 +176,44 @@ const ProfileEditForm: React.FC<ProfileEditFormProps> = ({
             gap: 4,
           }}
         >
-          {/* Sección de Identificación */}
+          {/* Identificación */}
           <FormSection
             title="Identificación"
             icon={<BadgeIcon />}
             description="Información de tu documento de identidad"
           >
             <Box display="flex" flexWrap="wrap" gap={2}>
+              {/* Número de CI */}
               <Box flexGrow={1} flexBasis={{ xs: "100%", sm: "45%" }}>
                 <TextField
                   label="Número de CI"
                   fullWidth
                   value={form.ciNumber}
-                  onChange={(e) => onChange("ciNumber", e.target.value)}
+                  onChange={(e) =>
+                    onChange("ciNumber", e.target.value.replace(/\D/g, ""))
+                  }
                   onBlur={() => onBlur("ciNumber")}
-                  error={Boolean(errors.ciNumber && touched.ciNumber)}
-                  helperText={touched.ciNumber ? errors.ciNumber : ""}
+                  error={
+                    touched.ciNumber && (Boolean(errors.ciNumber) || !validCi)
+                  }
+                  helperText={
+                    touched.ciNumber
+                      ? errors.ciNumber ?? (!validCi && "Debe ser un CI válido")
+                      : ""
+                  }
                   required
+                  inputProps={{
+                    inputMode: "numeric",
+                    pattern: "\\d*",
+                    maxLength: 8,
+                  }}
                   InputProps={{
                     startAdornment: (
                       <BadgeIcon
                         sx={{
                           color:
-                            errors.ciNumber && touched.ciNumber
+                            (errors.ciNumber && touched.ciNumber) ||
+                            (!validCi && touched.ciNumber)
                               ? theme.palette.error.main
                               : theme.palette.action.active,
                           mr: 1,
@@ -186,17 +225,33 @@ const ProfileEditForm: React.FC<ProfileEditFormProps> = ({
                 />
               </Box>
 
+              {/* Complemento (opcional) */}
               <Box flexGrow={1} flexBasis={{ xs: "100%", sm: "25%" }}>
                 <TextField
                   label="Complemento"
                   fullWidth
                   value={form.ciComplement}
-                  onChange={(e) => onChange("ciComplement", e.target.value)}
+                  onChange={(e) =>
+                    onChange(
+                      "ciComplement",
+                      e.target.value
+                        .toUpperCase()
+                        .replace(/[^0-9A-Z]/g, "")
+                        .slice(0, 2)
+                    )
+                  }
                   onBlur={() => onBlur("ciComplement")}
-                  placeholder="Opcional"
+                  error={Boolean(errors.ciComplement && touched.ciComplement)}
+                  helperText={touched.ciComplement ? errors.ciComplement : ""}
+                  placeholder="Ej: 1A"
+                  inputProps={{
+                    maxLength: 2,
+                    pattern: "[0-9][A-Z]",
+                  }}
                 />
               </Box>
 
+              {/* Extensión */}
               <Box flexGrow={1} flexBasis={{ xs: "100%", sm: "28%" }}>
                 <FormControl fullWidth>
                   <InputLabel id="ci-extension-label">Extensión</InputLabel>
@@ -220,25 +275,48 @@ const ProfileEditForm: React.FC<ProfileEditFormProps> = ({
             </Box>
           </FormSection>
 
-          {/* Sección de Contacto */}
+          {/* Información de contacto */}
           <FormSection
             title="Información de contacto"
             icon={<PhoneIcon />}
             description="Datos para que tus pacientes puedan contactarte"
           >
             <Box display="flex" flexWrap="wrap" gap={2}>
+              {/* Teléfono */}
               <Box flexGrow={1} flexBasis={{ xs: "100%", sm: "48%" }}>
                 <TextField
                   label="Teléfono"
                   fullWidth
                   value={form.phoneNumber}
-                  onChange={(e) => onChange("phoneNumber", e.target.value)}
+                  onChange={(e) =>
+                    onChange("phoneNumber", e.target.value.replace(/\D/g, ""))
+                  }
                   onBlur={() => onBlur("phoneNumber")}
+                  error={
+                    touched.phoneNumber &&
+                    (Boolean(errors.phoneNumber) || !validPhone)
+                  }
+                  helperText={
+                    touched.phoneNumber
+                      ? errors.phoneNumber ??
+                        (!validPhone && "Debe ser un teléfono válido")
+                      : ""
+                  }
+                  required
+                  inputProps={{
+                    inputMode: "tel",
+                    pattern: "\\d*",
+                    maxLength: 8,
+                  }}
                   InputProps={{
                     startAdornment: (
                       <PhoneIcon
                         sx={{
-                          color: theme.palette.action.active,
+                          color:
+                            (errors.phoneNumber && touched.phoneNumber) ||
+                            (!validPhone && touched.phoneNumber)
+                              ? theme.palette.error.main
+                              : theme.palette.action.active,
                           mr: 1,
                           fontSize: 20,
                         }}
@@ -249,6 +327,7 @@ const ProfileEditForm: React.FC<ProfileEditFormProps> = ({
                 />
               </Box>
 
+              {/* Dirección */}
               <Box flexGrow={1} flexBasis={{ xs: "100%", sm: "48%" }}>
                 <TextField
                   label="Dirección"
@@ -273,7 +352,7 @@ const ProfileEditForm: React.FC<ProfileEditFormProps> = ({
             </Box>
           </FormSection>
 
-          {/* Sección de Especialidades */}
+          {/* Especialidades */}
           <FormSection
             title="Especialidades"
             icon={<PsychologyIcon />}
@@ -323,7 +402,7 @@ const ProfileEditForm: React.FC<ProfileEditFormProps> = ({
             </FormControl>
           </FormSection>
 
-          {/* Barra de acciones */}
+          {/* Acciones */}
           <Box
             sx={{
               display: "flex",
@@ -381,7 +460,6 @@ interface FormSectionProps {
   description?: string;
   children: React.ReactNode;
 }
-
 const FormSection: React.FC<FormSectionProps> = ({
   title,
   icon,

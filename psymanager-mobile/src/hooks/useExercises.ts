@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
-import { getExercises, ExerciseDto } from "../services/wellnessService";
+import type { Exercise } from "../types/exercise";
+import { getExercises } from "../services/wellnessService";
 
 /**
  * Hook para obtener ejercicios de bienestar desde el backend.
@@ -8,7 +9,7 @@ import { getExercises, ExerciseDto } from "../services/wellnessService";
  * @returns Objeto con loading, data y error
  */
 export function useExercises(category?: string) {
-  return useQuery<ExerciseDto[], Error>({
+  return useQuery<Exercise[], Error>({
     queryKey: ["exercises", category],
     queryFn: () => getExercises(category),
     staleTime: 1000 * 60 * 5,

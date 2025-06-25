@@ -21,18 +21,40 @@ export const formatDateForServer = (date: Date | null): string => {
   return `${year}-${month}-${day}`;
 };
 
+// src/utils/validators.ts
+
+/**
+ * Valida un campo del formulario de perfil.
+ * Retorna cadena vacía si pasa, o el mensaje de error.
+ */
 export const validateField = (name: string, value: any): string => {
   let errorMessage = "";
 
   switch (name) {
-    case "ciNumber":
-      if (!value?.toString().trim()) {
+    // Número de CI: 7 u 8 dígitos
+    case "ciNumber": {
+      const ci = value?.toString().trim() || "";
+      if (!ci) {
         errorMessage = "El número de CI es requerido";
-      } else if (!/^\d+$/.test(value.toString())) {
-        errorMessage = "El CI debe contener solo números";
+      } else if (!/^\d{7,8}$/.test(ci)) {
+        errorMessage = "El CI debe tener sólo dígitos 7 u 8 caracteres";
       }
       break;
+    }
 
+    // Teléfono: exactamente 8 dígitos
+    case "phoneNumber": {
+      const phone = value?.toString().trim() || "";
+      if (!phone) {
+        errorMessage = "El número de teléfono es requerido";
+      } else if (!/^\d{8}$/.test(phone)) {
+        errorMessage =
+          "El teléfono debe tener sólo dígitos y exactamente 8 caracteres";
+      }
+      break;
+    }
+
+    // Fecha de nacimiento
     case "birthDate":
       if (!value) {
         errorMessage = "La fecha de nacimiento es requerida";
@@ -47,26 +69,29 @@ export const validateField = (name: string, value: any): string => {
       }
       break;
 
+    // Género biológico
     case "birthGender":
       if (!value) {
         errorMessage = "El género biológico es requerido";
       }
       break;
 
-    case "career":
+    // Facultad (dropdown)
+    case "faculty":
       if (!value) {
+        errorMessage = "La facultad es requerida";
+      }
+      break;
+
+    // Carrera (dropdown)
+    case "careerId":
+      if (value == null) {
         errorMessage = "La carrera es requerida";
       }
       break;
 
-    case "phoneNumber":
-      if (!value?.toString().trim()) {
-        errorMessage = "El número de teléfono es requerido";
-      } else if (!/^\d+$/.test(value.toString())) {
-        errorMessage = "El teléfono debe contener solo números";
-      } else if (value.toString().length < 7) {
-        errorMessage = "El número debe tener al menos 7 dígitos";
-      }
+    // Si el campo no está en este switch, no hay error
+    default:
       break;
   }
 

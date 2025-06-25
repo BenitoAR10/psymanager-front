@@ -134,20 +134,24 @@ const RegisterStep1Screen: React.FC = () => {
       case "firstName":
         if (!value.trim()) {
           errorMessage = "El nombre es requerido";
+        } else if (!/^[A-Za-zÁÉÍÓÚáéíóúÜüÑñ\s]+$/.test(value)) {
+          errorMessage = "El nombre solo puede contener letras y espacios";
         }
         break;
 
       case "lastName":
         if (!value.trim()) {
           errorMessage = "El apellido es requerido";
+        } else if (!/^[A-Za-zÁÉÍÓÚáéíóúÜüÑñ\s]+$/.test(value)) {
+          errorMessage = "El apellido solo puede contener letras y espacios";
         }
         break;
 
       case "email":
         if (!value.trim()) {
           errorMessage = "El correo electrónico es requerido";
-        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
-          errorMessage = "Ingresa un correo electrónico válido";
+        } else if (!/^[^\s@]+@ucb\.edu\.bo$/.test(value.toLowerCase())) {
+          errorMessage = "El correo debe terminar en @ucb.edu.bo";
         }
         break;
 
@@ -163,7 +167,6 @@ const RegisterStep1Screen: React.FC = () => {
     setErrors((prev) => ({ ...prev, [name]: errorMessage }));
     return !errorMessage;
   };
-
   // Marcar un campo como tocado cuando pierde el foco
   const handleBlur = (field: string) => {
     setTouched((prev) => ({ ...prev, [field]: true }));

@@ -1,17 +1,16 @@
 // src/utils/constants.ts
 export const GENDER_OPTIONS = [
   { label: "Selecciona género biológico", value: "" },
-  { label: "Masculino", value: "male" },
-  { label: "Femenino", value: "female" },
+  { label: "Masculino", value: "Masculino" },
+  { label: "Femenino", value: "Femenino" },
 ];
 
 export const IDENTITY_GENDER_OPTIONS = [
   { label: "Selecciona género con el que te identificas", value: "" },
-  { label: "Masculino", value: "male" },
-  { label: "Femenino", value: "female" },
-  { label: "No binario", value: "non-binary" },
-  { label: "Otro", value: "other" },
-  { label: "Prefiero no decirlo", value: "not-specified" },
+  { label: "Masculino", value: "Masculino" },
+  { label: "Femenino", value: "Femenino" },
+  { label: "Otro", value: "Otro" },
+  { label: "Prefiero no decirlo", value: "no especificó" },
 ];
 
 export const CI_EXTENSION_OPTIONS = [

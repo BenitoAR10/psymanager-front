@@ -43,7 +43,7 @@ export const useTherapistProfile = () => {
     isProfileIncomplete,
     editMode,
     setEditMode,
-    updateProfile: mutation.mutate,
+    updateProfile: mutation.mutateAsync,
     updating: mutation.isPending,
   };
 };
