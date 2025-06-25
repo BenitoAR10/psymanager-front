@@ -9,7 +9,6 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useToast } from "react-native-toast-notifications";
 import CelebrationModal from "../../components/modals/CelebrationModal";
-import Slider from "@react-native-community/slider";
 
 import PlayerHeader from "./PlayerHeader";
 import ExerciseInfo from "./ExerciseInfo";

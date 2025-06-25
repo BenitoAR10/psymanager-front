@@ -1,7 +1,7 @@
 "use client";
 
 import type React from "react";
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import {
   View,
   Text,
@@ -14,12 +14,14 @@ import { Avatar } from "react-native-paper";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useAuth } from "../../auth/useAuth";
 import { MotiView, MotiText } from "moti";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../../navigation/AppNavigator";
 import LogoutConfirmModal from "../../components/modals/LogoutConfirmModal";
 import profileStyles from "../styles/profileStyles";
 import { theme } from "../styles/themeConstants";
+
+import { useTotalPoints } from "../../hooks/useTotalPoints";
 
 const { colors } = theme;
 
@@ -29,6 +31,22 @@ const ProfileScreen: React.FC = () => {
 
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+
+  const patientId = userInfo?.userId!;
+  const {
+    data: pointsData,
+    isLoading: loadingPoints,
+    refetch: refetchPoints,
+  } = useTotalPoints(patientId);
+
+  // Refrescar puntos cuando la pantalla recibe foco
+  useFocusEffect(
+    useCallback(() => {
+      if (patientId) {
+        refetchPoints();
+      }
+    }, [patientId, refetchPoints])
+  );
 
   const getInitials = () => {
     if (!userInfo) return "?";
@@ -152,6 +170,29 @@ const ProfileScreen: React.FC = () => {
             >
               Estudiante
             </MotiText>
+
+            {/* Puntos totales integrados dentro de la tarjeta */}
+            <MotiView
+              from={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 400, duration: 500 }}
+              style={profileStyles.pointsContainer}
+              key={`points-${pointsData?.totalPoints || 0}`} // Key para forzar re-animación cuando cambien los puntos
+            >
+              <View style={profileStyles.pointsBadge}>
+                <MaterialCommunityIcons
+                  name="star-circle"
+                  size={16}
+                  color={colors.primary.main}
+                  style={profileStyles.pointsIcon}
+                />
+                <Text style={profileStyles.pointsText}>
+                  {loadingPoints
+                    ? "Cargando..."
+                    : `${pointsData?.totalPoints ?? 0} puntos`}
+                </Text>
+              </View>
+            </MotiView>
           </MotiView>
 
           {/* Sección de cuenta */}
