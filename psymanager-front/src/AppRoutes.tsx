@@ -4,7 +4,6 @@ import { CircularProgress, Box } from "@mui/material";
 import RoleProtectedRoute from "./components/common/RoleProtectedRoute";
 import NotFound from "./components/common/NotFound";
 
-// Lazy load de páginas principales
 const Login = lazy(() => import("./features/auth/pages/Login"));
 const AuthSuccess = lazy(() => import("./features/auth/pages/AuthSuccess"));
 const DashboardLayout = lazy(
@@ -58,17 +57,15 @@ const AppRoutes: React.FC = () => {
         <Route path="/login" element={<Login />} />
         <Route path="/auth/success" element={<AuthSuccess />} />
 
-        {/*
-          Rutas protegidas para THERAPIST + INTERN-THERAPIST
-          Todas las pantallas de Dashboard salvo subir-ejercicio
-        */}
+        {/* Rutas protegidas para THERAPIST + INTERN-THERAPIST */}
         <Route
           element={
             <RoleProtectedRoute
-              requiredRole={["THERAPIST", "INTERN-THERAPIST"]}
+              requiredRoles={["THERAPIST", "INTERN-THERAPIST"]}
             />
           }
         >
+          {/* DashboardLayout con todas sus subrutas */}
           <Route path="/dashboard" element={<DashboardLayout />}>
             <Route index element={<DashboardHome />} />
             <Route path="calendario" element={<CalendarPage />} />
@@ -82,20 +79,17 @@ const AppRoutes: React.FC = () => {
               path="historiales/:id"
               element={<ClosedTreatmentDetailPage />}
             />
+
+            {/* Sólo THERAPIST puede subir ejercicio */}
+            <Route
+              element={<RoleProtectedRoute requiredRoles={["THERAPIST"]} />}
+            >
+              <Route path="subir-ejercicio" element={<UploadExercisePage />} />
+            </Route>
           </Route>
         </Route>
 
-        {/*
-          Ruta subir-ejercicio EXCLUSIVA para THERAPIST
-        */}
-        <Route element={<RoleProtectedRoute requiredRole="THERAPIST" />}>
-          <Route
-            path="/dashboard/subir-ejercicio"
-            element={<UploadExercisePage />}
-          />
-        </Route>
-
-        {/* Ruta no encontrada */}
+        {/* 404 */}
         <Route path="*" element={<NotFound />} />
       </Routes>
     </Suspense>
