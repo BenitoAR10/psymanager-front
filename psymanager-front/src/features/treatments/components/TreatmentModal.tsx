@@ -21,6 +21,11 @@ import {
   Fade,
   Tooltip,
   InputAdornment,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  FormHelperText,
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import MedicalServicesOutlinedIcon from "@mui/icons-material/MedicalServicesOutlined";
@@ -60,6 +65,10 @@ const TreatmentModal: React.FC<TreatmentModalProps> = ({
   patientName = "hola",
 }) => {
   const theme = useTheme();
+  const year = new Date().getFullYear();
+  const month = new Date().getMonth() + 1;
+  const semesterOptions = [`1-${year}`, `2-${year}`];
+  const defaultSemester = month <= 6 ? semesterOptions[0] : semesterOptions[1];
   const [reason, setReason] = useState("");
   const [semester, setSemester] = useState("");
   const [createdTreatmentId, setCreatedTreatmentId] = useState<number | null>(
@@ -265,39 +274,43 @@ const TreatmentModal: React.FC<TreatmentModalProps> = ({
               }}
             />
 
-            <TextField
-              label="Semestre"
+            <FormControl
               fullWidth
               margin="normal"
-              value={semester}
-              onChange={(e) => setSemester(e.target.value)}
               disabled={treatmentCreated || loading}
-              placeholder="Ej: 2023-2"
-              InputProps={{
-                startAdornment: (
+              error={!treatmentCreated && !semester}
+            >
+              <InputLabel id="semester-label">Semestre</InputLabel>
+              <Select
+                labelId="semester-label"
+                id="semester-select"
+                value={semester || defaultSemester}
+                label="Semestre"
+                onChange={(e) => setSemester(e.target.value)}
+                startAdornment={
                   <InputAdornment position="start">
                     <SchoolOutlinedIcon color="action" />
                   </InputAdornment>
-                ),
-                sx: {
+                }
+                sx={{
                   borderRadius: 2,
                   bgcolor: treatmentCreated
                     ? alpha(theme.palette.grey[100], 0.5)
                     : "transparent",
-                },
-              }}
-              helperText={
-                !treatmentCreated && !semester
+                }}
+              >
+                {semesterOptions.map((opt) => (
+                  <MenuItem key={opt} value={opt}>
+                    {opt}
+                  </MenuItem>
+                ))}
+              </Select>
+              <FormHelperText sx={{ mt: 0.5, ml: 1 }}>
+                {!treatmentCreated && !semester
                   ? "Este campo es obligatorio"
-                  : "Indique el semestre académico en el que se inicia el tratamiento"
-              }
-              FormHelperTextProps={{
-                sx: {
-                  mt: 0.5,
-                  ml: 1,
-                },
-              }}
-            />
+                  : "Indique el semestre académico en el que se inicia el tratamiento"}
+              </FormHelperText>
+            </FormControl>
           </Box>
         </DialogContent>
 
