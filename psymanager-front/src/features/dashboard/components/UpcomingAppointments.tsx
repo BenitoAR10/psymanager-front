@@ -1,7 +1,7 @@
 // src/components/UpcomingAppointments.tsx
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Box,
   Typography,
@@ -68,6 +68,36 @@ const UpcomingAppointments: React.FC<UpcomingAppointmentsProps> = ({
   const [modalOpen, setModalOpen] = useState(false);
   const [completingId, setCompletingId] = useState<number | null>(null);
   const [hoveredItem, setHoveredItem] = useState<number | null>(null);
+  // Estado local para marcar optimistamente qué citas ya iniciaron tratamiento
+  const [startedIds, setStartedIds] = useState<number[]>(() => {
+    if (typeof window === "undefined") return [];
+    try {
+      return JSON.parse(localStorage.getItem("startedTreatmentIds") || "[]");
+    } catch {
+      return [];
+    }
+  });
+
+  useEffect(() => {
+    const onFocus = () => onListChanged?.();
+    window.addEventListener("focus", onFocus);
+    return () => window.removeEventListener("focus", onFocus);
+  }, [onListChanged]);
+
+  // Envoltorio para llamar a onStartTreatment y luego añadir el appointmentId a startedIds
+  const handleStartTreatmentLocal = (appt: Appointment) => {
+    // 1) Llamas a tu API real
+    onStartTreatment?.(appt.patientId, appt.therapistId, appt.studentName);
+
+    // 2) Miras si ya estaba marcado
+    setStartedIds((prev) => {
+      if (prev.includes(appt.appointmentId)) return prev;
+      const next = [...prev, appt.appointmentId];
+      // 3) Guardas **sincrónicamente** en localStorage
+      localStorage.setItem("startedTreatmentIds", JSON.stringify(next));
+      return next;
+    });
+  };
 
   const handleMarkCompleted = async (sessionId: number) => {
     setCompletingId(sessionId);
@@ -301,6 +331,10 @@ const UpcomingAppointments: React.FC<UpcomingAppointmentsProps> = ({
               const canMarkComplete = now >= startTime;
               const canStartTreatment =
                 appt.state === "COMPLETED" && !appt.isPartOfTreatment;
+
+              const hasStarted =
+                appt.isPartOfTreatment ||
+                startedIds.includes(appt.appointmentId);
 
               const isActive = isInProgress(appt.dateTime);
               const isHovered = hoveredItem === appt.appointmentId;
@@ -598,49 +632,44 @@ const UpcomingAppointments: React.FC<UpcomingAppointmentsProps> = ({
                           </Button>
                         </Fade>
 
-                        <Fade
-                          in={canStartTreatment}
-                          timeout={300}
-                          unmountOnExit
-                        >
+                        {canStartTreatment && !hasStarted && (
+                          <Fade in timeout={300} unmountOnExit>
+                            <Button
+                              variant="contained"
+                              size="small"
+                              color="primary"
+                              onClick={() => handleStartTreatmentLocal(appt)}
+                              startIcon={<PlayArrowIcon fontSize="small" />}
+                              sx={
+                                {
+                                  /* tus estilos */
+                                }
+                              }
+                            >
+                              Iniciar tratamiento
+                            </Button>
+                          </Fade>
+                        )}
+
+                        {hasStarted && (
                           <Button
                             variant="contained"
                             size="small"
                             color="primary"
-                            onClick={() =>
-                              onStartTreatment?.(
-                                appt.patientId,
-                                appt.therapistId,
-                                appt.studentName
-                              )
-                            }
-                            startIcon={<PlayArrowIcon fontSize="small" />}
+                            disabled
+                            startIcon={<CheckIcon fontSize="small" />}
                             sx={{
                               textTransform: "none",
                               borderRadius: 2,
-                              boxShadow: isHovered
-                                ? `0 4px 8px ${alpha(
-                                    theme.palette.primary.main,
-                                    0.25
-                                  )}`
-                                : `0 2px 4px ${alpha(
-                                    theme.palette.primary.main,
-                                    0.15
-                                  )}`,
-                              transition: "all 0.2s ease",
-                              "&:hover": {
-                                transform: "translateY(-2px)",
-                                boxShadow: `0 6px 12px ${alpha(
-                                  theme.palette.primary.main,
-                                  0.3
-                                )}`,
-                              },
                               px: 1.5,
+                              bgcolor: alpha(theme.palette.grey[300], 0.3),
+                              color: theme.palette.text.secondary,
+                              boxShadow: "none",
                             }}
                           >
-                            Iniciar tratamiento
+                            Tratamiento iniciado
                           </Button>
-                        </Fade>
+                        )}
                       </Box>
                     )}
                   </ListItem>
