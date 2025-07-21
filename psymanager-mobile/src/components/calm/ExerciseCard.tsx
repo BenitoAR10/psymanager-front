@@ -15,11 +15,14 @@ import { theme } from "../../screens/styles/themeConstants";
 const { colors, typography, spacing, borderRadius } = theme;
 
 // Colores de gradientes para las tarjetas
-const GRADIENTS = [
+import type { ColorValue } from "react-native";
+
+const GRADIENTS: ReadonlyArray<readonly [ColorValue, ColorValue]> = [
   ["#A0C4FF", "#4895EF"], // Azul
   ["#FFA07A", "#FF7E5F"], // Naranja/Rojo
   ["#9BF6FF", "#00BBF9"], // Azul claro
   ["#CAFFBF", "#80ED99"], // Verde
+  ["#F7DC6F", "#F4D03F"], // Amarillo - para el diario de ansiedad
 ];
 
 interface ExerciseCardProps {
@@ -29,13 +32,14 @@ interface ExerciseCardProps {
   audioUrl?: string;
   onPress: () => void;
   index: number;
-
   // Props de descarga
   isDownloaded: boolean;
   onDownload: () => void;
   onRemoveDownload: () => void;
   isConnected: boolean;
   isDownloading: boolean;
+  // Prop especial para el diario de ansiedad
+  isSpecial?: boolean;
 }
 
 export const ExerciseCard: React.FC<ExerciseCardProps> = ({
@@ -48,13 +52,19 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
   onRemoveDownload,
   isConnected,
   isDownloading,
+  isSpecial = false,
 }) => {
   // Seleccionar un gradiente basado en el índice
-  const gradientIndex = index % GRADIENTS.length;
+  const gradientIndex = isSpecial ? 4 : index % 4; // Usar el gradiente amarillo para especiales
   const gradient = GRADIENTS[gradientIndex];
 
   // Imágenes de fondo según el índice
   const getBackgroundImage = () => {
+    if (isSpecial) {
+      // Para el diario de ansiedad, usar un fondo especial o el primero
+      return require("../../../assets/calm-bg-1.jpg");
+    }
+
     switch (index % 3) {
       case 0:
         return require("../../../assets/calm-bg-1.jpg");
@@ -68,6 +78,19 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
   };
 
   const renderDownloadIcon = () => {
+    // Para el diario de ansiedad, mostrar un icono especial
+    if (isSpecial) {
+      return (
+        <View style={styles.specialIcon}>
+          <MaterialCommunityIcons
+            name="book-edit-outline"
+            size={20}
+            color="#FFFFFF"
+          />
+        </View>
+      );
+    }
+
     if (isDownloading) {
       return (
         <View style={[styles.downloadIcon, styles.disabledIcon]}>
@@ -123,24 +146,59 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
         activeOpacity={0.9}
         style={styles.container}
       >
-        <ImageBackground
-          source={getBackgroundImage()}
-          style={styles.background}
-          imageStyle={styles.backgroundImage}
-        >
+        {isSpecial ? (
+          // Diseño especial para el diario de ansiedad
           <LinearGradient
-            colors={["transparent", "rgba(0,0,0,0.4)"]}
-            style={styles.overlay}
+            colors={gradient}
             start={{ x: 0, y: 0 }}
-            end={{ x: 0, y: 1 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.background}
           >
-            <View style={styles.contentContainer}>
-              <Text style={styles.title}>{title}</Text>
-              {category && <Text style={styles.category}>{category}</Text>}
+            <View style={styles.specialOverlay}>
+              <View style={styles.contentContainer}>
+                <View style={styles.specialHeader}>
+                  <MaterialCommunityIcons
+                    name="book-edit-outline"
+                    size={32}
+                    color="#FFFFFF"
+                  />
+                  {isSpecial && (
+                    <View style={styles.specialBadge}>
+                      <MaterialCommunityIcons
+                        name="star"
+                        size={12}
+                        color="#FFD700"
+                      />
+                      <Text style={styles.specialText}>Nuevo</Text>
+                    </View>
+                  )}
+                </View>
+                <Text style={styles.title}>{title}</Text>
+                {category && <Text style={styles.category}>{category}</Text>}
+              </View>
             </View>
-            <View style={styles.bottomRow}>{renderDownloadIcon()}</View>
           </LinearGradient>
-        </ImageBackground>
+        ) : (
+          // Diseño normal para ejercicios regulares
+          <ImageBackground
+            source={getBackgroundImage()}
+            style={styles.background}
+            imageStyle={styles.backgroundImage}
+          >
+            <LinearGradient
+              colors={["transparent", "rgba(0,0,0,0.4)"]}
+              style={styles.overlay}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 0, y: 1 }}
+            >
+              <View style={styles.contentContainer}>
+                <Text style={styles.title}>{title}</Text>
+                {category && <Text style={styles.category}>{category}</Text>}
+              </View>
+              <View style={styles.bottomRow}>{renderDownloadIcon()}</View>
+            </LinearGradient>
+          </ImageBackground>
+        )}
       </TouchableOpacity>
     </MotiView>
   );
@@ -177,8 +235,21 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.lg,
     padding: spacing.sm,
   },
+  specialOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.1)",
+    justifyContent: "flex-end",
+    borderRadius: borderRadius.lg,
+    padding: spacing.sm,
+  },
   contentContainer: {
     marginBottom: spacing.md,
+  },
+  specialHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: spacing.sm,
   },
   title: {
     fontSize: typography.sizes.md,
@@ -215,9 +286,28 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 4,
   },
+  specialIcon: {
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    borderRadius: 12,
+    padding: 4,
+  },
   disabledIcon: {
     backgroundColor: "#A0A0A0",
     opacity: 0.6,
+  },
+  specialBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    borderRadius: borderRadius.sm,
+    paddingHorizontal: spacing.xs,
+    paddingVertical: 2,
+  },
+  specialText: {
+    fontSize: typography.sizes.xs,
+    color: "#FFFFFF",
+    fontWeight: typography.fontWeights.semibold as any,
+    marginLeft: 2,
   },
 });
 

@@ -5,13 +5,15 @@ import {
   StyleSheet,
   ActivityIndicator,
   ScrollView,
-  Alert,
 } from "react-native";
 import { ExerciseCard } from "../../components/calm/ExerciseCard";
 import { FeaturedExerciseCard } from "../../components/calm/FeaturedExerciseCard";
 import { CategoryChips } from "../../components/calm/CategoryChips";
 import type { Exercise } from "../../types/exercise";
 import { theme } from "../../screens/styles/themeConstants";
+import { useNavigation } from "@react-navigation/native";
+import type { NavigationProp } from "@react-navigation/native";
+import type { RootStackParamList } from "../../navigation/AppNavigator";
 
 const { colors, typography, spacing, borderRadius } = theme;
 
@@ -22,8 +24,7 @@ interface CalmNowScreenProps {
   selectedCategory: string;
   onCategoryChange: (category: string) => void;
   onExercisePress: (exercise: Exercise) => void;
-
-  // Nuevas props para manejo de descargas
+  // Props para manejo de descargas
   downloadedMap: Record<number, string>;
   onDownload: (exercise: Exercise) => void;
   onRemoveDownload: (exerciseId: number) => void;
@@ -44,6 +45,8 @@ export const CalmNowScreen: React.FC<CalmNowScreenProps> = ({
   isConnected,
   downloadingIds,
 }) => {
+  const navigation = useNavigation<NavigationProp<RootStackParamList>>();
+
   if (isLoading) {
     return (
       <View style={styles.center}>
@@ -95,6 +98,24 @@ export const CalmNowScreen: React.FC<CalmNowScreenProps> = ({
       )}
 
       <View style={styles.gridContainer}>
+        {/* Diario de Ansiedad como primer elemento especial */}
+        <ExerciseCard
+          title="Diario de Ansiedad"
+          category="Herramienta TCC"
+          pointsReward={25}
+          audioUrl=""
+          onPress={() => navigation.navigate("AnxietyJournal" as never)}
+          index={0}
+          // Props de descarga (no aplicables para el diario)
+          isDownloaded={true} // Siempre disponible localmente
+          onDownload={() => {}} // No hace nada
+          onRemoveDownload={() => {}} // No hace nada
+          isConnected={isConnected}
+          isDownloading={false}
+          // Prop especial para identificar el diario
+          isSpecial={true}
+        />
+
         {rest.map((exercise, index) => (
           <ExerciseCard
             key={exercise.id}
@@ -103,7 +124,7 @@ export const CalmNowScreen: React.FC<CalmNowScreenProps> = ({
             pointsReward={exercise.pointsReward}
             audioUrl={exercise.audioUrl}
             onPress={() => onExercisePress(exercise)}
-            index={index}
+            index={index + 1} // +1 porque el diario ocupa el índice 0
             // Props de descarga
             isDownloaded={!!downloadedMap[exercise.id]}
             onDownload={() => onDownload(exercise)}
