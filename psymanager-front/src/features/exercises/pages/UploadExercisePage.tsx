@@ -16,6 +16,8 @@ import {
   Divider,
   IconButton,
   Tooltip,
+  FormControlLabel,
+  Switch,
 } from "@mui/material";
 import { useForm, Controller } from "react-hook-form";
 import { toast } from "sonner";
@@ -29,6 +31,7 @@ interface UploadExerciseFormValues {
   category: string;
   pointsReward: number;
   audioFile: FileList;
+  showPoints: boolean; // Nuevo campo para controlar si mostrar la recompensa
 }
 
 const UploadExercisePage: React.FC = () => {
@@ -36,7 +39,6 @@ const UploadExercisePage: React.FC = () => {
     control,
     handleSubmit,
     reset,
-
     formState: { isSubmitting },
   } = useForm<UploadExerciseFormValues>({
     defaultValues: {
@@ -44,6 +46,7 @@ const UploadExercisePage: React.FC = () => {
       category: "",
       pointsReward: 10,
       audioFile: undefined,
+      showPoints: true, // Valor por defecto activado
     },
   });
 
@@ -52,6 +55,7 @@ const UploadExercisePage: React.FC = () => {
     formData.append("title", data.title);
     formData.append("category", data.category);
     formData.append("pointsReward", String(data.pointsReward));
+    formData.append("showPoints", String(data.showPoints)); // Incluir el campo showPoints
     formData.append("audioFile", data.audioFile[0]);
 
     try {
@@ -111,6 +115,7 @@ const UploadExercisePage: React.FC = () => {
 
         <form onSubmit={handleSubmit(onSubmit)} noValidate>
           <Stack spacing={3}>
+            {/* Título */}
             <Controller
               name="title"
               control={control}
@@ -123,13 +128,12 @@ const UploadExercisePage: React.FC = () => {
                   error={!!fieldState.error}
                   helperText={fieldState.error?.message}
                   fullWidth
-                  InputProps={{
-                    sx: { borderRadius: 2 },
-                  }}
+                  InputProps={{ sx: { borderRadius: 2 } }}
                 />
               )}
             />
 
+            {/* Categoría y puntos */}
             <Box
               sx={{
                 display: "flex",
@@ -149,8 +153,8 @@ const UploadExercisePage: React.FC = () => {
                   >
                     <InputLabel>Categoría</InputLabel>
                     <Select
-                      label="Categoría"
                       {...field}
+                      label="Categoría"
                       sx={{ borderRadius: 2 }}
                     >
                       <MenuItem value="Ansiedad">Ansiedad</MenuItem>
@@ -199,36 +203,41 @@ const UploadExercisePage: React.FC = () => {
               />
             </Box>
 
+            {/* Mostrar puntos */}
+            <Controller
+              name="showPoints"
+              control={control}
+              render={({ field }) => (
+                <FormControlLabel
+                  control={<Switch {...field} checked={field.value} />}
+                  label="Mostrar puntos al completar"
+                />
+              )}
+            />
+
             <Divider sx={{ my: 1 }} />
 
+            {/* Archivo de audio/video */}
             <Controller
               name="audioFile"
               control={control}
               rules={{
                 required: "El archivo es obligatorio",
                 validate: (files) => {
-                  if (!files || files.length === 0) {
+                  if (!files || files.length === 0)
                     return "Selecciona un archivo";
-                  }
-
                   const file = files[0];
-                  const allowedTypes = [
+                  const allowed = [
                     "audio/mpeg",
                     "audio/wav",
                     "video/mp4",
                     "video/webm",
                   ];
-
-                  const maxSizeInBytes = 524288000; // 500MB
-
-                  if (!allowedTypes.includes(file.type)) {
-                    return "Solo se permiten archivos .mp3, .wav, .mp4 o .webm";
-                  }
-
-                  if (file.size > maxSizeInBytes) {
+                  const max = 524288000;
+                  if (!allowed.includes(file.type))
+                    return "Formato no permitido";
+                  if (file.size > max)
                     return "El archivo no debe superar los 500MB";
-                  }
-
                   return true;
                 },
               }}
@@ -306,7 +315,6 @@ const UploadExercisePage: React.FC = () => {
                             {field.value[0].name}
                           </Typography>
                         </Box>
-
                         <Stack
                           direction="row"
                           spacing={1}
@@ -327,7 +335,6 @@ const UploadExercisePage: React.FC = () => {
                             variant="outlined"
                           />
                         </Stack>
-
                         <Button
                           variant="outlined"
                           component="label"
@@ -344,7 +351,6 @@ const UploadExercisePage: React.FC = () => {
                       </Box>
                     )}
                   </Box>
-
                   {fieldState.error && (
                     <Typography
                       color="error"
@@ -358,6 +364,7 @@ const UploadExercisePage: React.FC = () => {
               )}
             />
 
+            {/* Botones de acción */}
             <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 2 }}>
               <Button variant="outlined" sx={{ mr: 2 }} onClick={() => reset()}>
                 Cancelar
@@ -366,11 +373,7 @@ const UploadExercisePage: React.FC = () => {
                 type="submit"
                 variant="contained"
                 disabled={isSubmitting}
-                sx={{
-                  px: 4,
-                  py: 1.2,
-                  fontWeight: 600,
-                }}
+                sx={{ px: 4, py: 1.2, fontWeight: 600 }}
               >
                 {isSubmitting ? "Subiendo..." : "Subir ejercicio"}
               </Button>
