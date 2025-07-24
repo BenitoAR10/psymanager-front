@@ -14,8 +14,9 @@ import PlayerHeader from "./PlayerHeader";
 import ExerciseInfo from "./ExerciseInfo";
 import PlayerControls from "./PlayerControls";
 import ProgressBar from "./ProgressBar";
-import CircleBreathing from "./CircleBreathing";
-import BoxBreathing from "./BoxBreathing";
+import CircleBreathing from "./CircleBreathing"; // Solo uno ahora
+// import BoxBreathing from "./BoxBreathing";     // Ya no se usa
+
 import { exercisePlayerStyles } from "../styles/exercisePlayerStyles";
 import { theme } from "../styles/themeConstants";
 import { completeExercise } from "../../services/exerciseService";
@@ -28,6 +29,7 @@ interface ExercisePlayerScreenProps {
   pointsReward: number;
   mediaUrl: string;
   description?: string;
+  showPoints: boolean;
 }
 
 const ExercisePlayerScreen: React.FC<ExercisePlayerScreenProps> = ({
@@ -36,6 +38,7 @@ const ExercisePlayerScreen: React.FC<ExercisePlayerScreenProps> = ({
   category,
   pointsReward,
   mediaUrl,
+  showPoints,
   description = "Ejercicio de relajación y bienestar",
 }) => {
   const navigation = useNavigation();
@@ -56,11 +59,8 @@ const ExercisePlayerScreen: React.FC<ExercisePlayerScreenProps> = ({
   const currentTime = audioStatus?.currentTime ?? 0; // en segundos
   const duration = audioStatus?.duration ?? 0; // en segundos
 
-  // Cue points de ejemplo (en segundos)
-  const cuePoints = [
-    { time: 15, type: "circle" }, // a los 15s lanzar CircleBreathing
-    { time: 45, type: "box" }, // a los 45s lanzar BoxBreathing
-  ];
+  // Solo un cue point a 1:28 → 88 segundos
+  const cuePoints = [{ time: 88, type: "circle" }];
 
   // Para no disparar dos veces cada cue
   const seen = useRef<{ [key: number]: boolean }>({});
@@ -73,9 +73,7 @@ const ExercisePlayerScreen: React.FC<ExercisePlayerScreenProps> = ({
 
   // Cuando el audio carga
   useEffect(() => {
-    if (isLoaded) {
-      setIsLoading(false);
-    }
+    if (isLoaded) setIsLoading(false);
   }, [isLoaded]);
 
   // Detectar fin de reproducción para registrar ejercicio
@@ -83,21 +81,25 @@ const ExercisePlayerScreen: React.FC<ExercisePlayerScreenProps> = ({
     if (audioStatus?.didJustFinish && !hasBeenCompleted) {
       setHasBeenCompleted(true);
       completeExercise({ exerciseId: id })
-        .then(() => setShowCelebration(true))
+        .then(() => {
+          if (showPoints) {
+            // ← envolvemos aquí
+            setShowCelebration(true);
+          }
+        })
         .catch((error) => {
           console.error("❌ Error al registrar ejercicio:", error);
           toast.show("No se pudo registrar el ejercicio.", { type: "danger" });
         });
     }
-  }, [audioStatus, hasBeenCompleted, id, toast]);
+  }, [audioStatus, hasBeenCompleted, id, toast, showPoints]);
 
-  // Vigilar currentTime para disparar cues
+  // Vigilar currentTime para disparar el cue en 88s
   useEffect(() => {
     const t = Math.floor(currentTime);
     cuePoints.forEach(({ time, type }) => {
       if (t >= time && !seen.current[time]) {
         seen.current[time] = true;
-        // Pausar audio y lanzar la dinámica
         audioPlayer.pause();
         setActiveExercise(type);
       }
@@ -227,7 +229,7 @@ const ExercisePlayerScreen: React.FC<ExercisePlayerScreenProps> = ({
           </View>
         )}
 
-        {/* — Dinámicas interactivas superpuestas — */}
+        {/* Solo CircleBreathing a los 88 segundos */}
         {activeExercise === "circle" && (
           <CircleBreathing
             onComplete={() => {
@@ -236,16 +238,8 @@ const ExercisePlayerScreen: React.FC<ExercisePlayerScreenProps> = ({
             }}
           />
         )}
-        {activeExercise === "box" && (
-          <BoxBreathing
-            onComplete={() => {
-              setActiveExercise(null);
-              audioPlayer.play();
-            }}
-          />
-        )}
 
-        {/* — Modal de celebración / fin de ejercicio — */}
+        {/* Modal de celebración / fin de ejercicio */}
         <CelebrationModal
           visible={showCelebration}
           category={category}

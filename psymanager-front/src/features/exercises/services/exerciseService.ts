@@ -12,6 +12,7 @@ export const uploadExercise = async (
   formData.append("title", payload.title);
   formData.append("category", payload.category);
   formData.append("pointsReward", payload.pointsReward.toString());
+  formData.append("showPoints", payload.showPoints.toString());
   formData.append("audioFile", payload.audioFile);
 
   const response = await axiosInstance.post<ExerciseResponse>(

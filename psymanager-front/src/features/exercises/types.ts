@@ -6,6 +6,7 @@ export interface CreateExercisePayload {
   category: string;
   pointsReward: number;
   audioFile: File;
+  showPoints: boolean;
 }
 
 /**
@@ -16,5 +17,6 @@ export interface ExerciseResponse {
   title: string;
   category: string;
   pointsReward: number;
+  showPoints: boolean;
   audioUrl: string;
 }

@@ -32,6 +32,7 @@ export const ExercisePlayerContainer: React.FC = () => {
       category={exercise.category}
       pointsReward={exercise.pointsReward}
       mediaUrl={exercise.audioUrl}
+      showPoints={exercise.showPoints}
     />
   );
 };

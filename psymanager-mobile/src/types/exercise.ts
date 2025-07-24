@@ -4,4 +4,5 @@ export interface Exercise {
   category: string;
   pointsReward: number;
   audioUrl: string;
+  showPoints: boolean;
 }

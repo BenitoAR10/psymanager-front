@@ -341,8 +341,8 @@ const CalendarView: React.FC = () => {
               `${moment(start).format("D MMMM")} - ${moment(end).format(
                 "D MMMM YYYY"
               )}`,
-            dayFormat: "ddd D", // Formato corto para los días
-            weekdayFormat: "ddd", // Formato corto para los días de la semana
+            dayFormat: "ddd D",
+            weekdayFormat: "ddd",
           }}
           step={30}
           timeslots={2}

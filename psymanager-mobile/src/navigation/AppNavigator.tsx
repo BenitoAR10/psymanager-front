@@ -1,26 +1,24 @@
-// src/navigation/AppNavigator.tsx
+"use client";
 
-import React from "react";
+import type React from "react";
 import { View, Text } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { useAuth } from "../auth/useAuth";
 import { navigationRef } from "./navigationRef";
 import { useConnectivity } from "../hooks/useConnectivity";
-
 import LoginScreen from "../screens/auth/LoginScreen";
 import AuthSuccessScreen from "../screens/auth/AuthSuccessScreen";
 import RegisterStep1Screen from "../screens/auth/RegisterStep1Screen";
 import RegisterStep2Screen from "../screens/auth/RegisterStep2Screen";
 import CustomHeader from "../components/common/CustomHeader";
-
 import ScheduleDetailScreen from "../screens/schedule/ScheduleDetailScreen";
 import AppointmentDetailScreen from "../screens/appointments/AppointmentDetailScreen";
 import AccountSettingsScreen from "../screens/profile/AccountSettingsScreen";
 import HelpCenterScreen from "../screens/profile/HelpCenterScreen";
 import TermsAndConditionsScreen from "../screens/profile/TermsAndConditionsScreen";
 import { ExercisePlayerContainer } from "../screens/calm/ExercisePlayerContainer";
-
+import AnxietyJournalScreen from "../screens/axiety/AnxietyJournalScreen";
 import PatientTabs from "./PatientTabs";
 
 export type RootStackParamList = {
@@ -49,8 +47,10 @@ export type RootStackParamList = {
       category: string;
       audioUrl: string;
       pointsReward: number;
+      showPoints: boolean;
     };
   };
+  AnxietyJournal: undefined; // Nueva pantalla agregada
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -139,6 +139,13 @@ const AppNavigator: React.FC = () => {
             <Stack.Screen
               name="ExercisePlayer"
               component={ExercisePlayerContainer}
+              options={{ headerShown: false }}
+            />
+
+            {/* -- Diario de Ansiedad (sin header, maneja su propio header) -- */}
+            <Stack.Screen
+              name="AnxietyJournal"
+              component={AnxietyJournalScreen}
               options={{ headerShown: false }}
             />
           </Stack.Navigator>
