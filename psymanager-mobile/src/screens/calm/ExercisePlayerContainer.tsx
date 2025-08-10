@@ -12,7 +12,7 @@ export const ExercisePlayerContainer: React.FC = () => {
   const { exercise } = route.params;
 
   const mediaUrl = exercise.audioUrl.toLowerCase();
-  const isVideo = mediaUrl.endsWith(".mp4") || mediaUrl.endsWith(".webm");
+  const isVideo = mediaUrl.endsWith(".mp4") || mediaUrl.endsWith(".webm") || mediaUrl.endsWith(".mov");
 
   if (isVideo) {
     return (
