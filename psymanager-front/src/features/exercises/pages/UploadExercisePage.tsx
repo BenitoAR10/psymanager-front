@@ -232,6 +232,7 @@ const UploadExercisePage: React.FC = () => {
                     "audio/wav",
                     "video/mp4",
                     "video/webm",
+                    "video/quicktime",
                   ];
                   const max = 524288000;
                   if (!allowed.includes(file.type))
@@ -280,7 +281,7 @@ const UploadExercisePage: React.FC = () => {
                           <input
                             type="file"
                             hidden
-                            accept=".mp3,.wav,.mp4,.webm"
+                            accept=".mp3,.wav,.mp4,.webm, .mov"
                             onChange={(e) => field.onChange(e.target.files)}
                           />
                         </Button>
@@ -290,7 +291,7 @@ const UploadExercisePage: React.FC = () => {
                           mt={2}
                           color="text.secondary"
                         >
-                          Formatos permitidos: MP3, WAV, MP4, WEBM (máx. 500MB)
+                          Formatos permitidos: MP3, WAV, MP4, WEBM, MOV (máx. 500MB)
                         </Typography>
                       </Box>
                     ) : (
